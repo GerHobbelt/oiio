@@ -127,7 +127,7 @@ build_script:
   - cmake --build . --config %CONFIGURATION%
   - cd %APPVEYOR_BUILD_FOLDER%
   - 7z a oiio_dependencies.zip C:/Sys
-  - 7z a oiio_x64.zip C:/projects/oiio/ext
+  - 7z a oiio_x64.zip C:/projects/oiio
 
 #---------------------------------#
 #      artifacts configuration    #
