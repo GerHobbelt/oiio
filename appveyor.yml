@@ -126,20 +126,18 @@ build_script:
   - dir c:\projects\oiio\build\windows64
   - cmake --build . --config %CONFIGURATION%
   - cd %APPVEYOR_BUILD_FOLDER%
-  - 7z a oiio_dependencies.zip C:\projects\oiio
+
+  - 7z a oiio_x64.zip C:/projects/oiio
 
 #---------------------------------#
 #      artifacts configuration    #
 #---------------------------------#
 
-  - path: oiio_dependencies.zip 
-       name: Package
 
-deploy:
-    - provider: Environment
-      name: GitHub Release
 
-test: off
+  - path: oiio_x64.zip
+    name: binaries
 
-only_commits:
-    message: /build/
+        
+matrix:
+    fast_finish: true
