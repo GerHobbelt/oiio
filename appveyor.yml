@@ -133,25 +133,25 @@ build_script:
 #      artifacts configuration    #
 #---------------------------------#
 
-    -path: oiio_dependencies.zip 
-     name: dependencies
+  -path: oiio_dependencies.zip 
+   name: dependencies
 
-    -path: oiio_x64.zip
-     name: binaries
+  -path: oiio_x64.zip
+   name: binaries
 
 #---------------------------------#
 #      deployment configuration   #
 #---------------------------------#
 deploy:
-    provider: github
-    artifact: /.*\.zip/   
-    force_update: true
-    auth_token:
-        secure: bQcFIaSwxL25UtEWSNCn32aVMGrw+H40gyIjWhJJPcyJUFp5/zqzQnMnxTphmOD4
-    draft: false
-    prerelease: false
-    on:
-        appveyor_repo_tag: true
+  provider: github
+  artifact: /.*\.zip/   
+  force_update: true
+  auth_token:
+    secure: bQcFIaSwxL25UtEWSNCn32aVMGrw+H40gyIjWhJJPcyJUFp5/zqzQnMnxTphmOD4
+  draft: false
+  prerelease: false
+  on:
+    appveyor_repo_tag: true
         
 matrix:
     fast_finish: true
