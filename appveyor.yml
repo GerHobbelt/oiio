@@ -133,11 +133,11 @@ build_script:
 #---------------------------------#
 
   - path: oiio_dependencies.zip 
-       name: Package
+    name: Package
 
 deploy:
-    - provider: Environment
-      name: GitHub Release
+  - provider: Environment
+    name: GitHub Release
 
 test: off
 
