@@ -114,6 +114,8 @@ set (PROJ_NAMESPACE "${${PROJ_NAME}_NAMESPACE}")
 set (PROJ_NAMESPACE_V "${PROJ_NAMESPACE}_v${PROJECT_VERSION_MAJOR}_${PROJECT_VERSION_MINOR}")
 message(STATUS "Setting Namespace to: ${PROJ_NAMESPACE_V}")
 
+# ====== Tangent Rez Deps
+include(${CMAKE_CURRENT_SOURCE_DIR}/rez_deps.cmake)
 
 include (externalpackages)
 include (install)
