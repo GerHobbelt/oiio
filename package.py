@@ -1,13 +1,14 @@
 name = 'oiio'
 
-version = '1.8.9-ta.1.0.0'
+version = '1.8.9-ta.2.0.0'
 
 authors = [
     'benjamin.skinner',
 ]
 
 variants = [
-    ['platform-windows', 'arch-x64', 'os-windows-10'],
+    ['platform-windows', 'arch-x64', 'os-windows-10', 'boost-1.69'],
+    ['platform-windows', 'arch-x64', 'os-windows-10', 'boost-1.65'],
 ]
 
 requires = [
@@ -16,7 +17,6 @@ requires = [
     'libpng-1.6.5',
     'openexr-2.4.0',
     'libjpeg_turbo-2.0.5',
-    'boost-1.69.0',
     'ocio-1.1.1',
 ]
 
