@@ -1,3 +1,4 @@
+// clang-format off
 /*
 xxHash - Fast Hash algorithm
 Copyright (C) 2012-2014, Yann Collet.
@@ -27,10 +28,9 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 You can contact the author at :
-- xxHash source repository : http://code.google.com/p/xxhash/
+- xxHash source repository : https://github.com/Cyan4973/xxHash
 - public discussion board : https://groups.google.com/forum/#!forum/lz4c
 */
-
 
 //**************************************
 // Tuning parameters

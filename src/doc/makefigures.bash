@@ -23,8 +23,8 @@ ${OIIOTOOL} grid-small.jpg --rotate270 -o rotate270.jpg
 ${OIIOTOOL} grid-small.jpg --transpose -o transpose.jpg
 ${OIIOTOOL} grid-small.jpg --rotate 45 -o rotate45.jpg
 ${OIIOTOOL} grid-small.jpg --cshift +70+30 -o cshift.jpg
-${OIIOTOOL} --pattern constant:color=1,0.7,0.7 320x240 3 --fill:color=1,0,0 50x100+50+75 --tocolorspace sRGB -o fill.jpg
-${OIIOTOOL} --create 320x240 3 -fill:bottom=1,0.7,0.7:top=1,0,0 320x240 --tocolorspace sRGB -o fill.jpg
+${OIIOTOOL} --pattern fill:bottom=1,0.7,0.7:top=1,0,0  320x240 3 --fill:color=1,0,0 50x100+50+75 --tocolorspace sRGB -o fill.jpg
+#${OIIOTOOL} --create 320x240 3 -fill:bottom=1,0.7,0.7:top=1,0,0 320x240 --tocolorspace sRGB -o fill2.jpg
 ${OIIOTOOL} --pattern checker:color1=0.1,0.1,0.1:color2=0.4,0.4,0.4:width=32:height=32 320x240 3 --tocolorspace sRGB -o checker.jpg
 ${OIIOTOOL} --pattern fill:top=0.1,0.1,0.1:bottom=0,0,0.75 320x240 3 --tocolorspace sRGB -o gradient.jpg
 ${OIIOTOOL} --pattern fill:left=0.1,0.1,0.1:right=0,0.75,0 320x240 3 --tocolorspace sRGB -o gradienth.jpg
@@ -72,10 +72,16 @@ ${OIIOTOOL} --autocc dilate.jpg erode.jpg -sub -d uint8 -o morphgradient.jpg
 ${OIIOTOOL} --autocc morphsource.jpg morphopen.jpg -sub -d uint8 -o tophat.jpg
 ${OIIOTOOL} --autocc morphclose.jpg morphsource.jpg -sub -d uint8 -o bottomhat.jpg
 
-${OIIOTOOL} -autocc tahoe-small.jpg --colormap blue-red -o colormap-blue-red.jpg
+${OIIOTOOL} -autocc tahoe-small.jpg --contrast:black=0.1:white=0.75 -o tahoe-lincontrast.jpg
+${OIIOTOOL} -autocc tahoe-small.jpg --contrast:black=1:white=0 -o tahoe-inverse.jpg
+${OIIOTOOL} -autocc tahoe-small.jpg --contrast:scontrast=5 -o tahoe-sigmoid.jpg
+
+${OIIOTOOL} -autocc tahoe-small.jpg --colormap inferno -o colormap-inferno.jpg
+${OIIOTOOL} -autocc tahoe-small.jpg --colormap viridis -o colormap-viridis.jpg
 ${OIIOTOOL} -autocc tahoe-small.jpg --colormap spectrum -o colormap-spectrum.jpg
-${OIIOTOOL} -autocc tahoe-small.jpg --colormap heat -o colormap-heat.jpg
 ${OIIOTOOL} -autocc tahoe-small.jpg --colormap ".25,.25,.25,0,.5,0,1,0,0" -o colormap-custom.jpg
+
+${OIIOTOOL} -autocc tahoe-small.jpg --ccmatrix "0.805,0.506,-0.311,0,-0.311,0.805,0.506,0,0.506,-0.311,0.805,0,0,0,0,1" -o tahoe-ccmatrix.jpg
 
 #${OIIOTOOL} ../../../testsuite/oiiotool/tahoe-small.tif
 

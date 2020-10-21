@@ -4,10 +4,10 @@
 message (STATUS "CMAKE_CXX_COMPILER is ${CMAKE_CXX_COMPILER}")
 message (STATUS "CMAKE_CXX_COMPILER_ID is ${CMAKE_CXX_COMPILER_ID}")
 
-set (USE_CPP 11 CACHE STRING "C++ standard to prefer (11, 14, etc.)")
-option (USE_LIBCPLUSPLUS "Compile with clang libc++")
-set (USE_SIMD "" CACHE STRING "Use SIMD directives (0, sse2, sse3, ssse3, sse4.1, sse4.2, avx, avx2, avx512f, f16c)")
-option (STOP_ON_WARNING "Stop building if there are any compiler warnings" ON)
+set (USE_CPP 11 CACHE STRING "C++ standard to prefer (11, 14, 17, etc.)")
+option (USE_LIBCPLUSPLUS "Compile with clang libc++" OFF)
+set (USE_SIMD "" CACHE STRING "Use SIMD directives (0, sse2, sse3, ssse3, sse4.1, sse4.2, avx, avx2, avx512f, f16c, aes)")
+option (STOP_ON_WARNING "Stop building if there are any compiler warnings" OFF)
 option (HIDE_SYMBOLS "Hide symbols not in the public API" OFF)
 option (USE_CCACHE "Use ccache if found" ON)
 option (USE_fPIC "Build with -fPIC")
@@ -18,9 +18,22 @@ option (LINKSTATIC  "Link with static external libraries when possible" OFF)
 option (CODECOV "Build code coverage tests" OFF)
 set (SANITIZE "" CACHE STRING "Build code using sanitizer (address, thread)")
 option (CLANG_TIDY "Enable clang-tidy" OFF)
-set (CLANG_TIDY_CHECKS "-*" CACHE STRING "clang-tidy checks to perform")
+set (CLANG_TIDY_CHECKS "" CACHE STRING "clang-tidy checks to perform (none='-*')")
 set (CLANG_TIDY_ARGS "" CACHE STRING "clang-tidy args")
 option (CLANG_TIDY_FIX "Have clang-tidy fix source" OFF)
+set (CLANG_FORMAT_EXE_HINT "" CACHE STRING "clang-format executable's directory (will search if not specified")
+set (CLANG_FORMAT_INCLUDES "src/*.h" "src/*.cpp"
+    CACHE STRING "Glob patterns to include for clang-format")
+    # Eventually: want this to be: "src/*.h;src/*.cpp"
+set (CLANG_FORMAT_EXCLUDES "src/include/OpenImageIO/fmt/*.h"
+                           "*pugixml*" "*SHA1*" "*/farmhash.cpp" "*/tinyformat.h"
+                           "src/dpx.imageio/libdpx/*"
+                           "src/cineon.imageio/libcineon/*"
+                           "src/dds.imageio/squish/*"
+                           "src/gif.imageio/gif.h"
+                           "src/hdr.imageio/rgbe.cpp"
+     CACHE STRING "Glob patterns to exclude for clang-format")
+set (GLIBCXX_USE_CXX11_ABI "" CACHE STRING "For gcc, use the new C++11 library ABI (0|1)")
 
 # Figure out which compiler we're using
 if (CMAKE_COMPILER_IS_GNUCC)
@@ -63,8 +76,11 @@ endif ()
 # turn on more detailed warnings and consider warnings as errors
 if (NOT MSVC)
     add_definitions ("-Wall")
-    if (STOP_ON_WARNING)
+    if (STOP_ON_WARNING OR DEFINED ENV{CI})
         add_definitions ("-Werror")
+        # N.B. Force CI builds (Travis defines $CI) to use -Werror, even if
+        # STOP_ON_WARNING has been switched off by default, which we may do
+        # in release branches.
     endif ()
 endif ()
 
@@ -129,18 +145,11 @@ endif ()
 
 # gcc specific options
 if (CMAKE_COMPILER_IS_GNUCC AND NOT (CMAKE_COMPILER_IS_CLANG OR CMAKE_COMPILER_IS_APPLECLANG))
-    if (NOT ${GCC_VERSION} VERSION_LESS 4.8)
-        # suppress a warning that Boost::Python hits in g++ 4.8
-        add_definitions ("-Wno-error=unused-local-typedefs")
-        add_definitions ("-Wno-unused-local-typedefs")
-    endif ()
+    add_definitions ("-Wno-unused-local-typedefs")
     add_definitions ("-Wno-unused-result")
-    if (NOT ${GCC_VERSION} VERSION_LESS 6.0)
-        add_definitions ("-Wno-error=misleading-indentation")
-    endif ()
     if (NOT ${GCC_VERSION} VERSION_LESS 7.0)
         add_definitions ("-Wno-aligned-new")
-        add_definitions ("-Wno-error=noexcept-type")
+        add_definitions ("-Wno-noexcept-type")
     endif ()
 endif ()
 
@@ -189,6 +198,18 @@ if (USE_LIBCPLUSPLUS AND CMAKE_COMPILER_IS_CLANG)
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
 endif ()
 
+# GCC 5+: honor build-time option for whether or not to use new string ABI.
+# FIXME: In theory, this should also be needed for clang, if compiling with
+# the gcc libstdc++ toolchain. In practice, I could not get things to build
+# with clang properly when using this option, and I haven't yet seen a case
+# where it's needed. We can return to this and fix for clang if it becomes a
+# legit problem later.
+if (CMAKE_COMPILER_IS_GNUCC AND NOT ${GCC_VERSION} VERSION_LESS 5.0)
+    if (NOT ${GLIBCXX_USE_CXX11_ABI} STREQUAL "")
+        add_definitions ("-D_GLIBCXX_USE_CXX11_ABI=${GLIBCXX_USE_CXX11_ABI}")
+    endif ()
+endif ()
+
 
 # SIMD and machine architecture options
 set (SIMD_COMPILE_FLAGS "")
@@ -232,6 +253,7 @@ endif ()
 include (CMakePushCheckState)
 include (CheckCXXSourceRuns)
 
+# Find out if it's safe for us to use std::regex or if we need boost.regex
 cmake_push_check_state ()
 set (CMAKE_REQUIRED_DEFINITIONS ${CSTD_FLAGS})
 check_cxx_source_runs("
@@ -280,21 +302,68 @@ if (SANITIZE AND (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_CLANG))
         set (SANITIZE_LIBRARIES "asan;pthread")
         # set (SANITIZE_LIBRARIES "asan" "ubsan")
     endif()
+    if (CMAKE_COMPILER_IS_GNUCC)
+        # turn on glibcxx extra annotations to find vector writes past end
+        add_definitions ("-D_GLIBCXX_SANITIZE_VECTOR=1")
+    endif ()
     add_definitions ("-D${PROJECT_NAME}_SANITIZE=1")
 endif ()
 
 # clang-tidy options
 if (CLANG_TIDY)
-    set (CMAKE_CXX_CLANG_TIDY "clang-tidy;-header-filter=(${PROJECT_NAME})|(${PROJ_NAME})|(${PROJ_NAME_LOWER})|(_pvt.h)")
-    if (CLANG_TIDY_ARGS)
-        set (CMAKE_CXX_CLANG_TIDY "${CMAKE_CXX_CLANG_TIDY};${CLANG_TIDY_ARGS}")
+    find_program(CLANG_TIDY_EXE NAMES "clang-tidy"
+                 DOC "Path to clang-tidy executable")
+    message (STATUS "CLANG_TIDY_EXE ${CLANG_TIDY_EXE}")
+    if (CLANG_TIDY_EXE AND NOT ${CMAKE_VERSION} VERSION_LESS 3.6)
+        set (CMAKE_CXX_CLANG_TIDY
+             "${CLANG_TIDY_EXE}"
+             )
+        if (CLANG_TIDY_ARGS)
+            list (APPEND CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY_ARGS})
+        endif ()
+        if (CLANG_TIDY_CHECKS)
+            list (APPEND CMAKE_CXX_CLANG_TIDY -checks="${CLANG_TIDY_CHECKS}")
+        endif ()
+        execute_process (COMMAND ${CMAKE_CXX_CLANG_TIDY} -list-checks
+                         OUTPUT_VARIABLE tidy_checks
+                         OUTPUT_STRIP_TRAILING_WHITESPACE)
+        if (CLANG_TIDY_FIX)
+            list (APPEND CMAKE_CXX_CLANG_TIDY "-fix")
+        endif ()
+        message (STATUS "clang-tidy command line is: ${CMAKE_CXX_CLANG_TIDY}")
+        message (STATUS "${tidy_checks}")
+    else ()
+        message (STATUS "Cannot run clang-tidy as requested")
     endif ()
-    if (CLANG_TIDY_FIX)
-        set (CMAKE_CXX_CLANG_TIDY "${CMAKE_CXX_CLANG_TIDY};-fix")
-    endif ()
-    set (CMAKE_CXX_CLANG_TIDY "${CMAKE_CXX_CLANG_TIDY};-checks=${CLANG_TIDY_CHECKS}")
-    message (STATUS "clang-tidy command line is: ${CMAKE_CXX_CLANG_TIDY}")
+    # Hint: run with CLANG_TIDY_ARGS=-list-checks to list all the checks
 endif ()
+
+# clang-format
+find_program (CLANG_FORMAT_EXE
+              NAMES clang-format bin/clang-format
+              HINTS ${CLANG_FORMAT_EXE_HINT} ENV CLANG_FORMAT_EXE_HINT
+                    ENV LLVM_DIRECTORY
+              NO_DEFAULT_PATH
+              DOC "Path to clang-format executable")
+find_program (CLANG_FORMAT_EXE NAMES clang-format bin/clang-format)
+if (CLANG_FORMAT_EXE)
+    message (STATUS "clang-format found: ${CLANG_FORMAT_EXE}")
+    # Start with the list of files to include when formatting...
+    file (GLOB_RECURSE FILES_TO_FORMAT ${CLANG_FORMAT_INCLUDES})
+    # ... then process any list of excludes we are given
+    foreach (_pat ${CLANG_FORMAT_EXCLUDES})
+        file (GLOB_RECURSE _excl ${_pat})
+        list (REMOVE_ITEM FILES_TO_FORMAT ${_excl})
+    endforeach ()
+    #message (STATUS "clang-format file list: ${FILES_TO_FORMAT}")
+    file (COPY ${CMAKE_CURRENT_SOURCE_DIR}/.clang-format
+          DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+    add_custom_target (clang-format
+        COMMAND "${CLANG_FORMAT_EXE}" -i -style=file ${FILES_TO_FORMAT} )
+else ()
+    message (STATUS "clang-format not found.")
+endif ()
+
 
 if (EXTRA_CPP_ARGS)
     message (STATUS "Extra C++ args: ${EXTRA_CPP_ARGS}")
@@ -310,7 +379,6 @@ if (BUILDSTATIC)
         # On Linux, the lack of -fPIC when building static libraries seems
         # incompatible with the dynamic library needed for the Python bindings.
         set (USE_PYTHON OFF)
-        set (USE_PYTHON3 OFF)
     endif ()
 else ()
     set (LIBRARY_BUILD_TYPE SHARED)

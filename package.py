@@ -1,6 +1,6 @@
 name = 'oiio'
 
-version = '1.8.9-ta.1.0.0'
+version = '2.0.10-ta.1.0.0'
 
 authors = [
     'benjamin.skinner',

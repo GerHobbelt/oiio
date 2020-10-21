@@ -26,24 +26,25 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// clang-format off
 
 #include <sstream>
 #include <type_traits>
 
-#include <OpenEXR/half.h>
-#include <OpenEXR/ImathVec.h>
 #include <OpenEXR/ImathMatrix.h>
+#include <OpenEXR/ImathVec.h>
+#include <OpenEXR/half.h>
 
-#include <OpenImageIO/simd.h>
-#include <OpenImageIO/imageio.h>
-#include <OpenImageIO/unittest.h>
-#include <OpenImageIO/typedesc.h>
-#include <OpenImageIO/strutil.h>
 #include <OpenImageIO/argparse.h>
-#include <OpenImageIO/timer.h>
 #include <OpenImageIO/benchmark.h>
-#include <OpenImageIO/ustring.h>
 #include <OpenImageIO/fmath.h>
+#include <OpenImageIO/imageio.h>
+#include <OpenImageIO/simd.h>
+#include <OpenImageIO/strutil.h>
+#include <OpenImageIO/timer.h>
+#include <OpenImageIO/typedesc.h>
+#include <OpenImageIO/unittest.h>
+#include <OpenImageIO/ustring.h>
 
 
 
@@ -53,45 +54,44 @@ using namespace OIIO::simd;
 
 
 static int iterations = 1000000;
-static int ntrials = 5;
-static bool verbose = false;
+static int ntrials    = 5;
+static bool verbose   = false;
 static Sysutil::Term term(std::cout);
-float dummy_float[16];
-float dummy_float2[16];
-float dummy_int[16];
+OIIO_SIMD16_ALIGN float dummy_float[16];
+OIIO_SIMD16_ALIGN float dummy_float2[16];
+OIIO_SIMD16_ALIGN float dummy_int[16];
 
 
 
 static void
-getargs (int argc, char *argv[])
+getargs(int argc, char* argv[])
 {
     bool help = false;
     ArgParse ap;
-    ap.options ("simd_test\n"
-                OIIO_INTRO_STRING "\n"
-                "Usage:  simd_test [options]",
-                // "%*", parse_files, "",
-                "--help", &help, "Print help message",
-                "-v", &verbose, "Verbose mode",
-                "--iterations %d", &iterations,
-                    ustring::format("Number of iterations (default: %d)", iterations).c_str(),
-                "--trials %d", &ntrials, "Number of trials",
-                NULL);
-    if (ap.parse (argc, (const char**)argv) < 0) {
+    ap.options("simd_test\n" OIIO_INTRO_STRING "\n"
+        "Usage:  simd_test [options]",
+        // "%*", parse_files, "",
+        "--help", &help, "Print help message",
+        "-v", &verbose, "Verbose mode",
+        "--iterations %d", &iterations,
+            ustring::sprintf("Number of iterations (default: %d)", iterations).c_str(),
+        "--trials %d", &ntrials, "Number of trials",
+        nullptr);
+    if (ap.parse(argc, (const char**)argv) < 0) {
         std::cerr << ap.geterror() << std::endl;
-        ap.usage ();
-        exit (EXIT_FAILURE);
+        ap.usage();
+        exit(EXIT_FAILURE);
     }
     if (help) {
-        ap.usage ();
-        exit (EXIT_FAILURE);
+        ap.usage();
+        exit(EXIT_FAILURE);
     }
 }
 
 
 
 static void
-category_heading (string_view name)
+category_heading(string_view name)
 {
     std::cout << "\n" << term.ansi("bold,underscore,yellow", name) << "\n\n";
 }
@@ -99,7 +99,7 @@ category_heading (string_view name)
 
 
 static void
-test_heading (string_view name, string_view name2="")
+test_heading(string_view name, string_view name2 = "")
 {
     std::cout << term.ansi("bold") << name << ' ' << name2
               << term.ansi("normal") << "\n";
@@ -116,9 +116,9 @@ test_heading (string_view name, string_view name2="")
 // for now, gcc 4.8 seems like an important barrier.
 
 
-template <typename FUNC, typename T>
-void benchmark (string_view funcname, FUNC func, T x,
-                size_t work=0)
+template<typename FUNC, typename T>
+void
+benchmark(string_view funcname, FUNC func, T x, size_t work = 0)
 {
     if (!work)
         work = SimdElements<decltype(func(x))>::size;
@@ -133,20 +133,20 @@ void benchmark (string_view funcname, FUNC func, T x,
         r = func(x); DoNotOptimize (r); clobber_all_memory();
         r = func(x); DoNotOptimize (r); clobber_all_memory();
     };
-    float time = time_trial (repeat_func, ntrials, iterations/8);
-    std::cout << Strutil::format ("  %s: %7.1f Mvals/sec, (%.1f Mcalls/sec)\n",
-                                  funcname, ((iterations*work)/1.0e6)/time,
-                                  (iterations/1.0e6)/time);
+    float time = time_trial(repeat_func, ntrials, iterations / 8);
+    Strutil::printf("  %s: %7.1f Mvals/sec, (%.1f Mcalls/sec)\n",
+                                 funcname, ((iterations * work) / 1.0e6) / time,
+                                 (iterations / 1.0e6) / time);
 }
 
 
-template <typename FUNC, typename T, typename U>
-void benchmark2 (string_view funcname, FUNC func, T x, U y,
-                 size_t work=0)
+template<typename FUNC, typename T, typename U>
+void
+benchmark2(string_view funcname, FUNC func, T x, U y, size_t work = 0)
 {
     if (!work)
-        work = SimdElements<decltype(func(x,y))>::size;
-    auto repeat_func = [&](){
+        work = SimdElements<decltype(func(x, y))>::size;
+    auto repeat_func = [&]() {
         // Unroll the loop 8 times
         auto r = func(x, y); DoNotOptimize (r); clobber_all_memory();
         r = func(x, y); DoNotOptimize (r); clobber_all_memory();
@@ -157,160 +157,245 @@ void benchmark2 (string_view funcname, FUNC func, T x, U y,
         r = func(x, y); DoNotOptimize (r); clobber_all_memory();
         r = func(x, y); DoNotOptimize (r); clobber_all_memory();
     };
-    float time = time_trial (repeat_func, ntrials, iterations/8);
-    std::cout << Strutil::format ("  %s: %7.1f Mvals/sec, (%.1f Mcalls/sec)\n",
-                                  funcname, ((iterations*work)/1.0e6)/time,
-                                  (iterations/1.0e6)/time);
+    float time = time_trial(repeat_func, ntrials, iterations / 8);
+    Strutil::printf("  %s: %7.1f Mvals/sec, (%.1f Mcalls/sec)\n",
+                                 funcname, ((iterations * work) / 1.0e6) / time,
+                                 (iterations / 1.0e6) / time);
 }
 
 
 
 template<typename VEC>
-inline VEC mkvec (typename VEC::value_t a, typename VEC::value_t b,
-                  typename VEC::value_t c, typename VEC::value_t d=0)
+inline VEC
+mkvec(typename VEC::value_t a, typename VEC::value_t b, typename VEC::value_t c,
+      typename VEC::value_t d = 0)
 {
-    return VEC(a,b,c,d);
+    return VEC(a, b, c, d);
 }
 
-template<> inline vfloat3 mkvec<vfloat3> (float a, float b, float c, float d) {
-    return vfloat3(a,b,c);
-}
-
-template<> inline vfloat8 mkvec<vfloat8> (float a, float b, float c, float d) {
-    return vfloat8(a,b,c,d,a,b,c,d);
-}
-
-template<> inline vfloat16 mkvec<vfloat16> (float a, float b, float c, float d) {
-    return vfloat16(a,b,c,d,a,b,c,d,a,b,c,d,a,b,c,d);
-}
-
-template<> inline vint8 mkvec<vint8> (int a, int b, int c, int d) {
-    return vint8(a,b,c,d,a,b,c,d);
-}
-
-template<> inline vint16 mkvec<vint16> (int a, int b, int c, int d) {
-    return vint16(a,b,c,d,a,b,c,d,a,b,c,d,a,b,c,d);
-}
-
-template<> inline vbool8 mkvec<vbool8> (bool a, bool b, bool c, bool d) {
-    return vbool8(a,b,c,d,a,b,c,d);
-}
-
-template<> inline vbool16 mkvec<vbool16> (bool a, bool b, bool c, bool d) {
-    return vbool16(a,b,c,d,a,b,c,d,a,b,c,d,a,b,c,d);
-}
-
-
-
-template<typename VEC>
-inline VEC mkvec (typename VEC::value_t a, typename VEC::value_t b,
-                  typename VEC::value_t c, typename VEC::value_t d,
-                  typename VEC::value_t e, typename VEC::value_t f,
-                  typename VEC::value_t g, typename VEC::value_t h)
+template<>
+inline vfloat3
+mkvec<vfloat3>(float a, float b, float c, float d)
 {
-    return VEC(a,b,c,d,e,f,g,h);
+    return vfloat3(a, b, c);
 }
 
-
-template<> inline vbool4 mkvec<vbool4> (bool a, bool b, bool c, bool d,
-                                      bool e, bool f, bool g, bool h) {
-    return vbool4(a,b,c,d);
+template<>
+inline vfloat8
+mkvec<vfloat8>(float a, float b, float c, float d)
+{
+    return vfloat8(a, b, c, d, a, b, c, d);
 }
 
-template<> inline vint4 mkvec<vint4> (int a, int b, int c, int d,
-                                    int e, int f, int g, int h) {
-    return vint4(a,b,c,d);
+template<>
+inline vfloat16
+mkvec<vfloat16>(float a, float b, float c, float d)
+{
+    return vfloat16(a, b, c, d, a, b, c, d, a, b, c, d, a, b, c, d);
 }
 
-template<> inline vint16 mkvec<vint16> (int a, int b, int c, int d,
-                                      int e, int f, int g, int h) {
-    return vint16(a,b,c,d,e,f,g,h,
-                 h+1,h+2,h+3,h+4,h+5,h+6,h+7,h+8);
+template<>
+inline vint8
+mkvec<vint8>(int a, int b, int c, int d)
+{
+    return vint8(a, b, c, d, a, b, c, d);
 }
 
-template<> inline vfloat4 mkvec<vfloat4> (float a, float b, float c, float d,
-                                        float e, float f, float g, float h) {
-    return vfloat4(a,b,c,d);
+template<>
+inline vint16
+mkvec<vint16>(int a, int b, int c, int d)
+{
+    return vint16(a, b, c, d, a, b, c, d, a, b, c, d, a, b, c, d);
 }
 
-template<> inline vfloat3 mkvec<vfloat3> (float a, float b, float c, float d,
-                                        float e, float f, float g, float h) {
-    return vfloat3(a,b,c);
+template<>
+inline vbool8
+mkvec<vbool8>(bool a, bool b, bool c, bool d)
+{
+    return vbool8(a, b, c, d, a, b, c, d);
 }
 
-template<> inline vfloat16 mkvec<vfloat16> (float a, float b, float c, float d,
-                                          float e, float f, float g, float h) {
-    return vfloat16(a,b,c,d,e,f,g,h,
-                   h+1,h+2,h+3,h+4,h+5,h+6,h+7,h+8);
+template<>
+inline vbool16
+mkvec<vbool16>(bool a, bool b, bool c, bool d)
+{
+    return vbool16(a, b, c, d, a, b, c, d, a, b, c, d, a, b, c, d);
 }
 
 
 
 template<typename VEC>
-inline int loadstore_vec (int dummy) {
+inline VEC
+mkvec(typename VEC::value_t a, typename VEC::value_t b, typename VEC::value_t c,
+      typename VEC::value_t d, typename VEC::value_t e, typename VEC::value_t f,
+      typename VEC::value_t g, typename VEC::value_t h)
+{
+    return VEC(a, b, c, d, e, f, g, h);
+}
+
+
+template<>
+inline vbool4
+mkvec<vbool4>(bool a, bool b, bool c, bool d, bool e, bool f, bool g, bool h)
+{
+    return vbool4(a, b, c, d);
+}
+
+template<>
+inline vint4
+mkvec<vint4>(int a, int b, int c, int d, int e, int f, int g, int h)
+{
+    return vint4(a, b, c, d);
+}
+
+template<>
+inline vint16
+mkvec<vint16>(int a, int b, int c, int d, int e, int f, int g, int h)
+{
+    return vint16(a, b, c, d, e, f, g, h, h + 1, h + 2, h + 3, h + 4, h + 5,
+                  h + 6, h + 7, h + 8);
+}
+
+template<>
+inline vfloat4
+mkvec<vfloat4>(float a, float b, float c, float d, float e, float f, float g,
+               float h)
+{
+    return vfloat4(a, b, c, d);
+}
+
+template<>
+inline vfloat3
+mkvec<vfloat3>(float a, float b, float c, float d, float e, float f, float g,
+               float h)
+{
+    return vfloat3(a, b, c);
+}
+
+template<>
+inline vfloat16
+mkvec<vfloat16>(float a, float b, float c, float d, float e, float f, float g,
+                float h)
+{
+    return vfloat16(a, b, c, d, e, f, g, h, h + 1, h + 2, h + 3, h + 4, h + 5,
+                    h + 6, h + 7, h + 8);
+}
+
+
+
+template<typename VEC>
+inline int
+loadstore_vec(int dummy)
+{
     typedef typename VEC::value_t ELEM;
     ELEM B[VEC::elements];
     VEC v;
-    v.load ((ELEM *)dummy_float);
-    v.store ((ELEM *)B);
+    v.load((ELEM*)dummy_float);
+    DoNotOptimize(v);
+    clobber_all_memory();
+    v.store((ELEM*)B);
+    DoNotOptimize(B[0]);
+    return 0;
+}
+
+template<typename VEC>
+inline VEC
+load_vec(int dummy)
+{
+    typedef typename VEC::value_t ELEM;
+    VEC v;
+    v.load((ELEM*)dummy_float);
+    return v;
+}
+
+template<typename VEC>
+inline int
+store_vec(const VEC& v)
+{
+    typedef typename VEC::value_t ELEM;
+    v.store((ELEM*)dummy_float);
     return 0;
 }
 
 template<typename VEC, int N>
-inline int loadstore_vec_N (int dummy) {
+inline VEC
+load_vec_N(typename VEC::value_t* B)
+{
     typedef typename VEC::value_t ELEM;
-    ELEM B[VEC::elements];
     VEC v;
-    v.load ((ELEM *)dummy_float, N);
-    v.store ((ELEM *)B, N);
+    v.load((ELEM*)dummy_float, N);
+    return v;
+}
+
+template<typename VEC, int N>
+inline int
+store_vec_N(const VEC& v)
+{
+    typedef typename VEC::value_t ELEM;
+    v.store((ELEM*)dummy_float, N);
+    DoNotOptimize(dummy_float[0]);
     return 0;
 }
 
 
-inline float dot_imath (const Imath::V3f &v) {
+
+inline float
+dot_imath(const Imath::V3f& v)
+{
     return v.dot(v);
 }
-inline float dot_imath_simd (const Imath::V3f &v_) {
-    vfloat3 v (v_);
-    return simd::dot(v,v);
+inline float
+dot_imath_simd(const Imath::V3f& v_)
+{
+    vfloat3 v(v_);
+    return simd::dot(v, v);
 }
-inline float dot_simd (const simd::vfloat3 v) {
-    return dot(v,v);
+inline float
+dot_simd(const simd::vfloat3& v)
+{
+    return dot(v, v);
 }
 
 inline Imath::V3f
-norm_imath (const Imath::V3f &a) {
+norm_imath(const Imath::V3f& a)
+{
     return a.normalized();
 }
 
 inline Imath::V3f
-norm_imath_simd (vfloat3 a) {
+norm_imath_simd(const vfloat3& a)
+{
     return a.normalized().V3f();
 }
 
 inline Imath::V3f
-norm_imath_simd_fast (vfloat3 a) {
+norm_imath_simd_fast(const vfloat3& a)
+{
     return a.normalized_fast().V3f();
 }
 
 inline vfloat3
-norm_simd_fast (vfloat3 a) {
+norm_simd_fast(const vfloat3& a)
+{
     return a.normalized_fast();
 }
 
 inline vfloat3
-norm_simd (vfloat3 a) {
+norm_simd(const vfloat3& a)
+{
     return a.normalized();
 }
 
 
-inline Imath::M44f inverse_imath (const Imath::M44f &M)
+inline Imath::M44f
+inverse_imath(const Imath::M44f& M)
 {
     return M.inverse();
 }
 
 
-inline matrix44 inverse_simd (const matrix44 &M)
+inline matrix44
+inverse_simd(const matrix44& M)
 {
     return M.inverse();
 }
@@ -318,62 +403,84 @@ inline matrix44 inverse_simd (const matrix44 &M)
 
 
 template<typename VEC>
-void test_partial_loadstore ()
+void
+test_partial_loadstore()
 {
     typedef typename VEC::value_t ELEM;
-    test_heading ("partial loadstore ", VEC::type_name());
-    VEC C1234 = VEC::Iota(1);
-    ELEM partial[] = { 101, 102, 103, 104, 105, 106, 107, 108,
-                       109, 110, 111, 112, 113, 114, 115, 116 };
-    OIIO_CHECK_SIMD_EQUAL (VEC(partial), VEC::Iota(101));
+    test_heading("partial loadstore ", VEC::type_name());
+    OIIO_SIMD16_ALIGN VEC C1234 = VEC::Iota(1);
+    OIIO_SIMD16_ALIGN ELEM partial[]
+        = { 101, 102, 103, 104, 105, 106, 107, 108,
+            109, 110, 111, 112, 113, 114, 115, 116 };
+    OIIO_CHECK_SIMD_EQUAL(VEC(partial), VEC::Iota(101));
     for (int i = 1; i <= VEC::elements; ++i) {
-        VEC a (ELEM(0));
-        a.load (partial, i);
+        VEC a(ELEM(0));
+        a.load(partial, i);
         for (int j = 0; j < VEC::elements; ++j)
-            OIIO_CHECK_EQUAL (a[j], j<i ? partial[j] : ELEM(0));
+            OIIO_CHECK_EQUAL(a[j], j < i ? partial[j] : ELEM(0));
         std::cout << "  partial load " << i << " : " << a << "\n";
-        ELEM stored[] = { 0, 0, 0, 0, 0, 0, 0, 0,
-                          0, 0, 0, 0, 0, 0, 0, 0 };
-        C1234.store (stored, i);
+        ELEM stored[] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+        C1234.store(stored, i);
         for (int j = 0; j < VEC::elements; ++j)
-            OIIO_CHECK_EQUAL (stored[j], j<i ? ELEM(j+1) : ELEM(0));
+            OIIO_CHECK_EQUAL(stored[j], j < i ? ELEM(j + 1) : ELEM(0));
         std::cout << "  partial store " << i << " :";
         for (int c = 0; c < VEC::elements; ++c)
             std::cout << ' ' << stored[c];
         std::cout << std::endl;
     }
 
-    benchmark ("load/store", loadstore_vec<VEC>, 0, VEC::elements);
+    benchmark("load", load_vec<VEC>, 0, VEC::elements);
+    benchmark("store", store_vec<VEC>, 0, VEC::elements);
+    OIIO_SIMD16_ALIGN ELEM tmp[VEC::elements];
     if (VEC::elements == 16) {
-        benchmark ("load/store, 16 comps", loadstore_vec_N<VEC, 16>, 0, 16);
-        benchmark ("load/store, 13 comps", loadstore_vec_N<VEC, 13>, 0, 13);
-        benchmark ("load/store, 9 comps", loadstore_vec_N<VEC, 9>, 0, 9);
+        benchmark("load 16 comps", load_vec_N<VEC, 16>, tmp, 16);
+        benchmark("load 13 comps", load_vec_N<VEC, 13>, tmp, 13);
+        benchmark("load 9 comps", load_vec_N<VEC, 9>, tmp, 9);
     }
     if (VEC::elements > 4) {
-        benchmark ("load/store, 8 comps", loadstore_vec_N<VEC, 8>, 0, 8);
-        benchmark ("load/store, 7 comps", loadstore_vec_N<VEC, 7>, 0, 7);
-        benchmark ("load/store, 6 comps", loadstore_vec_N<VEC, 6>, 0, 6);
-        benchmark ("load/store, 5 comps", loadstore_vec_N<VEC, 5>, 0, 5);
+        benchmark("load 8 comps", load_vec_N<VEC, 8>, tmp, 8);
+        benchmark("load 7 comps", load_vec_N<VEC, 7>, tmp, 7);
+        benchmark("load 6 comps", load_vec_N<VEC, 6>, tmp, 6);
+        benchmark("load 5 comps", load_vec_N<VEC, 5>, tmp, 5);
     }
     if (VEC::elements >= 4) {
-        benchmark ("load/store, 4 comps", loadstore_vec_N<VEC, 4>, 0, 4);
+        benchmark("load 4 comps", load_vec_N<VEC, 4>, tmp, 4);
     }
-    benchmark ("load/store, 3 comps", loadstore_vec_N<VEC, 3>, 0, 3);
-    benchmark ("load/store, 2 comps", loadstore_vec_N<VEC, 2>, 0, 2);
-    benchmark ("load/store, 1 comps", loadstore_vec_N<VEC, 1>, 0, 1);
+    benchmark("load 3 comps", load_vec_N<VEC, 3>, tmp, 3);
+    benchmark("load 2 comps", load_vec_N<VEC, 2>, tmp, 2);
+    benchmark("load 1 comps", load_vec_N<VEC, 1>, tmp, 1);
+
+    if (VEC::elements == 16) {
+        benchmark("store 16 comps", store_vec_N<VEC, 16>, C1234, 16);
+        benchmark("store 13 comps", store_vec_N<VEC, 13>, C1234, 13);
+        benchmark("store 9 comps", store_vec_N<VEC, 9>, C1234, 9);
+    }
+    if (VEC::elements > 4) {
+        benchmark("store 8 comps", store_vec_N<VEC, 8>, C1234, 8);
+        benchmark("store 7 comps", store_vec_N<VEC, 7>, C1234, 7);
+        benchmark("store 6 comps", store_vec_N<VEC, 6>, C1234, 6);
+        benchmark("store 5 comps", store_vec_N<VEC, 5>, C1234, 5);
+    }
+    if (VEC::elements >= 4) {
+        benchmark("store 4 comps", store_vec_N<VEC, 4>, C1234, 4);
+    }
+    benchmark("store 3 comps", store_vec_N<VEC, 3>, C1234, 3);
+    benchmark("store 2 comps", store_vec_N<VEC, 2>, C1234, 2);
+    benchmark("store 1 comps", store_vec_N<VEC, 1>, C1234, 1);
 }
 
 
 
 template<typename VEC>
-void test_conversion_loadstore_float ()
+void
+test_conversion_loadstore_float()
 {
     typedef typename VEC::value_t ELEM;
-    test_heading ("loadstore with conversion", VEC::type_name());
-    VEC C1234 = VEC::Iota(1);
+    test_heading("loadstore with conversion", VEC::type_name());
+    VEC C1234      = VEC::Iota(1);
     ELEM partial[] = { 101, 102, 103, 104, 105, 106, 107, 108,
                        109, 110, 111, 112, 113, 114, 115, 116 };
-    OIIO_CHECK_SIMD_EQUAL (VEC(partial), VEC::Iota(101));
+    OIIO_CHECK_SIMD_EQUAL(VEC(partial), VEC::Iota(101));
 
     // Check load from integers
     unsigned short us1234[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
@@ -434,7 +541,7 @@ void test_conversion_loadstore_int ()
 template<typename VEC>
 void test_vint_to_uint16s ()
 {
-    test_heading (Strutil::format("test converting %s to uint16", VEC::type_name()));
+    test_heading (Strutil::sprintf("test converting %s to uint16", VEC::type_name()));
     VEC ival = VEC::Iota (0xffff0000);
     unsigned short buf[VEC::elements];
     ival.store (buf);
@@ -442,7 +549,7 @@ void test_vint_to_uint16s ()
         OIIO_CHECK_EQUAL (int(buf[i]), i);
 
     benchmark2 ("load from uint16", [](VEC& a, unsigned short *s){ a.load(s); return 1; }, ival, buf, VEC::elements);
-    benchmark2 ("convert to uint16", [](VEC& a, unsigned short *s){ a.store(s); return 1; }, ival, buf, VEC::elements);
+    benchmark2 ("convert to uint16", [](const VEC& a, unsigned short *s){ a.store(s); return 1; }, ival, buf, VEC::elements);
 }
 
 
@@ -450,7 +557,7 @@ void test_vint_to_uint16s ()
 template<typename VEC>
 void test_vint_to_uint8s ()
 {
-    test_heading (Strutil::format("test converting %s to uint8", VEC::type_name()));
+    test_heading (Strutil::sprintf("test converting %s to uint8", VEC::type_name()));
     VEC ival = VEC::Iota (0xffffff00);
     unsigned char buf[VEC::elements];
     ival.store (buf);
@@ -458,7 +565,7 @@ void test_vint_to_uint8s ()
         OIIO_CHECK_EQUAL (int(buf[i]), i);
 
     benchmark2 ("load from uint8", [](VEC& a, unsigned char *s){ a.load(s); return 1; }, ival, buf, VEC::elements);
-    benchmark2 ("convert to uint16", [](VEC& a, unsigned char *s){ a.store(s); return 1; }, ival, buf, VEC::elements);
+    benchmark2 ("convert to uint16", [](const VEC& a, unsigned char *s){ a.store(s); return 1; }, ival, buf, VEC::elements);
 }
 
 
@@ -492,23 +599,24 @@ void test_masked_loadstore ()
 
 
 template<typename VEC>
-void test_gatherscatter ()
+void
+test_gatherscatter()
 {
     typedef typename VEC::value_t ELEM;
     typedef typename VEC::vbool_t BOOL;
-    test_heading ("scatter & gather ", VEC::type_name());
+    test_heading("scatter & gather ", VEC::type_name());
 
     const int spacing = 3;
-    const int bufsize = VEC::elements*3 + 1;
-    std::vector<ELEM> gather_source (bufsize);
+    const int bufsize = VEC::elements * 3 + 1;
+    std::vector<ELEM> gather_source(bufsize);
     for (int i = 0; i < bufsize; ++i)
-        gather_source[i] = ((i%spacing) == 1) ? i/3 : -1;
+        gather_source[i] = ((i % spacing) == 1) ? i / 3 : -1;
     // gather_source will contain: -1 0 -1  -1 1 -1  -1 2 -1  -1 3 -1  ...
 
-    auto indices = VEC::vint_t::Iota(1,3);
+    auto indices = VEC::vint_t::Iota(1, 3);
     VEC g, gm;
-    g.gather (gather_source.data(), indices);
-    OIIO_CHECK_SIMD_EQUAL (g, VEC::Iota());
+    g.gather(gather_source.data(), indices);
+    OIIO_CHECK_SIMD_EQUAL(g, VEC::Iota());
 
     BOOL mask = BOOL::from_bitmask(0x55555555);  // every other one
     ELEM every_other_iota[] = { 0, 0, 2, 0, 4, 0, 6, 0, 8, 0, 10, 0, 12, 0, 14, 0 };
@@ -533,35 +641,124 @@ void test_gatherscatter ()
 
 
 
+template<typename T>
+void test_extract3 ()
+{
+    const T vals[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
+    using VEC = typename VecType<T,3>::type;
+    VEC b (vals);
+    for (int i = 0; i < VEC::elements; ++i)
+        OIIO_CHECK_EQUAL (b[i], vals[i]);
+    OIIO_CHECK_EQUAL (extract<0>(b), 0);
+    OIIO_CHECK_EQUAL (extract<1>(b), 1);
+    OIIO_CHECK_EQUAL (extract<2>(b), 2);
+}
+
+template<typename T>
+void
+test_extract4()
+{
+    const T vals[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
+    using VEC      = typename VecType<T, 4>::type;
+    VEC b(vals);
+    for (int i = 0; i < VEC::elements; ++i)
+        OIIO_CHECK_EQUAL(b[i], vals[i]);
+    OIIO_CHECK_EQUAL(extract<0>(b), 0);
+    OIIO_CHECK_EQUAL(extract<1>(b), 1);
+    OIIO_CHECK_EQUAL(extract<2>(b), 2);
+    OIIO_CHECK_EQUAL(extract<3>(b), 3);
+}
+
+template<typename T>
+void
+test_extract8()
+{
+    test_extract4<T>();
+
+    const T vals[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
+    using VEC      = typename VecType<T, 8>::type;
+    VEC b(vals);
+    for (int i = 0; i < VEC::elements; ++i)
+        OIIO_CHECK_EQUAL(b[i], vals[i]);
+    OIIO_CHECK_EQUAL(extract<4>(b), 4);
+    OIIO_CHECK_EQUAL(extract<5>(b), 5);
+    OIIO_CHECK_EQUAL(extract<6>(b), 6);
+    OIIO_CHECK_EQUAL(extract<7>(b), 7);
+}
+
+template<typename T>
+void
+test_extract16()
+{
+    test_extract8<T>();
+
+    const T vals[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
+    using VEC      = typename VecType<T, 16>::type;
+    VEC b(vals);
+    for (int i = 0; i < VEC::elements; ++i)
+        OIIO_CHECK_EQUAL(b[i], vals[i]);
+    OIIO_CHECK_EQUAL(extract<8>(b), 8);
+    OIIO_CHECK_EQUAL(extract<9>(b), 9);
+    OIIO_CHECK_EQUAL(extract<10>(b), 10);
+    OIIO_CHECK_EQUAL(extract<11>(b), 11);
+    OIIO_CHECK_EQUAL(extract<12>(b), 12);
+    OIIO_CHECK_EQUAL(extract<13>(b), 13);
+    OIIO_CHECK_EQUAL(extract<14>(b), 14);
+    OIIO_CHECK_EQUAL(extract<15>(b), 15);
+}
+
+
+
+template<typename T, int SIZE> void test_extract ();
+template<> void test_extract<float,16> () { test_extract16<float>(); }
+template<> void test_extract<int,16> () { test_extract16<int>(); }
+template<> void test_extract<float,8> () { test_extract8<float>(); }
+template<> void test_extract<int,8> () { test_extract8<int>(); }
+template<> void test_extract<float,4> () { test_extract4<float>(); }
+template<> void test_extract<int,4> () { test_extract4<int>(); }
+template<> void test_extract<float,3> () { test_extract3<float>(); }
+
+
+
 template<typename VEC>
-void test_component_access ()
+void
+test_component_access()
 {
     typedef typename VEC::value_t ELEM;
-    test_heading ("component_access ", VEC::type_name());
+    test_heading("component_access ", VEC::type_name());
 
-    const ELEM vals[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
+    const ELEM vals[]
+        = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
     VEC a = VEC::Iota();
     for (int i = 0; i < VEC::elements; ++i)
-        OIIO_CHECK_EQUAL (a[i], vals[i]);
+        OIIO_CHECK_EQUAL(a[i], vals[i]);
 
     if (VEC::elements <= 4) {
-        OIIO_CHECK_EQUAL (a.x(), 0);
-        OIIO_CHECK_EQUAL (a.y(), 1);
-        OIIO_CHECK_EQUAL (a.z(), 2);
+        OIIO_CHECK_EQUAL(a.x(), 0);
+        OIIO_CHECK_EQUAL(a.y(), 1);
+        OIIO_CHECK_EQUAL(a.z(), 2);
         if (SimdElements<VEC>::size > 3)
-            OIIO_CHECK_EQUAL (a.w(), 3);
+            OIIO_CHECK_EQUAL(a.w(), 3);
         VEC t;
-        t = a; t.set_x(42); OIIO_CHECK_SIMD_EQUAL (t, mkvec<VEC>(42,1,2,3,4,5,6,7));
-        t = a; t.set_y(42); OIIO_CHECK_SIMD_EQUAL (t, mkvec<VEC>(0,42,2,3,4,5,6,7));
-        t = a; t.set_z(42); OIIO_CHECK_SIMD_EQUAL (t, mkvec<VEC>(0,1,42,3,4,5,6,7));
+        t = a;
+        t.set_x(42);
+        OIIO_CHECK_SIMD_EQUAL(t, mkvec<VEC>(42, 1, 2, 3, 4, 5, 6, 7));
+        t = a;
+        t.set_y(42);
+        OIIO_CHECK_SIMD_EQUAL(t, mkvec<VEC>(0, 42, 2, 3, 4, 5, 6, 7));
+        t = a;
+        t.set_z(42);
+        OIIO_CHECK_SIMD_EQUAL(t, mkvec<VEC>(0, 1, 42, 3, 4, 5, 6, 7));
         if (SimdElements<VEC>::size > 3) {
-            t = a; t.set_w(42); OIIO_CHECK_SIMD_EQUAL (t, mkvec<VEC>(0,1,2,42,4,5,6,7));
+            t = a;
+            t.set_w(42);
+            OIIO_CHECK_SIMD_EQUAL(t, mkvec<VEC>(0, 1, 2, 42, 4, 5, 6, 7));
         }
     }
 
-    OIIO_CHECK_EQUAL (extract<0>(a), 0);
-    OIIO_CHECK_EQUAL (extract<1>(a), 1);
-    OIIO_CHECK_EQUAL (extract<2>(a), 2);
+    OIIO_CHECK_EQUAL(extract<0>(a), 0);
+    OIIO_CHECK_EQUAL(extract<1>(a), 1);
+    OIIO_CHECK_EQUAL(extract<2>(a), 2);
     if (SimdElements<VEC>::size > 3)
         OIIO_CHECK_EQUAL (extract<3>(a), 3);
     OIIO_CHECK_SIMD_EQUAL (insert<0>(a, ELEM(42)), mkvec<VEC>(42,1,2,3,4,5,6,7));
@@ -570,30 +767,34 @@ void test_component_access ()
     if (SimdElements<VEC>::size > 3)
         OIIO_CHECK_SIMD_EQUAL (insert<3>(a, ELEM(42)), mkvec<VEC>(0,1,2,42,4,5,6,7));
 
-    VEC b (vals);
+    VEC b(vals);
+#if 1
+    test_extract<ELEM, VEC::elements>();
+#else
     for (int i = 0; i < VEC::elements; ++i)
-        OIIO_CHECK_EQUAL (b[i], vals[i]);
-    OIIO_CHECK_EQUAL (extract<0>(b), 0);
-    OIIO_CHECK_EQUAL (extract<1>(b), 1);
-    OIIO_CHECK_EQUAL (extract<2>(b), 2);
+        OIIO_CHECK_EQUAL(b[i], vals[i]);
+    OIIO_CHECK_EQUAL(extract<0>(b), 0);
+    OIIO_CHECK_EQUAL(extract<1>(b), 1);
+    OIIO_CHECK_EQUAL(extract<2>(b), 2);
     if (SimdElements<VEC>::size > 3)
-        OIIO_CHECK_EQUAL (extract<3>(b), 3);
+        OIIO_CHECK_EQUAL(extract<3>(b), 3);
     if (SimdElements<VEC>::size > 4) {
-        OIIO_CHECK_EQUAL (extract<4>(b), 4);
-        OIIO_CHECK_EQUAL (extract<5>(b), 5);
-        OIIO_CHECK_EQUAL (extract<6>(b), 6);
-        OIIO_CHECK_EQUAL (extract<7>(b), 7);
+        OIIO_CHECK_EQUAL(extract<4>(b), 4);
+        OIIO_CHECK_EQUAL(extract<5>(b), 5);
+        OIIO_CHECK_EQUAL(extract<6>(b), 6);
+        OIIO_CHECK_EQUAL(extract<7>(b), 7);
     }
     if (SimdElements<VEC>::size > 8) {
-        OIIO_CHECK_EQUAL (extract<8>(b), 8);
-        OIIO_CHECK_EQUAL (extract<9>(b), 9);
-        OIIO_CHECK_EQUAL (extract<10>(b), 10);
-        OIIO_CHECK_EQUAL (extract<11>(b), 11);
-        OIIO_CHECK_EQUAL (extract<12>(b), 12);
-        OIIO_CHECK_EQUAL (extract<13>(b), 13);
-        OIIO_CHECK_EQUAL (extract<14>(b), 14);
-        OIIO_CHECK_EQUAL (extract<15>(b), 15);
+        OIIO_CHECK_EQUAL(extract<8>(b), 8);
+        OIIO_CHECK_EQUAL(extract<9>(b), 9);
+        OIIO_CHECK_EQUAL(extract<10>(b), 10);
+        OIIO_CHECK_EQUAL(extract<11>(b), 11);
+        OIIO_CHECK_EQUAL(extract<12>(b), 12);
+        OIIO_CHECK_EQUAL(extract<13>(b), 13);
+        OIIO_CHECK_EQUAL(extract<14>(b), 14);
+        OIIO_CHECK_EQUAL(extract<15>(b), 15);
     }
+#endif
 
     benchmark2 ("operator[i]", [&](const VEC& v, int i){ return v[i]; },  b, 2, 1 /*work*/);
     benchmark2 ("operator[2]", [&](const VEC& v, int i){ return v[2]; },  b, 2, 1 /*work*/);
@@ -606,127 +807,129 @@ void test_component_access ()
 
 
 template<>
-void test_component_access<vbool4> ()
+void
+test_component_access<vbool4>()
 {
     typedef vbool4 VEC;
     typedef VEC::value_t ELEM;
-    test_heading ("component_access ", VEC::type_name());
+    test_heading("component_access ", VEC::type_name());
 
     for (int bit = 0; bit < VEC::elements; ++bit) {
-        VEC ctr (bit == 0, bit == 1, bit == 2, bit == 3);
+        VEC ctr(bit == 0, bit == 1, bit == 2, bit == 3);
         VEC a;
-        a.clear ();
+        a.clear();
         for (int b = 0; b < VEC::elements; ++b)
-            a.setcomp (b, b==bit);
-        OIIO_CHECK_SIMD_EQUAL (ctr, a);
+            a.setcomp(b, b == bit);
+        OIIO_CHECK_SIMD_EQUAL(ctr, a);
         for (int b = 0; b < VEC::elements; ++b)
-            OIIO_CHECK_EQUAL (bool(a[b]), b == bit);
-        OIIO_CHECK_EQUAL (extract<0>(a), bit == 0);
-        OIIO_CHECK_EQUAL (extract<1>(a), bit == 1);
-        OIIO_CHECK_EQUAL (extract<2>(a), bit == 2);
-        OIIO_CHECK_EQUAL (extract<3>(a), bit == 3);
+            OIIO_CHECK_EQUAL(bool(a[b]), b == bit);
+        OIIO_CHECK_EQUAL(extract<0>(a), bit == 0);
+        OIIO_CHECK_EQUAL(extract<1>(a), bit == 1);
+        OIIO_CHECK_EQUAL(extract<2>(a), bit == 2);
+        OIIO_CHECK_EQUAL(extract<3>(a), bit == 3);
     }
 
     VEC a;
-    a.load (0,0,0,0);
-    OIIO_CHECK_SIMD_EQUAL (insert<0>(a, 1), VEC(1,0,0,0));
-    OIIO_CHECK_SIMD_EQUAL (insert<1>(a, 1), VEC(0,1,0,0));
-    OIIO_CHECK_SIMD_EQUAL (insert<2>(a, 1), VEC(0,0,1,0));
-    OIIO_CHECK_SIMD_EQUAL (insert<3>(a, 1), VEC(0,0,0,1));
-    a.load (1,1,1,1);
-    OIIO_CHECK_SIMD_EQUAL (insert<0>(a, 0), VEC(0,1,1,1));
-    OIIO_CHECK_SIMD_EQUAL (insert<1>(a, 0), VEC(1,0,1,1));
-    OIIO_CHECK_SIMD_EQUAL (insert<2>(a, 0), VEC(1,1,0,1));
-    OIIO_CHECK_SIMD_EQUAL (insert<3>(a, 0), VEC(1,1,1,0));
+    a.load(0, 0, 0, 0);
+    OIIO_CHECK_SIMD_EQUAL(insert<0>(a, 1), VEC(1, 0, 0, 0));
+    OIIO_CHECK_SIMD_EQUAL(insert<1>(a, 1), VEC(0, 1, 0, 0));
+    OIIO_CHECK_SIMD_EQUAL(insert<2>(a, 1), VEC(0, 0, 1, 0));
+    OIIO_CHECK_SIMD_EQUAL(insert<3>(a, 1), VEC(0, 0, 0, 1));
+    a.load(1, 1, 1, 1);
+    OIIO_CHECK_SIMD_EQUAL(insert<0>(a, 0), VEC(0, 1, 1, 1));
+    OIIO_CHECK_SIMD_EQUAL(insert<1>(a, 0), VEC(1, 0, 1, 1));
+    OIIO_CHECK_SIMD_EQUAL(insert<2>(a, 0), VEC(1, 1, 0, 1));
+    OIIO_CHECK_SIMD_EQUAL(insert<3>(a, 0), VEC(1, 1, 1, 0));
 }
 
 
 
 template<>
-void test_component_access<vbool8> ()
+void
+test_component_access<vbool8>()
 {
     typedef vbool8 VEC;
     typedef VEC::value_t ELEM;
-    test_heading ("component_access ", VEC::type_name());
+    test_heading("component_access ", VEC::type_name());
 
     for (int bit = 0; bit < VEC::elements; ++bit) {
-        VEC ctr (bit == 0, bit == 1, bit == 2, bit == 3,
-                 bit == 4, bit == 5, bit == 6, bit == 7);
+        VEC ctr(bit == 0, bit == 1, bit == 2, bit == 3, bit == 4, bit == 5,
+                bit == 6, bit == 7);
         VEC a;
-        a.clear ();
+        a.clear();
         for (int b = 0; b < VEC::elements; ++b)
-            a.setcomp (b, b==bit);
-        OIIO_CHECK_SIMD_EQUAL (ctr, a);
+            a.setcomp(b, b == bit);
+        OIIO_CHECK_SIMD_EQUAL(ctr, a);
         for (int b = 0; b < VEC::elements; ++b)
-            OIIO_CHECK_EQUAL (bool(a[b]), b == bit);
-        OIIO_CHECK_EQUAL (extract<0>(a), bit == 0);
-        OIIO_CHECK_EQUAL (extract<1>(a), bit == 1);
-        OIIO_CHECK_EQUAL (extract<2>(a), bit == 2);
-        OIIO_CHECK_EQUAL (extract<3>(a), bit == 3);
-        OIIO_CHECK_EQUAL (extract<4>(a), bit == 4);
-        OIIO_CHECK_EQUAL (extract<5>(a), bit == 5);
-        OIIO_CHECK_EQUAL (extract<6>(a), bit == 6);
-        OIIO_CHECK_EQUAL (extract<7>(a), bit == 7);
+            OIIO_CHECK_EQUAL(bool(a[b]), b == bit);
+        OIIO_CHECK_EQUAL(extract<0>(a), bit == 0);
+        OIIO_CHECK_EQUAL(extract<1>(a), bit == 1);
+        OIIO_CHECK_EQUAL(extract<2>(a), bit == 2);
+        OIIO_CHECK_EQUAL(extract<3>(a), bit == 3);
+        OIIO_CHECK_EQUAL(extract<4>(a), bit == 4);
+        OIIO_CHECK_EQUAL(extract<5>(a), bit == 5);
+        OIIO_CHECK_EQUAL(extract<6>(a), bit == 6);
+        OIIO_CHECK_EQUAL(extract<7>(a), bit == 7);
     }
 
     VEC a;
-    a.load (0,0,0,0,0,0,0,0);
-    OIIO_CHECK_SIMD_EQUAL (insert<0>(a, 1), VEC(1,0,0,0,0,0,0,0));
-    OIIO_CHECK_SIMD_EQUAL (insert<1>(a, 1), VEC(0,1,0,0,0,0,0,0));
-    OIIO_CHECK_SIMD_EQUAL (insert<2>(a, 1), VEC(0,0,1,0,0,0,0,0));
-    OIIO_CHECK_SIMD_EQUAL (insert<3>(a, 1), VEC(0,0,0,1,0,0,0,0));
-    OIIO_CHECK_SIMD_EQUAL (insert<4>(a, 1), VEC(0,0,0,0,1,0,0,0));
-    OIIO_CHECK_SIMD_EQUAL (insert<5>(a, 1), VEC(0,0,0,0,0,1,0,0));
-    OIIO_CHECK_SIMD_EQUAL (insert<6>(a, 1), VEC(0,0,0,0,0,0,1,0));
-    OIIO_CHECK_SIMD_EQUAL (insert<7>(a, 1), VEC(0,0,0,0,0,0,0,1));
-    a.load (1,1,1,1,1,1,1,1);
-    OIIO_CHECK_SIMD_EQUAL (insert<0>(a, 0), VEC(0,1,1,1,1,1,1,1));
-    OIIO_CHECK_SIMD_EQUAL (insert<1>(a, 0), VEC(1,0,1,1,1,1,1,1));
-    OIIO_CHECK_SIMD_EQUAL (insert<2>(a, 0), VEC(1,1,0,1,1,1,1,1));
-    OIIO_CHECK_SIMD_EQUAL (insert<3>(a, 0), VEC(1,1,1,0,1,1,1,1));
-    OIIO_CHECK_SIMD_EQUAL (insert<4>(a, 0), VEC(1,1,1,1,0,1,1,1));
-    OIIO_CHECK_SIMD_EQUAL (insert<5>(a, 0), VEC(1,1,1,1,1,0,1,1));
-    OIIO_CHECK_SIMD_EQUAL (insert<6>(a, 0), VEC(1,1,1,1,1,1,0,1));
-    OIIO_CHECK_SIMD_EQUAL (insert<7>(a, 0), VEC(1,1,1,1,1,1,1,0));
+    a.load(0, 0, 0, 0, 0, 0, 0, 0);
+    OIIO_CHECK_SIMD_EQUAL(insert<0>(a, 1), VEC(1, 0, 0, 0, 0, 0, 0, 0));
+    OIIO_CHECK_SIMD_EQUAL(insert<1>(a, 1), VEC(0, 1, 0, 0, 0, 0, 0, 0));
+    OIIO_CHECK_SIMD_EQUAL(insert<2>(a, 1), VEC(0, 0, 1, 0, 0, 0, 0, 0));
+    OIIO_CHECK_SIMD_EQUAL(insert<3>(a, 1), VEC(0, 0, 0, 1, 0, 0, 0, 0));
+    OIIO_CHECK_SIMD_EQUAL(insert<4>(a, 1), VEC(0, 0, 0, 0, 1, 0, 0, 0));
+    OIIO_CHECK_SIMD_EQUAL(insert<5>(a, 1), VEC(0, 0, 0, 0, 0, 1, 0, 0));
+    OIIO_CHECK_SIMD_EQUAL(insert<6>(a, 1), VEC(0, 0, 0, 0, 0, 0, 1, 0));
+    OIIO_CHECK_SIMD_EQUAL(insert<7>(a, 1), VEC(0, 0, 0, 0, 0, 0, 0, 1));
+    a.load(1, 1, 1, 1, 1, 1, 1, 1);
+    OIIO_CHECK_SIMD_EQUAL(insert<0>(a, 0), VEC(0, 1, 1, 1, 1, 1, 1, 1));
+    OIIO_CHECK_SIMD_EQUAL(insert<1>(a, 0), VEC(1, 0, 1, 1, 1, 1, 1, 1));
+    OIIO_CHECK_SIMD_EQUAL(insert<2>(a, 0), VEC(1, 1, 0, 1, 1, 1, 1, 1));
+    OIIO_CHECK_SIMD_EQUAL(insert<3>(a, 0), VEC(1, 1, 1, 0, 1, 1, 1, 1));
+    OIIO_CHECK_SIMD_EQUAL(insert<4>(a, 0), VEC(1, 1, 1, 1, 0, 1, 1, 1));
+    OIIO_CHECK_SIMD_EQUAL(insert<5>(a, 0), VEC(1, 1, 1, 1, 1, 0, 1, 1));
+    OIIO_CHECK_SIMD_EQUAL(insert<6>(a, 0), VEC(1, 1, 1, 1, 1, 1, 0, 1));
+    OIIO_CHECK_SIMD_EQUAL(insert<7>(a, 0), VEC(1, 1, 1, 1, 1, 1, 1, 0));
 }
 
 
 
 template<>
-void test_component_access<vbool16> ()
+void
+test_component_access<vbool16>()
 {
     typedef vbool16 VEC;
     typedef VEC::value_t ELEM;
-    test_heading ("component_access ", VEC::type_name());
+    test_heading("component_access ", VEC::type_name());
 
     for (int bit = 0; bit < VEC::elements; ++bit) {
-        VEC ctr (bit == 0, bit == 1, bit == 2, bit == 3,
-                 bit == 4, bit == 5, bit == 6, bit == 7,
-                 bit == 8, bit == 9, bit == 10, bit == 11,
-                 bit == 12, bit == 13, bit == 14, bit == 15);
+        VEC ctr(bit == 0, bit == 1, bit == 2, bit == 3, bit == 4, bit == 5,
+                bit == 6, bit == 7, bit == 8, bit == 9, bit == 10, bit == 11,
+                bit == 12, bit == 13, bit == 14, bit == 15);
         VEC a;
-        a.clear ();
+        a.clear();
         for (int b = 0; b < VEC::elements; ++b)
-            a.setcomp (b, b==bit);
-        OIIO_CHECK_SIMD_EQUAL (ctr, a);
+            a.setcomp(b, b == bit);
+        OIIO_CHECK_SIMD_EQUAL(ctr, a);
         for (int b = 0; b < VEC::elements; ++b)
-            OIIO_CHECK_EQUAL (bool(a[b]), b == bit);
-        OIIO_CHECK_EQUAL (extract<0>(a), bit == 0);
-        OIIO_CHECK_EQUAL (extract<1>(a), bit == 1);
-        OIIO_CHECK_EQUAL (extract<2>(a), bit == 2);
-        OIIO_CHECK_EQUAL (extract<3>(a), bit == 3);
-        OIIO_CHECK_EQUAL (extract<4>(a), bit == 4);
-        OIIO_CHECK_EQUAL (extract<5>(a), bit == 5);
-        OIIO_CHECK_EQUAL (extract<6>(a), bit == 6);
-        OIIO_CHECK_EQUAL (extract<7>(a), bit == 7);
-        OIIO_CHECK_EQUAL (extract<8>(a), bit == 8);
-        OIIO_CHECK_EQUAL (extract<9>(a), bit == 9);
-        OIIO_CHECK_EQUAL (extract<10>(a), bit == 10);
-        OIIO_CHECK_EQUAL (extract<11>(a), bit == 11);
-        OIIO_CHECK_EQUAL (extract<12>(a), bit == 12);
-        OIIO_CHECK_EQUAL (extract<13>(a), bit == 13);
-        OIIO_CHECK_EQUAL (extract<14>(a), bit == 14);
-        OIIO_CHECK_EQUAL (extract<15>(a), bit == 15);
+            OIIO_CHECK_EQUAL(bool(a[b]), b == bit);
+        OIIO_CHECK_EQUAL(extract<0>(a), bit == 0);
+        OIIO_CHECK_EQUAL(extract<1>(a), bit == 1);
+        OIIO_CHECK_EQUAL(extract<2>(a), bit == 2);
+        OIIO_CHECK_EQUAL(extract<3>(a), bit == 3);
+        OIIO_CHECK_EQUAL(extract<4>(a), bit == 4);
+        OIIO_CHECK_EQUAL(extract<5>(a), bit == 5);
+        OIIO_CHECK_EQUAL(extract<6>(a), bit == 6);
+        OIIO_CHECK_EQUAL(extract<7>(a), bit == 7);
+        OIIO_CHECK_EQUAL(extract<8>(a), bit == 8);
+        OIIO_CHECK_EQUAL(extract<9>(a), bit == 9);
+        OIIO_CHECK_EQUAL(extract<10>(a), bit == 10);
+        OIIO_CHECK_EQUAL(extract<11>(a), bit == 11);
+        OIIO_CHECK_EQUAL(extract<12>(a), bit == 12);
+        OIIO_CHECK_EQUAL(extract<13>(a), bit == 13);
+        OIIO_CHECK_EQUAL(extract<14>(a), bit == 14);
+        OIIO_CHECK_EQUAL(extract<15>(a), bit == 15);
     }
 
     VEC a;
@@ -814,7 +1017,7 @@ void test_arithmetic ()
     benchmark2 ("operator-", do_sub<VEC>, a, b);
     benchmark2 ("operator*", do_mul<VEC>, a, b);
     benchmark2 ("operator/", do_div<VEC>, a, b);
-    benchmark  ("reduce_add", [](VEC& a){ return vreduce_add(a); }, a);
+    benchmark  ("reduce_add", [](const VEC& a){ return vreduce_add(a); }, a);
     if (is_same<VEC,vfloat3>::value) {  // For vfloat3, compare to Imath
         Imath::V3f a(2.51f,1.0f,1.0f), b(3.1f,1.0f,1.0f);
         benchmark2 ("add Imath::V3f", do_add<Imath::V3f>, a, b, 3 /*work*/);
@@ -843,14 +1046,14 @@ void test_fused ()
     OIIO_CHECK_SIMD_EQUAL (nmadd (a, b, c), -(a*b)+c);
     OIIO_CHECK_SIMD_EQUAL (nmsub (a, b, c), -(a*b)-c);
 
-    benchmark2 ("madd old *+", [&](VEC&a, VEC&b){ return a*b+c; }, a, b);
-    benchmark2 ("madd fused", [&](VEC&a, VEC&b){ return madd(a,b,c); }, a, b);
-    benchmark2 ("msub old *-", [&](VEC&a, VEC&b){ return a*b-c; }, a, b);
-    benchmark2 ("msub fused", [&](VEC&a, VEC&b){ return msub(a,b,c); }, a, b);
-    benchmark2 ("nmadd old (-*)+", [&](VEC&a, VEC&b){ return c-(a*b); }, a, b);
-    benchmark2 ("nmadd fused", [&](VEC&a, VEC&b){ return nmadd(a,b,c); }, a, b);
-    benchmark2 ("nmsub old -(*+)", [&](VEC&a, VEC&b){ return -(a*b)-c; }, a, b);
-    benchmark2 ("nmsub fused", [&](VEC&a, VEC&b){ return nmsub(a,b,c); }, a, b);
+    benchmark2 ("madd old *+", [&](const VEC& a, const VEC& b){ return a*b+c; }, a, b);
+    benchmark2 ("madd fused", [&](const VEC& a, const VEC& b){ return madd(a,b,c); }, a, b);
+    benchmark2 ("msub old *-", [&](const VEC& a, const VEC& b){ return a*b-c; }, a, b);
+    benchmark2 ("msub fused", [&](const VEC& a, const VEC& b){ return msub(a,b,c); }, a, b);
+    benchmark2 ("nmadd old (-*)+", [&](const VEC& a, const VEC& b){ return c-(a*b); }, a, b);
+    benchmark2 ("nmadd fused", [&](const VEC& a, const VEC& b){ return nmadd(a,b,c); }, a, b);
+    benchmark2 ("nmsub old -(*+)", [&](const VEC& a, const VEC& b){ return -(a*b)-c; }, a, b);
+    benchmark2 ("nmsub fused", [&](const VEC& a, const VEC& b){ return nmsub(a,b,c); }, a, b);
 }
 
 
@@ -864,32 +1067,36 @@ template<typename T> T do_andnot (const T& a, const T& b) { return andnot(a,b); 
 
 
 template<typename VEC>
-void test_bitwise_int ()
+void
+test_bitwise_int()
 {
-    test_heading ("bitwise ", VEC::type_name());
+    test_heading("bitwise ", VEC::type_name());
 
-    VEC a (0x12341234);
-    VEC b (0x11111111);
-    OIIO_CHECK_SIMD_EQUAL (a & b, VEC(0x10101010));
-    OIIO_CHECK_SIMD_EQUAL (a | b, VEC(0x13351335));
-    OIIO_CHECK_SIMD_EQUAL (a ^ b, VEC(0x03250325));
-    OIIO_CHECK_SIMD_EQUAL (~(a), VEC(0xedcbedcb));
-    OIIO_CHECK_SIMD_EQUAL (andnot (b, a), (~(b)) & a);
-    OIIO_CHECK_SIMD_EQUAL (andnot (b, a), VEC(0x02240224));
+    VEC a(0x12341234);
+    VEC b(0x11111111);
+    OIIO_CHECK_SIMD_EQUAL(a & b, VEC(0x10101010));
+    OIIO_CHECK_SIMD_EQUAL(a | b, VEC(0x13351335));
+    OIIO_CHECK_SIMD_EQUAL(a ^ b, VEC(0x03250325));
+    OIIO_CHECK_SIMD_EQUAL(~(a), VEC(0xedcbedcb));
+    OIIO_CHECK_SIMD_EQUAL(andnot(b, a), (~(b)) & a);
+    OIIO_CHECK_SIMD_EQUAL(andnot(b, a), VEC(0x02240224));
 
-    VEC atest(15);  atest[1] = 7;
-    OIIO_CHECK_EQUAL (reduce_and(atest), 7);
+    VEC atest(15);
+    atest[1] = 7;
+    OIIO_CHECK_EQUAL(reduce_and(atest), 7);
 
-    VEC otest(0);  otest[1] = 3;  otest[2] = 4;
-    OIIO_CHECK_EQUAL (reduce_or(otest), 7);
+    VEC otest(0);
+    otest[1] = 3;
+    otest[2] = 4;
+    OIIO_CHECK_EQUAL(reduce_or(otest), 7);
 
-    benchmark2 ("operator&", do_and<VEC>, a, b);
-    benchmark2 ("operator|", do_or<VEC>, a, b);
-    benchmark2 ("operator^", do_xor<VEC>, a, b);
-    benchmark  ("operator!", do_compl<VEC>, a);
-    benchmark2 ("andnot",    do_andnot<VEC>, a, b);
-    benchmark  ("reduce_and", [](VEC& a){ return reduce_and(a); }, a);
-    benchmark  ("reduce_or ", [](VEC& a){ return reduce_or(a); }, a);
+    benchmark2("operator&", do_and<VEC>, a, b);
+    benchmark2("operator|", do_or<VEC>, a, b);
+    benchmark2("operator^", do_xor<VEC>, a, b);
+    benchmark("operator!", do_compl<VEC>, a);
+    benchmark2("andnot", do_andnot<VEC>, a, b);
+    benchmark("reduce_and", [](const VEC& a) { return reduce_and(a); }, a);
+    benchmark("reduce_or ", [](const VEC& a) { return reduce_or(a); }, a);
 }
 
 
@@ -933,8 +1140,8 @@ void test_bitwise_bool ()
     benchmark2 ("operator|", do_or<VEC>, a, b);
     benchmark2 ("operator^", do_xor<VEC>, a, b);
     benchmark  ("operator!", do_compl<VEC>, a);
-    benchmark  ("reduce_and", [](VEC& a){ return reduce_and(a); }, a);
-    benchmark  ("reduce_or ", [](VEC& a){ return reduce_or(a); }, a);
+    benchmark  ("reduce_and", [](const VEC& a){ return reduce_and(a); }, a);
+    benchmark  ("reduce_or ", [](const VEC& a){ return reduce_or(a); }, a);
 }
 
 
@@ -949,60 +1156,63 @@ template<class T, class B> B do_ne (const T& a, const T& b) { return a != b; }
 
 
 template<typename VEC>
-void test_comparisons ()
+void
+test_comparisons()
 {
     typedef typename VEC::value_t ELEM;
     typedef typename VEC::vbool_t bool_t;
-    test_heading ("comparisons ", VEC::type_name());
+    test_heading("comparisons ", VEC::type_name());
 
-    VEC a = VEC::Iota();
-    bool lt2[] = { 1, 1, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0 };
-    bool gt2[] = { 0, 0, 0, 1, 1, 1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1 };
-    bool le2[] = { 1, 1, 1, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0 };
-    bool ge2[] = { 0, 0, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1 };
-    bool eq2[] = { 0, 0, 1, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0 };
-    bool ne2[] = { 1, 1, 0, 1, 1, 1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1 };
-    OIIO_CHECK_SIMD_EQUAL ((a < 2), bool_t(lt2));
-    OIIO_CHECK_SIMD_EQUAL ((a > 2), bool_t(gt2));
-    OIIO_CHECK_SIMD_EQUAL ((a <= 2), bool_t(le2));
-    OIIO_CHECK_SIMD_EQUAL ((a >= 2), bool_t(ge2));
-    OIIO_CHECK_SIMD_EQUAL ((a == 2), bool_t(eq2));
-    OIIO_CHECK_SIMD_EQUAL ((a != 2), bool_t(ne2));
-    VEC b (ELEM(2));
-    OIIO_CHECK_SIMD_EQUAL ((a < b), bool_t(lt2));
-    OIIO_CHECK_SIMD_EQUAL ((a > b), bool_t(gt2));
-    OIIO_CHECK_SIMD_EQUAL ((a <= b), bool_t(le2));
-    OIIO_CHECK_SIMD_EQUAL ((a >= b), bool_t(ge2));
-    OIIO_CHECK_SIMD_EQUAL ((a == b), bool_t(eq2));
-    OIIO_CHECK_SIMD_EQUAL ((a != b), bool_t(ne2));
+    VEC a      = VEC::Iota();
+    bool lt2[] = { 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+    bool gt2[] = { 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
+    bool le2[] = { 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+    bool ge2[] = { 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
+    bool eq2[] = { 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+    bool ne2[] = { 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
+    OIIO_CHECK_SIMD_EQUAL((a < 2), bool_t(lt2));
+    OIIO_CHECK_SIMD_EQUAL((a > 2), bool_t(gt2));
+    OIIO_CHECK_SIMD_EQUAL((a <= 2), bool_t(le2));
+    OIIO_CHECK_SIMD_EQUAL((a >= 2), bool_t(ge2));
+    OIIO_CHECK_SIMD_EQUAL((a == 2), bool_t(eq2));
+    OIIO_CHECK_SIMD_EQUAL((a != 2), bool_t(ne2));
+    VEC b(ELEM(2));
+    OIIO_CHECK_SIMD_EQUAL((a < b), bool_t(lt2));
+    OIIO_CHECK_SIMD_EQUAL((a > b), bool_t(gt2));
+    OIIO_CHECK_SIMD_EQUAL((a <= b), bool_t(le2));
+    OIIO_CHECK_SIMD_EQUAL((a >= b), bool_t(ge2));
+    OIIO_CHECK_SIMD_EQUAL((a == b), bool_t(eq2));
+    OIIO_CHECK_SIMD_EQUAL((a != b), bool_t(ne2));
 
-    benchmark2 ("operator< ", do_lt<VEC,bool_t>, a, b);
-    benchmark2 ("operator> ", do_gt<VEC,bool_t>, a, b);
-    benchmark2 ("operator<=", do_le<VEC,bool_t>, a, b);
-    benchmark2 ("operator>=", do_ge<VEC,bool_t>, a, b);
-    benchmark2 ("operator==", do_eq<VEC,bool_t>, a, b);
-    benchmark2 ("operator!=", do_ne<VEC,bool_t>, a, b);
+    benchmark2("operator< ", do_lt<VEC, bool_t>, a, b);
+    benchmark2("operator> ", do_gt<VEC, bool_t>, a, b);
+    benchmark2("operator<=", do_le<VEC, bool_t>, a, b);
+    benchmark2("operator>=", do_ge<VEC, bool_t>, a, b);
+    benchmark2("operator==", do_eq<VEC, bool_t>, a, b);
+    benchmark2("operator!=", do_ne<VEC, bool_t>, a, b);
 }
 
 
 
 template<typename VEC>
-void test_shuffle4 ()
+void
+test_shuffle4()
 {
-    test_heading ("shuffle ", VEC::type_name());
+    test_heading("shuffle ", VEC::type_name());
 
-    VEC a (0, 1, 2, 3);
-    OIIO_CHECK_SIMD_EQUAL ((shuffle<3,2,1,0>(a)), VEC(3,2,1,0));
-    OIIO_CHECK_SIMD_EQUAL ((shuffle<0,0,2,2>(a)), VEC(0,0,2,2));
-    OIIO_CHECK_SIMD_EQUAL ((shuffle<1,1,3,3>(a)), VEC(1,1,3,3));
-    OIIO_CHECK_SIMD_EQUAL ((shuffle<0,1,0,1>(a)), VEC(0,1,0,1));
-    OIIO_CHECK_SIMD_EQUAL ((shuffle<2>(a)), VEC(2));
+    VEC a(0, 1, 2, 3);
+    OIIO_CHECK_SIMD_EQUAL((shuffle<3, 2, 1, 0>(a)), VEC(3, 2, 1, 0));
+    OIIO_CHECK_SIMD_EQUAL((shuffle<0, 0, 2, 2>(a)), VEC(0, 0, 2, 2));
+    OIIO_CHECK_SIMD_EQUAL((shuffle<1, 1, 3, 3>(a)), VEC(1, 1, 3, 3));
+    OIIO_CHECK_SIMD_EQUAL((shuffle<0, 1, 0, 1>(a)), VEC(0, 1, 0, 1));
+    OIIO_CHECK_SIMD_EQUAL((shuffle<2>(a)), VEC(2));
 
-    benchmark ("shuffle<...> ", [&](VEC& v){ return shuffle<3,2,1,0>(v); }, a);
-    benchmark ("shuffle<0> ", [&](VEC& v){ return shuffle<0>(v); }, a);
-    benchmark ("shuffle<1> ", [&](VEC& v){ return shuffle<1>(v); }, a);
-    benchmark ("shuffle<2> ", [&](VEC& v){ return shuffle<2>(v); }, a);
-    benchmark ("shuffle<3> ", [&](VEC& v){ return shuffle<3>(v); }, a);
+    benchmark("shuffle<...> ",
+              [&](const VEC& v) { return shuffle<3, 2, 1, 0>(v); }, a);
+    benchmark("shuffle<0> ", [&](const VEC& v) { return shuffle<0>(v); }, a);
+    benchmark("shuffle<1> ", [&](const VEC& v) { return shuffle<1>(v); }, a);
+    benchmark("shuffle<2> ", [&](const VEC& v) { return shuffle<2>(v); }, a);
+    benchmark("shuffle<3> ", [&](const VEC& v) { return shuffle<3>(v); }, a);
 }
 
 
@@ -1018,15 +1228,15 @@ void test_shuffle8 ()
     OIIO_CHECK_SIMD_EQUAL ((shuffle<0,1,0,1,0,1,0,1>(a)), VEC(0,1,0,1,0,1,0,1));
     OIIO_CHECK_SIMD_EQUAL ((shuffle<2>(a)), VEC(2));
 
-    benchmark ("shuffle<...> ", [&](VEC& v){ return shuffle<7,6,5,4,3,2,1,0>(v); }, a);
-    benchmark ("shuffle<0> ", [&](VEC& v){ return shuffle<0>(v); }, a);
-    benchmark ("shuffle<1> ", [&](VEC& v){ return shuffle<1>(v); }, a);
-    benchmark ("shuffle<2> ", [&](VEC& v){ return shuffle<2>(v); }, a);
-    benchmark ("shuffle<3> ", [&](VEC& v){ return shuffle<3>(v); }, a);
-    benchmark ("shuffle<4> ", [&](VEC& v){ return shuffle<4>(v); }, a);
-    benchmark ("shuffle<5> ", [&](VEC& v){ return shuffle<5>(v); }, a);
-    benchmark ("shuffle<6> ", [&](VEC& v){ return shuffle<6>(v); }, a);
-    benchmark ("shuffle<7> ", [&](VEC& v){ return shuffle<7>(v); }, a);
+    benchmark ("shuffle<...> ", [&](const VEC& v){ return shuffle<7,6,5,4,3,2,1,0>(v); }, a);
+    benchmark ("shuffle<0> ", [&](const VEC& v){ return shuffle<0>(v); }, a);
+    benchmark ("shuffle<1> ", [&](const VEC& v){ return shuffle<1>(v); }, a);
+    benchmark ("shuffle<2> ", [&](const VEC& v){ return shuffle<2>(v); }, a);
+    benchmark ("shuffle<3> ", [&](const VEC& v){ return shuffle<3>(v); }, a);
+    benchmark ("shuffle<4> ", [&](const VEC& v){ return shuffle<4>(v); }, a);
+    benchmark ("shuffle<5> ", [&](const VEC& v){ return shuffle<5>(v); }, a);
+    benchmark ("shuffle<6> ", [&](const VEC& v){ return shuffle<6>(v); }, a);
+    benchmark ("shuffle<7> ", [&](const VEC& v){ return shuffle<7>(v); }, a);
 }
 
 
@@ -1049,23 +1259,24 @@ void test_shuffle16 ()
     OIIO_CHECK_SIMD_EQUAL ((shuffle<3>(a)),
                            VEC(3,3,3,3,7,7,7,7,11,11,11,11,15,15,15,15));
 
-    benchmark ("shuffle4<> ", [&](VEC& v){ return shuffle<3,2,1,0>(v); }, a);
-    benchmark ("shuffle<> ",  [&](VEC& v){ return shuffle<3,2,1,0>(v); }, a);
+    benchmark ("shuffle4<> ", [&](const VEC& v){ return shuffle<3,2,1,0>(v); }, a);
+    benchmark ("shuffle<> ",  [&](const VEC& v){ return shuffle<3,2,1,0>(v); }, a);
 }
 
 
 
 template<typename VEC>
-void test_swizzle ()
+void
+test_swizzle()
 {
-    test_heading ("swizzle ", VEC::type_name());
+    test_heading("swizzle ", VEC::type_name());
 
     VEC a = VEC::Iota(0);
     VEC b = VEC::Iota(10);
-    OIIO_CHECK_SIMD_EQUAL (AxyBxy(a,b), VEC(0,1,10,11));
-    OIIO_CHECK_SIMD_EQUAL (AxBxAyBy(a,b), VEC(0,10,1,11));
-    OIIO_CHECK_SIMD_EQUAL (b.xyz0(), VEC(10,11,12,0));
-    OIIO_CHECK_SIMD_EQUAL (b.xyz1(), VEC(10,11,12,1));
+    OIIO_CHECK_SIMD_EQUAL(AxyBxy(a, b), VEC(0, 1, 10, 11));
+    OIIO_CHECK_SIMD_EQUAL(AxBxAyBy(a, b), VEC(0, 10, 1, 11));
+    OIIO_CHECK_SIMD_EQUAL(b.xyz0(), VEC(10, 11, 12, 0));
+    OIIO_CHECK_SIMD_EQUAL(b.xyz1(), VEC(10, 11, 12, 1));
 }
 
 
@@ -1100,40 +1311,41 @@ void test_blend ()
     ELEM r3[] = { 0, 2, 0, 4, 0, 6, 0, 8,  0, 10, 0, 12, 0, 14, 0, 16 };
     OIIO_CHECK_SIMD_EQUAL (blend0not (a, tf), VEC(r3));
 
-    benchmark2 ("blend", [&](VEC& a, VEC& b){ return blend(a,b,tf); }, a, b);
-    benchmark2 ("blend0", [](VEC& a, bool_t& b){ return blend0(a,b); }, a, tf);
-    benchmark2 ("blend0not", [](VEC& a, bool_t& b){ return blend0not(a,b); }, a, tf);
+    benchmark2 ("blend", [&](const VEC& a, const VEC& b){ return blend(a,b,tf); }, a, b);
+    benchmark2 ("blend0", [](const VEC& a, const bool_t& b){ return blend0(a,b); }, a, tf);
+    benchmark2 ("blend0not", [](const VEC& a, const bool_t& b){ return blend0not(a,b); }, a, tf);
 }
 
 
 
 template<typename VEC>
-void test_transpose4 ()
+void
+test_transpose4()
 {
-    test_heading ("transpose ", VEC::type_name());
+    test_heading("transpose ", VEC::type_name());
 
-    VEC a (0, 1, 2, 3);
-    VEC b (4, 5, 6, 7);
-    VEC c (8, 9, 10, 11);
-    VEC d (12, 13, 14, 15);
+    VEC a(0, 1, 2, 3);
+    VEC b(4, 5, 6, 7);
+    VEC c(8, 9, 10, 11);
+    VEC d(12, 13, 14, 15);
 
-    OIIO_CHECK_SIMD_EQUAL (AxBxCxDx(a,b,c,d), VEC(0,4,8,12));
+    OIIO_CHECK_SIMD_EQUAL(AxBxCxDx(a, b, c, d), VEC(0, 4, 8, 12));
 
     std::cout << " before transpose:\n";
     std::cout << "\t" << a << "\n";
     std::cout << "\t" << b << "\n";
     std::cout << "\t" << c << "\n";
     std::cout << "\t" << d << "\n";
-    transpose (a, b, c, d);
+    transpose(a, b, c, d);
     std::cout << " after transpose:\n";
     std::cout << "\t" << a << "\n";
     std::cout << "\t" << b << "\n";
     std::cout << "\t" << c << "\n";
     std::cout << "\t" << d << "\n";
-    OIIO_CHECK_SIMD_EQUAL (a, VEC(0,4,8,12));
-    OIIO_CHECK_SIMD_EQUAL (b, VEC(1,5,9,13));
-    OIIO_CHECK_SIMD_EQUAL (c, VEC(2,6,10,14));
-    OIIO_CHECK_SIMD_EQUAL (d, VEC(3,7,11,15));
+    OIIO_CHECK_SIMD_EQUAL(a, VEC(0, 4, 8, 12));
+    OIIO_CHECK_SIMD_EQUAL(b, VEC(1, 5, 9, 13));
+    OIIO_CHECK_SIMD_EQUAL(c, VEC(2, 6, 10, 14));
+    OIIO_CHECK_SIMD_EQUAL(d, VEC(3, 7, 11, 15));
 }
 
 
@@ -1144,26 +1356,27 @@ template<typename T> inline T do_srl (const T &a, int b) { return srl(a,b); }
 
 
 template<typename VEC>
-void test_shift ()
+void
+test_shift()
 {
-    test_heading ("shift ", VEC::type_name());
+    test_heading("shift ", VEC::type_name());
 
     // Basics of << and >>
-    VEC i = VEC::Iota (10, 10);   // 10, 20, 30 ...
-    OIIO_CHECK_SIMD_EQUAL (i << 2, VEC::Iota(40, 40));
-    OIIO_CHECK_SIMD_EQUAL (i >> 1, VEC::Iota(5, 5));
+    VEC i = VEC::Iota(10, 10);  // 10, 20, 30 ...
+    OIIO_CHECK_SIMD_EQUAL(i << 2, VEC::Iota(40, 40));
+    OIIO_CHECK_SIMD_EQUAL(i >> 1, VEC::Iota(5, 5));
 
     // Tricky cases with high bits, and the difference between >> and srl
-    int vals[4] = { 1<<31, -1, 0xffff, 3 };
+    int vals[4] = { 1 << 31, -1, 0xffff, 3 };
     for (auto hard : vals) {
         VEC vhard(hard);
         OIIO_CHECK_SIMD_EQUAL (vhard >> 1, VEC(hard>>1));
         OIIO_CHECK_SIMD_EQUAL (srl(vhard,1), VEC(unsigned(hard)>>1));
-        std::cout << Strutil::format ("  [%x] >>  1 == [%x]\n", vhard, vhard>>1);
-        std::cout << Strutil::format ("  [%x] srl 1 == [%x]\n", vhard, srl(vhard,1));
+        Strutil::printf("  [%x] >>  1 == [%x]\n", vhard, vhard>>1);
+        Strutil::printf("  [%x] srl 1 == [%x]\n", vhard, srl(vhard,1));
         OIIO_CHECK_SIMD_EQUAL (srl(vhard,4), VEC(unsigned(hard)>>4));
-        std::cout << Strutil::format ("  [%x] >>  4 == [%x]\n", vhard, vhard>>4);
-        std::cout << Strutil::format ("  [%x] srl 4 == [%x]\n", vhard, srl(vhard,4));
+        Strutil::printf("  [%x] >>  4 == [%x]\n", vhard, vhard>>4);
+        Strutil::printf("  [%x] srl 4 == [%x]\n", vhard, srl(vhard,4));
     }
 
     // Test <<= and >>=
@@ -1180,11 +1393,12 @@ void test_shift ()
 
 
 
-void test_vectorops_vfloat4 ()
+void
+test_vectorops_vfloat4()
 {
     typedef vfloat4 VEC;
     typedef VEC::value_t ELEM;
-    test_heading ("vectorops ", VEC::type_name());
+    test_heading("vectorops ", VEC::type_name());
 
     VEC a = mkvec<VEC> (10, 11, 12, 13);
     VEC b = mkvec<VEC> (1, 2, 3, 4);
@@ -1194,10 +1408,10 @@ void test_vectorops_vfloat4 ()
     OIIO_CHECK_SIMD_EQUAL (vdot3(a,b), VEC(10+22+36));
     OIIO_CHECK_SIMD_EQUAL (hdiv(vfloat4(1.0f,2.0f,3.0f,2.0f)), vfloat3(0.5f,1.0f,1.5f));
 
-    benchmark2 ("vdot", [](VEC& a, VEC& b){ return vdot(a,b); }, a, b);
-    benchmark2 ("dot", [](VEC& a, VEC& b){ return dot(a,b); }, a, b);
-    benchmark2 ("vdot3", [](VEC& a, VEC& b){ return vdot3(a,b); }, a, b);
-    benchmark2 ("dot3", [](VEC& a, VEC& b){ return dot3(a,b); }, a, b);
+    benchmark2 ("vdot", [](const VEC& a, const VEC& b){ return vdot(a,b); }, a, b);
+    benchmark2 ("dot", [](const VEC& a, const VEC& b){ return dot(a,b); }, a, b);
+    benchmark2 ("vdot3", [](const VEC& a, const VEC& b){ return vdot3(a,b); }, a, b);
+    benchmark2 ("dot3", [](const VEC& a, const VEC& b){ return dot3(a,b); }, a, b);
 }
 
 
@@ -1219,8 +1433,8 @@ void test_vectorops_vfloat3 ()
     OIIO_CHECK_SIMD_EQUAL_THRESH (vfloat3(1.0f,2.0f,3.0f).normalized_fast(),
                                   vfloat3(norm_imath(Imath::V3f(1.0f,2.0f,3.0f))), 0.0005);
 
-    benchmark2 ("vdot", [](VEC& a, VEC& b){ return vdot(a,b); }, a, b);
-    benchmark2 ("dot", [](VEC& a, VEC& b){ return dot(a,b); }, a, b);
+    benchmark2 ("vdot", [](const VEC& a, const VEC& b){ return vdot(a,b); }, a, b);
+    benchmark2 ("dot", [](const VEC& a, const VEC& b){ return dot(a,b); }, a, b);
     benchmark ("dot vfloat3", dot_simd, vfloat3(2.0f,1.0f,0.0f), 1);
     // benchmark2 ("dot Imath::V3f", [](Imath::V3f& a, Imath::V3f& b){ return a.dot(b); }, a.V3f(), b.V3f());
     benchmark ("dot Imath::V3f", dot_imath, Imath::V3f(2.0f,1.0f,0.0f), 1);
@@ -1316,9 +1530,10 @@ void test_constants ()
 
 
 // Miscellaneous one-off stuff not caught by other tests
-void test_special ()
+void
+test_special()
 {
-    test_heading ("special");
+    test_heading("special");
     {
         // Make sure a vfloat4 constructed from saturated unsigned short,
         // short, unsigned char, or char values, then divided by the float
@@ -1378,14 +1593,14 @@ void test_mathfuncs ()
 
     benchmark2 ("simd operator/", do_div<VEC>, A, A);
     benchmark2 ("simd safe_div", do_safe_div<VEC>, A, A);
-    benchmark ("simd rcp_fast", [](VEC& v){ return rcp_fast(v); }, mkvec<VEC>(1.0f,4.0f,9.0f,16.0f));
+    benchmark ("simd rcp_fast", [](const VEC& v){ return rcp_fast(v); }, mkvec<VEC>(1.0f,4.0f,9.0f,16.0f));
 
     OIIO_CHECK_SIMD_EQUAL (ifloor(mkvec<VEC>(0.0f, 0.999f, 1.0f, 1.001f)),
                            mkvec<vint_t>(0, 0, 1, 1));
     OIIO_CHECK_SIMD_EQUAL (ifloor(mkvec<VEC>(0.0f, -0.999f, -1.0f, -1.001f)),
                            mkvec<vint_t>(0, -1, -1, -2));
     benchmark ("float ifloor", [](float&v){ return ifloor(v); }, 1.1f);
-    benchmark ("simd ifloor", [](VEC&v){ return simd::ifloor(v); }, VEC(1.1f));
+    benchmark ("simd ifloor", [](const VEC&v){ return simd::ifloor(v); }, VEC(1.1f));
 
     int iscalar;
     vint_t ival;
@@ -1402,20 +1617,20 @@ void test_mathfuncs ()
 
     benchmark ("float expf", expf, 0.67f);
     benchmark ("float fast_exp", fast_exp_float, 0.67f);
-    benchmark ("simd exp", [](VEC& v){ return simd::exp(v); }, VEC(0.67f));
-    benchmark ("simd fast_exp", [](VEC& v){ return fast_exp(v); }, VEC(0.67f));
+    benchmark ("simd exp", [](const VEC& v){ return simd::exp(v); }, VEC(0.67f));
+    benchmark ("simd fast_exp", [](const VEC& v){ return fast_exp(v); }, VEC(0.67f));
 
     benchmark ("float logf", logf, 0.67f);
     benchmark ("fast_log", fast_log_float, 0.67f);
-    benchmark ("simd log", [](VEC& v){ return simd::log(v); }, VEC(0.67f));
+    benchmark ("simd log", [](const VEC& v){ return simd::log(v); }, VEC(0.67f));
     benchmark ("simd fast_log", fast_log<VEC>, VEC(0.67f));
     benchmark2 ("float powf", powf, 0.67f, 0.67f);
-    benchmark2 ("simd fast_pow_pos", [](VEC& x,VEC& y){ return fast_pow_pos(x,y); }, VEC(0.67f), VEC(0.67f));
+    benchmark2 ("simd fast_pow_pos", [](const VEC& x,const VEC& y){ return fast_pow_pos(x,y); }, VEC(0.67f), VEC(0.67f));
     benchmark ("float sqrt", sqrtf, 4.0f);
-    benchmark ("simd sqrt", [](VEC& v){ return sqrt(v); }, mkvec<VEC>(1.0f,4.0f,9.0f,16.0f));
+    benchmark ("simd sqrt", [](const VEC& v){ return sqrt(v); }, mkvec<VEC>(1.0f,4.0f,9.0f,16.0f));
     benchmark ("float rsqrt", rsqrtf, 4.0f);
-    benchmark ("simd rsqrt", [](VEC& v){ return rsqrt(v); }, mkvec<VEC>(1.0f,4.0f,9.0f,16.0f));
-    benchmark ("simd rsqrt_fast", [](VEC& v){ return rsqrt_fast(v); }, mkvec<VEC>(1.0f,4.0f,9.0f,16.0f));
+    benchmark ("simd rsqrt", [](const VEC& v){ return rsqrt(v); }, mkvec<VEC>(1.0f,4.0f,9.0f,16.0f));
+    benchmark ("simd rsqrt_fast", [](const VEC& v){ return rsqrt_fast(v); }, mkvec<VEC>(1.0f,4.0f,9.0f,16.0f));
 }
 
 
@@ -1463,80 +1678,104 @@ void test_metaprogramming ()
     OIIO_CHECK_EQUAL (vbool16::elements, 16);
 
     // Make sure that VTYPE::value_t returns the right element type
-    OIIO_CHECK_ASSERT ((std::is_same<vfloat4::value_t,float>::value));
-    OIIO_CHECK_ASSERT ((std::is_same<vfloat3::value_t,float>::value));
-    OIIO_CHECK_ASSERT ((std::is_same<vfloat8::value_t,float>::value));
-    OIIO_CHECK_ASSERT ((std::is_same<vfloat16::value_t,float>::value));
-    OIIO_CHECK_ASSERT ((std::is_same<vint4::value_t,int>::value));
-    OIIO_CHECK_ASSERT ((std::is_same<vint8::value_t,int>::value));
-    OIIO_CHECK_ASSERT ((std::is_same<vint16::value_t,int>::value));
-    OIIO_CHECK_ASSERT ((std::is_same<vbool4::value_t,bool>::value));
-    OIIO_CHECK_ASSERT ((std::is_same<vbool8::value_t,bool>::value));
-    OIIO_CHECK_ASSERT ((std::is_same<vbool16::value_t,bool>::value));
+    OIIO_CHECK_ASSERT((std::is_same<vfloat4::value_t, float>::value));
+    OIIO_CHECK_ASSERT((std::is_same<vfloat3::value_t, float>::value));
+    OIIO_CHECK_ASSERT((std::is_same<vfloat8::value_t, float>::value));
+    OIIO_CHECK_ASSERT((std::is_same<vfloat16::value_t, float>::value));
+    OIIO_CHECK_ASSERT((std::is_same<vint4::value_t, int>::value));
+    OIIO_CHECK_ASSERT((std::is_same<vint8::value_t, int>::value));
+    OIIO_CHECK_ASSERT((std::is_same<vint16::value_t, int>::value));
+    OIIO_CHECK_ASSERT((std::is_same<vbool4::value_t, bool>::value));
+    OIIO_CHECK_ASSERT((std::is_same<vbool8::value_t, bool>::value));
+    OIIO_CHECK_ASSERT((std::is_same<vbool16::value_t, bool>::value));
 
     // Make sure that VTYPE::vfloat_t returns the same-sized float type
-    OIIO_CHECK_ASSERT ((std::is_same<vfloat4::vfloat_t,vfloat4>::value));
-    OIIO_CHECK_ASSERT ((std::is_same<vfloat8::vfloat_t,vfloat8>::value));
-    OIIO_CHECK_ASSERT ((std::is_same<vfloat16::vfloat_t,vfloat16>::value));
-    OIIO_CHECK_ASSERT ((std::is_same<vint4::vfloat_t,vfloat4>::value));
-    OIIO_CHECK_ASSERT ((std::is_same<vint8::vfloat_t,vfloat8>::value));
-    OIIO_CHECK_ASSERT ((std::is_same<vint16::vfloat_t,vfloat16>::value));
+    OIIO_CHECK_ASSERT((std::is_same<vfloat4::vfloat_t, vfloat4>::value));
+    OIIO_CHECK_ASSERT((std::is_same<vfloat8::vfloat_t, vfloat8>::value));
+    OIIO_CHECK_ASSERT((std::is_same<vfloat16::vfloat_t, vfloat16>::value));
+    OIIO_CHECK_ASSERT((std::is_same<vint4::vfloat_t, vfloat4>::value));
+    OIIO_CHECK_ASSERT((std::is_same<vint8::vfloat_t, vfloat8>::value));
+    OIIO_CHECK_ASSERT((std::is_same<vint16::vfloat_t, vfloat16>::value));
 
     // Make sure that VTYPE::vint_t returns the same-sized int type
-    OIIO_CHECK_ASSERT ((std::is_same<vfloat4::vint_t,vint4>::value));
-    OIIO_CHECK_ASSERT ((std::is_same<vfloat8::vint_t,vint8>::value));
-    OIIO_CHECK_ASSERT ((std::is_same<vfloat16::vint_t,vint16>::value));
-    OIIO_CHECK_ASSERT ((std::is_same<vint4::vint_t,vint4>::value));
-    OIIO_CHECK_ASSERT ((std::is_same<vint8::vint_t,vint8>::value));
-    OIIO_CHECK_ASSERT ((std::is_same<vint16::vint_t,vint16>::value));
+    OIIO_CHECK_ASSERT((std::is_same<vfloat4::vint_t, vint4>::value));
+    OIIO_CHECK_ASSERT((std::is_same<vfloat8::vint_t, vint8>::value));
+    OIIO_CHECK_ASSERT((std::is_same<vfloat16::vint_t, vint16>::value));
+    OIIO_CHECK_ASSERT((std::is_same<vint4::vint_t, vint4>::value));
+    OIIO_CHECK_ASSERT((std::is_same<vint8::vint_t, vint8>::value));
+    OIIO_CHECK_ASSERT((std::is_same<vint16::vint_t, vint16>::value));
 
     // Make sure that VTYPE::vbool_t returns the same-sized bool type
-    OIIO_CHECK_ASSERT ((std::is_same<vfloat4::vbool_t,vbool4>::value));
-    OIIO_CHECK_ASSERT ((std::is_same<vfloat8::vbool_t,vbool8>::value));
-    OIIO_CHECK_ASSERT ((std::is_same<vfloat16::vbool_t,vbool16>::value));
-    OIIO_CHECK_ASSERT ((std::is_same<vint4::vbool_t,vbool4>::value));
-    OIIO_CHECK_ASSERT ((std::is_same<vint8::vbool_t,vbool8>::value));
-    OIIO_CHECK_ASSERT ((std::is_same<vint16::vbool_t,vbool16>::value));
+    OIIO_CHECK_ASSERT((std::is_same<vfloat4::vbool_t, vbool4>::value));
+    OIIO_CHECK_ASSERT((std::is_same<vfloat8::vbool_t, vbool8>::value));
+    OIIO_CHECK_ASSERT((std::is_same<vfloat16::vbool_t, vbool16>::value));
+    OIIO_CHECK_ASSERT((std::is_same<vint4::vbool_t, vbool4>::value));
+    OIIO_CHECK_ASSERT((std::is_same<vint8::vbool_t, vbool8>::value));
+    OIIO_CHECK_ASSERT((std::is_same<vint16::vbool_t, vbool16>::value));
 }
 
 
 
 // Transform a point by a matrix using regular Imath
 inline Imath::V3f
-transformp_imath (const Imath::V3f &v, const Imath::M44f &m)
+transformp_imath(const Imath::V3f& v, const Imath::M44f& m)
 {
     Imath::V3f r;
-    m.multVecMatrix (v, r);
+    m.multVecMatrix(v, r);
     return r;
 }
 
 // Transform a point by a matrix using simd ops on Imath types.
 inline Imath::V3f
-transformp_imath_simd (const Imath::V3f &v, const Imath::M44f &m)
+transformp_imath_simd(const Imath::V3f& v, const Imath::M44f& m)
 {
-    return simd::transformp(m,v).V3f();
+    return simd::transformp(m, v).V3f();
 }
 
 // Transform a simd point by an Imath matrix using SIMD
 inline vfloat3
-transformp_simd (const vfloat3 &v, const Imath::M44f &m)
+transformp_simd(const vfloat3& v, const Imath::M44f& m)
 {
-    return simd::transformp (m, v);
+    return simd::transformp(m, v);
 }
 
 // Transform a point by a matrix using regular Imath
 inline Imath::V3f
-transformv_imath (const Imath::V3f &v, const Imath::M44f &m)
+transformv_imath(const Imath::V3f& v, const Imath::M44f& m)
 {
     Imath::V3f r;
-    m.multDirMatrix (v, r);
+    m.multDirMatrix(v, r);
     return r;
+}
+
+inline Imath::V4f
+mul_vm_imath(const Imath::V4f& v, const Imath::M44f& m)
+{
+    return v*m;
+}
+
+// inline Imath::V4f
+// mul_mv_imath(const Imath::M44f& m, const Imath::V4f& v)
+// {
+//     return m*v;
+// }
+
+inline vfloat4
+mul_vm_simd(const vfloat4& v, const matrix44& m)
+{
+    return v*m;
+}
+
+inline vfloat4
+mul_mv_simd(const matrix44& m, const vfloat4 v)
+{
+    return m*v;
 }
 
 
 
 inline bool
-mx_equal_thresh (const matrix44 &a, const matrix44 &b, float thresh)
+mx_equal_thresh(const matrix44& a, const matrix44& b, float thresh)
 {
     for (int j = 0; j < 4; ++j)
         for (int i = 0; i < 4; ++i)
@@ -1547,78 +1786,104 @@ mx_equal_thresh (const matrix44 &a, const matrix44 &b, float thresh)
 
 
 
-inline Imath::M44f mat_transpose (const Imath::M44f &m) {
+inline Imath::M44f
+mat_transpose(const Imath::M44f& m)
+{
     return m.transposed();
 }
 
-inline Imath::M44f mat_transpose_simd (const Imath::M44f &m) {
+inline Imath::M44f
+mat_transpose_simd(const Imath::M44f& m)
+{
     return matrix44(m).transposed().M44f();
 }
 
 
-void test_matrix ()
+
+void
+test_matrix()
 {
-    Imath::V3f P (1.0f, 0.0f, 0.0f);
-    Imath::M44f Mtrans (1, 0, 0, 0,  0, 1, 0, 0,  0, 0, 1, 0,  10, 11, 12, 1);
+    Imath::V3f P(1.0f, 0.0f, 0.0f);
+    Imath::M44f Mtrans(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 10, 11, 12, 1);
     Imath::M44f Mrot = Imath::M44f().rotate(Imath::V3f(0.0f, M_PI_2, 0.0f));
 
-    test_heading ("Testing matrix ops:");
+    test_heading("Testing matrix ops:");
     std::cout << "  P = " << P << "\n";
     std::cout << "  Mtrans = " << Mtrans << "\n";
     std::cout << "  Mrot   = " << Mrot << "\n";
-    OIIO_CHECK_EQUAL (simd::transformp(Mtrans, P).V3f(),
-                      transformp_imath(P, Mtrans));
-    std::cout << "  P translated = " << simd::transformp(Mtrans,P) << "\n";
-    OIIO_CHECK_EQUAL (simd::transformv(Mtrans,P).V3f(), P);
-    OIIO_CHECK_EQUAL (simd::transformp(Mrot, P).V3f(),
-                      transformp_imath(P, Mrot));
-    std::cout << "  P rotated = " << simd::transformp(Mrot,P) << "\n";
-    OIIO_CHECK_EQUAL (simd::transformvT(Mrot, P).V3f(),
-                      transformv_imath(P, Mrot.transposed()));
-    std::cout << "  P rotated by the transpose = " << simd::transformv(Mrot,P) << "\n";
-    OIIO_CHECK_EQUAL (matrix44(Mrot).transposed().M44f(),
-                      Mrot.transposed());
-    std::cout << "  Mrot transposed = " << matrix44(Mrot).transposed().M44f() << "\n";
-    {
-        matrix44 mt (Mtrans), mr (Mrot);
-        OIIO_CHECK_EQUAL (mt, mt);
-        OIIO_CHECK_EQUAL (mt, Mtrans);
-        OIIO_CHECK_EQUAL (Mtrans, mt);
-        OIIO_CHECK_NE (mt, mr);
-        OIIO_CHECK_NE (mr, Mtrans);
-        OIIO_CHECK_NE (Mtrans, mr);
-    }
-    OIIO_CHECK_ASSERT (mx_equal_thresh (Mtrans.inverse(),
-                       matrix44(Mtrans).inverse(), 1.0e-6f));
-    OIIO_CHECK_ASSERT (mx_equal_thresh (Mrot.inverse(),
-                       matrix44(Mrot).inverse(), 1.0e-6f));
-    OIIO_CHECK_EQUAL (matrix44(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15),
-                      Imath::M44f(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15));
+    OIIO_CHECK_EQUAL(simd::transformp(Mtrans, P).V3f(),
+                     transformp_imath(P, Mtrans));
+    std::cout << "  P translated = " << simd::transformp(Mtrans, P) << "\n";
+    OIIO_CHECK_EQUAL(simd::transformv(Mtrans, P).V3f(), P);
+    OIIO_CHECK_EQUAL(simd::transformp(Mrot, P).V3f(),
+                     transformp_imath(P, Mrot));
+    std::cout << "  P rotated = " << simd::transformp(Mrot, P) << "\n";
+    OIIO_CHECK_EQUAL(simd::transformvT(Mrot, P).V3f(),
+                     transformv_imath(P, Mrot.transposed()));
+    std::cout << "  P rotated by the transpose = " << simd::transformv(Mrot, P)
+              << "\n";
+    OIIO_CHECK_EQUAL(matrix44(Mrot).transposed().M44f(), Mrot.transposed());
+    std::cout << "  Mrot transposed = " << matrix44(Mrot).transposed().M44f()
+              << "\n";
 
-    Imath::V3f vx (2.51f,1.0f,1.0f);
-    Imath::M44f mx (1,0,0,0, 0,1,0,0, 0,0,1,0, 10,11,12,1);
-    benchmark2 ("transformp Imath", transformp_imath, vx, mx, 1);
-    benchmark2 ("transformp Imath with simd", transformp_imath_simd, vx, mx, 1);
-    benchmark2 ("transformp simd", transformp_simd, vfloat3(vx), mx, 1);
-    benchmark ("transpose m44", mat_transpose, mx, 1);
-    benchmark ("transpose m44 with simd", mat_transpose_simd, mx, 1);
+    // Test m44 * v4, v4 * m44
+    {
+        Imath::M44f M(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16);
+        matrix44 m(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16);
+        Imath::V4f V(1,2,3,4);
+        vfloat4 v(1,2,3,4);
+        vfloat4 mv = m*v;
+        vfloat4 vm = v*m;
+        OIIO_CHECK_SIMD_EQUAL(mv, M*V);
+        OIIO_CHECK_SIMD_EQUAL(vm, V*M);
+        benchmark2("V4 * M44 Imath", mul_vm_imath, V, M, 1);
+        // benchmark2("M44 * V4 Imath", mul_mv_imath, mx, v4x, 1);
+        benchmark2("M44 * V4 simd", mul_mv_simd, m, v, 1);
+        benchmark2("V4 * M44 simd", mul_vm_simd, v, m, 1);
+    }
+
+    // Test ==, !=
+    {
+        matrix44 mt(Mtrans), mr(Mrot);
+        OIIO_CHECK_EQUAL(mt, mt);
+        OIIO_CHECK_EQUAL(mt, Mtrans);
+        OIIO_CHECK_EQUAL(Mtrans, mt);
+        OIIO_CHECK_NE(mt, mr);
+        OIIO_CHECK_NE(mr, Mtrans);
+        OIIO_CHECK_NE(Mtrans, mr);
+    }
+    OIIO_CHECK_ASSERT(
+        mx_equal_thresh(Mtrans.inverse(), matrix44(Mtrans).inverse(), 1.0e-6f));
+    OIIO_CHECK_ASSERT(
+        mx_equal_thresh(Mrot.inverse(), matrix44(Mrot).inverse(), 1.0e-6f));
+    OIIO_CHECK_EQUAL(
+        matrix44(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
+        Imath::M44f(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15));
+
+    Imath::V3f vx(2.51f, 1.0f, 1.0f);
+    Imath::V4f v4x(2.51f, 1.0f, 1.0f, 1.0f);
+    Imath::M44f mx(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 10, 11, 12, 1);
+    benchmark2("transformp Imath", transformp_imath, vx, mx, 1);
+    benchmark2("transformp Imath with simd", transformp_imath_simd, vx, mx, 1);
+    benchmark2("transformp simd", transformp_simd, vfloat3(vx), mx, 1);
+
+    benchmark("transpose m44", mat_transpose, mx, 1);
+    benchmark("transpose m44 with simd", mat_transpose_simd, mx, 1);
     // Reduce the iterations of the ones below, if we can
     iterations /= 2;
-    benchmark ("m44 inverse Imath", inverse_imath, mx, 1);
+    benchmark("m44 inverse Imath", inverse_imath, mx, 1);
     // std::cout << "inv " << matrix44(inverse_imath(mx)) << "\n";
-    benchmark ("m44 inverse_simd", inverse_simd, mx, 1);
+    benchmark("m44 inverse_simd", inverse_simd, mx, 1);
     // std::cout << "inv " << inverse_simd(mx) << "\n";
-    benchmark ("m44 inverse_simd native simd", inverse_simd, matrix44(mx), 1);
+    benchmark("m44 inverse_simd native simd", inverse_simd, matrix44(mx), 1);
     // std::cout << "inv " << inverse_simd(mx) << "\n";
     iterations *= 2;  // put things the way they were
 }
 
 
 
-
-
 int
-main (int argc, char *argv[])
+main(int argc, char* argv[])
 {
 #if !defined(NDEBUG) || defined(OIIO_CI) || defined(OIIO_CODE_COVERAGE)
     // For the sake of test time, reduce the default iterations for DEBUG,
@@ -1629,151 +1894,152 @@ main (int argc, char *argv[])
 #endif
     for (int i = 0; i < 16; ++i) {
         dummy_float[i] = 1.0f;
-        dummy_int[i] = 1;
+        dummy_int[i]   = 1;
     }
 
-    getargs (argc, argv);
+    getargs(argc, argv);
 
-    std::string oiiosimd = OIIO::get_string_attribute ("oiio:simd");
-    std::string hwsimd = OIIO::get_string_attribute ("hw:simd");
-    std::cout << "OIIO SIMD support is: "
-              << (oiiosimd.size() ? oiiosimd : "") << "\n";
-    std::cout << "Hardware SIMD support is: "
-              << (hwsimd.size() ? hwsimd : "") << "\n";
+    std::string oiiosimd = OIIO::get_string_attribute("oiio:simd");
+    std::string hwsimd   = OIIO::get_string_attribute("hw:simd");
+    std::cout << "OIIO SIMD support is: " << (oiiosimd.size() ? oiiosimd : "")
+              << "\n";
+    std::cout << "Hardware SIMD support is: " << (hwsimd.size() ? hwsimd : "")
+              << "\n";
     std::cout << "\n";
 
     Timer timer;
 
     vint4 dummy4(0);
     vint8 dummy8(0);
-    benchmark ("null benchmark 4", [](const vint4&){ return int(0); }, dummy4);
-    benchmark ("null benchmark 8", [](const vint8&){ return int(0); }, dummy8);
+    benchmark("null benchmark 4", [](const vint4&) { return int(0); }, dummy4);
+    benchmark("null benchmark 8", [](const vint8&) { return int(0); }, dummy8);
 
-    category_heading ("vfloat4");
-    test_partial_loadstore<vfloat4> ();
-    test_conversion_loadstore_float<vfloat4> ();
-    test_masked_loadstore<vfloat4> ();
-    test_gatherscatter<vfloat4> ();
-    test_component_access<vfloat4> ();
-    test_arithmetic<vfloat4> ();
-    test_comparisons<vfloat4> ();
-    test_shuffle4<vfloat4> ();
-    test_swizzle<vfloat4> ();
-    test_blend<vfloat4> ();
-    test_transpose4<vfloat4> ();
-    test_vectorops_vfloat4 ();
-    test_fused<vfloat4> ();
+    category_heading("vfloat4");
+    test_partial_loadstore<vfloat4>();
+    test_conversion_loadstore_float<vfloat4>();
+    test_masked_loadstore<vfloat4>();
+    test_gatherscatter<vfloat4>();
+    test_component_access<vfloat4>();
+    test_arithmetic<vfloat4>();
+    test_comparisons<vfloat4>();
+    test_shuffle4<vfloat4>();
+    test_swizzle<vfloat4>();
+    test_blend<vfloat4>();
+    test_transpose4<vfloat4>();
+    test_vectorops_vfloat4();
+    test_fused<vfloat4>();
     test_mathfuncs<vfloat4>();
 
-    category_heading ("vfloat3");
-    test_partial_loadstore<vfloat3> ();
-    test_conversion_loadstore_float<vfloat3> ();
-    test_component_access<vfloat3> ();
-    test_arithmetic<vfloat3> ();
+    category_heading("vfloat3");
+    test_partial_loadstore<vfloat3>();
+    test_conversion_loadstore_float<vfloat3>();
+    test_component_access<vfloat3>();
+    test_arithmetic<vfloat3>();
     // Unnecessary to test these, they just use the vfloat4 ops.
     // test_comparisons<vfloat3> ();
     // test_shuffle4<vfloat3> ();
     // test_swizzle<vfloat3> ();
     // test_blend<vfloat3> ();
     // test_transpose4<vfloat3> ();
-    test_vectorops_vfloat3 ();
-    test_fused<vfloat3> ();
+    test_vectorops_vfloat3();
+    test_fused<vfloat3>();
     // test_mathfuncs<vfloat3>();
 
-    category_heading ("vfloat8");
-    test_partial_loadstore<vfloat8> ();
-    test_conversion_loadstore_float<vfloat8> ();
-    test_masked_loadstore<vfloat8> ();
-    test_gatherscatter<vfloat8> ();
-    test_component_access<vfloat8> ();
-    test_arithmetic<vfloat8> ();
-    test_comparisons<vfloat8> ();
-    test_shuffle8<vfloat8> ();
-    test_blend<vfloat8> ();
-    test_fused<vfloat8> ();
+    category_heading("vfloat8");
+    test_partial_loadstore<vfloat8>();
+    test_conversion_loadstore_float<vfloat8>();
+    test_masked_loadstore<vfloat8>();
+    test_gatherscatter<vfloat8>();
+    test_component_access<vfloat8>();
+    test_arithmetic<vfloat8>();
+    test_comparisons<vfloat8>();
+    test_shuffle8<vfloat8>();
+    test_blend<vfloat8>();
+    test_fused<vfloat8>();
     test_mathfuncs<vfloat8>();
 
-    category_heading ("vfloat16");
-    test_partial_loadstore<vfloat16> ();
-    test_conversion_loadstore_float<vfloat16> ();
-    test_masked_loadstore<vfloat16> ();
-    test_gatherscatter<vfloat16> ();
-    test_component_access<vfloat16> ();
-    test_arithmetic<vfloat16> ();
-    test_comparisons<vfloat16> ();
-    test_shuffle16<vfloat16> ();
-    test_blend<vfloat16> ();
-    test_fused<vfloat16> ();
+    category_heading("vfloat16");
+    test_partial_loadstore<vfloat16>();
+    test_conversion_loadstore_float<vfloat16>();
+    test_masked_loadstore<vfloat16>();
+    test_gatherscatter<vfloat16>();
+    test_component_access<vfloat16>();
+    test_arithmetic<vfloat16>();
+    test_comparisons<vfloat16>();
+    test_shuffle16<vfloat16>();
+    test_blend<vfloat16>();
+    test_fused<vfloat16>();
     test_mathfuncs<vfloat16>();
 
-    category_heading ("vint4");
-    test_partial_loadstore<vint4> ();
-    test_conversion_loadstore_int<vint4> ();
-    test_masked_loadstore<vint4> ();
-    test_gatherscatter<vint4> ();
-    test_component_access<vint4> ();
-    test_arithmetic<vint4> ();
-    test_bitwise_int<vint4> ();
-    test_comparisons<vint4> ();
-    test_shuffle4<vint4> ();
-    test_blend<vint4> ();
-    test_vint_to_uint16s<vint4> ();
-    test_vint_to_uint8s<vint4> ();
-    test_shift<vint4> ();
-    test_transpose4<vint4> ();
+    category_heading("vint4");
+    test_partial_loadstore<vint4>();
+    test_conversion_loadstore_int<vint4>();
+    test_masked_loadstore<vint4>();
+    test_gatherscatter<vint4>();
+    test_component_access<vint4>();
+    test_arithmetic<vint4>();
+    test_bitwise_int<vint4>();
+    test_comparisons<vint4>();
+    test_shuffle4<vint4>();
+    test_blend<vint4>();
+    test_vint_to_uint16s<vint4>();
+    test_vint_to_uint8s<vint4>();
+    test_shift<vint4>();
+    test_transpose4<vint4>();
 
-    category_heading ("vint8");
-    test_partial_loadstore<vint8> ();
-    test_conversion_loadstore_int<vint8> ();
-    test_masked_loadstore<vint8> ();
-    test_gatherscatter<vint8> ();
-    test_component_access<vint8> ();
-    test_arithmetic<vint8> ();
-    test_bitwise_int<vint8> ();
-    test_comparisons<vint8> ();
-    test_shuffle8<vint8> ();
-    test_blend<vint8> ();
-    test_vint_to_uint16s<vint8> ();
-    test_vint_to_uint8s<vint8> ();
-    test_shift<vint8> ();
+    category_heading("vint8");
+    test_partial_loadstore<vint8>();
+    test_conversion_loadstore_int<vint8>();
+    test_masked_loadstore<vint8>();
+    test_gatherscatter<vint8>();
+    test_component_access<vint8>();
+    test_arithmetic<vint8>();
+    test_bitwise_int<vint8>();
+    test_comparisons<vint8>();
+    test_shuffle8<vint8>();
+    test_blend<vint8>();
+    test_vint_to_uint16s<vint8>();
+    test_vint_to_uint8s<vint8>();
+    test_shift<vint8>();
 
-    category_heading ("vint16");
-    test_partial_loadstore<vint16> ();
-    test_conversion_loadstore_int<vint16> ();
-    test_masked_loadstore<vint16> ();
-    test_gatherscatter<vint16> ();
-    test_component_access<vint16> ();
-    test_arithmetic<vint16> ();
-    test_bitwise_int<vint16> ();
-    test_comparisons<vint16> ();
-    test_shuffle16<vint16> ();
-    test_blend<vint16> ();
-    test_vint_to_uint16s<vint16> ();
-    test_vint_to_uint16s<vint16> ();
-    test_shift<vint16> ();
+    category_heading("vint16");
+    test_partial_loadstore<vint16>();
+    test_conversion_loadstore_int<vint16>();
+    test_masked_loadstore<vint16>();
+    test_gatherscatter<vint16>();
+    test_component_access<vint16>();
+    test_arithmetic<vint16>();
+    test_bitwise_int<vint16>();
+    test_comparisons<vint16>();
+    test_shuffle16<vint16>();
+    test_blend<vint16>();
+    test_vint_to_uint16s<vint16>();
+    test_vint_to_uint16s<vint16>();
+    test_shift<vint16>();
 
-    category_heading ("vbool4");
-    test_shuffle4<vbool4> ();
-    test_component_access<vbool4> ();
-    test_bitwise_bool<vbool4> ();
+    category_heading("vbool4");
+    test_shuffle4<vbool4>();
+    test_component_access<vbool4>();
+    test_bitwise_bool<vbool4>();
 
-    category_heading ("vbool8");
-    test_shuffle8<vbool8> ();
-    test_component_access<vbool8> ();
-    test_bitwise_bool<vbool8> ();
+    category_heading("vbool8");
+    test_shuffle8<vbool8>();
+    test_component_access<vbool8>();
+    test_bitwise_bool<vbool8>();
 
-    category_heading ("vbool16");
+    category_heading("vbool16");
     // test_shuffle16<vbool16> ();
-    test_component_access<vbool16> ();
-    test_bitwise_bool<vbool16> ();
+    test_component_access<vbool16>();
+    test_bitwise_bool<vbool16>();
 
-    category_heading ("Odds and ends");
+    category_heading("Odds and ends");
     test_constants();
     test_special();
     test_metaprogramming();
     test_matrix();
 
-    std::cout << "\nTotal time: " << Strutil::timeintervalformat(timer()) << "\n";
+    std::cout << "\nTotal time: " << Strutil::timeintervalformat(timer())
+              << "\n";
 
     return unit_test_failures;
 }

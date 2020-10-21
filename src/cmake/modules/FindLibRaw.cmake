@@ -26,14 +26,16 @@ ENDIF()
 
 FIND_PATH(LibRaw_INCLUDE_DIR libraw/libraw.h
           HINTS
+          ${LIBRAW_INCLUDEDIR_HINT}
           ${LIBRAW_PATH}
           ${PC_LIBRAW_INCLUDEDIR}
           ${PC_LibRaw_INCLUDE_DIRS}
           PATH_SUFFIXES libraw
          )
 
-FIND_LIBRARY(LibRaw_LIBRARIES NAMES raw
+FIND_LIBRARY(LibRaw_LIBRARIES NAMES raw libraw
              HINTS
+             ${LIBRAW_LIBDIR_HINT}
              ${LIBRAW_PATH}
              ${PC_LIBRAW_LIBDIR}
              ${PC_LIBRAW_LIBRARY_DIRS}
@@ -41,10 +43,15 @@ FIND_LIBRARY(LibRaw_LIBRARIES NAMES raw
 
 FIND_LIBRARY(LibRaw_r_LIBRARIES NAMES raw_r
              HINTS
+             ${LIBRAW_LIBDIR_HINT}
              ${LIBRAW_PATH}
              ${PC_LIBRAW_R_LIBDIR}
              ${PC_LIBRAW_R_LIBRARY_DIRS}
             )
+
+IF(WIN32)
+   SET( LibRaw_r_LIBRARIES ${LibRaw_LIBRARIES} )
+ENDIF()
 
 IF(LibRaw_INCLUDE_DIR)
    FILE(READ ${LibRaw_INCLUDE_DIR}/libraw/libraw_version.h _libraw_version_content)

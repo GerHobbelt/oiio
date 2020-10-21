@@ -94,8 +94,15 @@ namespace @PROJ_NAME@ = @PROJ_NAMESPACE_V@;
 /// Version 18 changed to add an m_threads member to ImageInput/Output.
 /// Version 19 changed the definition of DeepData.
 /// Version 20 added FMT_imageio_library_version() to plugins. (OIIO 1.7)
+/// Version 21 changed the signatures of ImageInput methods: added
+///     subimage,miplevel params to many read_*() methods; changed thread
+///     safety expectations; removed newspec param from seek_subimage;
+///     added spec(subimage,miplevel) and spec_dimensions(subimage,miplevel).
+///     (OIIO 1.9)
+/// Version 22 changed the signatures of ImageInput/ImageOutput create()
+///     to return unique_ptr. (OIIO 1.9)
 
-#define OIIO_PLUGIN_VERSION 20
+#define OIIO_PLUGIN_VERSION 22
 
 #define OIIO_PLUGIN_NAMESPACE_BEGIN OIIO_NAMESPACE_BEGIN
 #define OIIO_PLUGIN_NAMESPACE_END OIIO_NAMESPACE_END
@@ -109,10 +116,12 @@ namespace @PROJ_NAME@ = @PROJ_NAMESPACE_V@;
 #endif
 
 #define OIIO_BUILD_CPP11 1 /* Always build for C++ >= 11 */
-// OIIO_BUILD_CPP14 will be 1 if this OIIO was built using C++14
+// OIIO_BUILD_CPP14 will be 1 if this OIIO was built using C++14 or higher
 #cmakedefine01 OIIO_BUILD_CPP14
-// OIIO_BUILD_CPP17 will be 1 if this OIIO was built using C++17
+// OIIO_BUILD_CPP17 will be 1 if this OIIO was built using C++17 or higher
 #cmakedefine01 OIIO_BUILD_CPP17
+// OIIO_BUILD_CPP20 will be 1 if this OIIO was built using C++20 or higher
+#cmakedefine01 OIIO_BUILD_CPP20
 
 #endif
 

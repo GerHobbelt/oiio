@@ -20,12 +20,20 @@
 //
 // FarmHash, by Geoff Pike
 
-// http://code.google.com/p/farmhash/
+// clang-format off
+
+// https://github.com/google/farmhash
 
 //#include "farmhash.h"
 #include <OpenImageIO/hash.h>
 
 #define NAMESPACE_FOR_HASH_FUNCTIONS OIIO::farmhash
+
+#ifdef _MSC_VER
+// Disable pointless windows warning
+#pragma warning( disable : 4319 )
+#endif
+
 
 // FARMHASH ASSUMPTIONS: Modify as needed, or use -DFARMHASH_ASSUME_SSE42 etc.
 // Note that if you use -DFARMHASH_ASSUME_SSE42 you likely need -msse42
@@ -108,7 +116,7 @@
 
 #if defined(FARMHASH_UNKNOWN_ENDIAN) || !defined(bswap_64)
 
-#ifdef _MSC_VER
+#ifdef _WIN32
 
 #undef bswap_32
 #undef bswap_64

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
 import os
 import glob
 import sys
@@ -40,11 +41,53 @@ path = os.path.normpath (path)
 
 tmpdir = "."
 tmpdir = os.path.abspath (tmpdir)
+redirect = " >> out.txt "
 
+def oiio_relpath (path, start=os.curdir):
+    "Wrapper around os.path.relpath which always uses '/' as the separator."
+    p = os.path.relpath (path, start)
+    return p if sys.platform != "win32" else p.replace ('\\', '/')
+
+# Try to figure out where some key things are. Go by env variables set by
+# the cmake tests, but if those aren't set, assume somebody is running
+# this script by hand from inside build/PLATFORM/testsuite/TEST and that
+# the rest of the tree has the standard layout.
+OIIO_TESTSUITE_ROOT = oiio_relpath(os.environ.get('OIIO_TESTSUITE_ROOT',
+                                                  '../../../../testsuite'))
+OIIO_TESTSUITE_IMAGEDIR = os.environ.get('OIIO_TESTSUITE_IMAGEDIR',
+                                         '../../../../../oiio-images')
+if OIIO_TESTSUITE_IMAGEDIR:
+    OIIO_TESTSUITE_IMAGEDIR = oiio_relpath(OIIO_TESTSUITE_IMAGEDIR)
+    # Set it back so test's can use it (python-imagebufalgo)
+    os.environ['OIIO_TESTSUITE_IMAGEDIR'] = OIIO_TESTSUITE_IMAGEDIR
 refdir = "ref/"
 refdirlist = [ refdir ]
-parent = "../../../../../"
-test_source_dir = "../../../../testsuite/" + os.path.basename(os.path.abspath(srcdir))
+mytest = os.path.split(os.path.abspath(os.getcwd()))[-1]
+test_source_dir = os.environ.get('OIIO_TESTSUITE_SRC',
+                                 os.path.join(OIIO_TESTSUITE_ROOT, mytest))
+colorconfig_file = os.path.join(OIIO_TESTSUITE_ROOT,
+                                "common", "OpenColorIO", "nuke-default", "config.ocio")
+
+# Swap the relative diff lines if the test suite is not being run via Makefile
+if OIIO_TESTSUITE_ROOT != "../../../../testsuite":
+    def replace_relative(lines):
+        imgdir = None
+        if OIIO_TESTSUITE_IMAGEDIR:
+            imgdir = os.path.basename(OIIO_TESTSUITE_IMAGEDIR)
+            if imgdir != "oiio-images":
+                oiioimgs = os.path.basename(os.path.dirname(OIIO_TESTSUITE_IMAGEDIR))
+                if oiioimgs == "oiio-images":
+                    imgdir = "oiio-images/" + imgdir
+                imgdir = "../../../../../" + imgdir
+
+        for i in xrange(len(lines)):
+            lines[i] = lines[i].replace("../../../../testsuite", OIIO_TESTSUITE_ROOT)
+            if imgdir:
+                lines[i] = lines[i].replace(imgdir, OIIO_TESTSUITE_IMAGEDIR)
+        return lines
+else:
+    replace_relative = None
+
 
 command = ""
 outputs = [ "out.txt" ]    # default
@@ -73,14 +116,34 @@ if platform.system() == 'Windows' :
     # if not os.path.exists("../common") :
     #     shutil.copytree ("../../../testsuite/common", "..")
 else :
+    def newsymlink(src, dst):
+        print("newsymlink", src, dst)
+        # os.path.exists returns False for broken symlinks, so remove if thats the case
+        if os.path.islink(dst):
+            os.remove(dst)
+        os.symlink (src, dst)
     if not os.path.exists("./ref") :
-        os.symlink (os.path.join (test_source_dir, "ref"), "./ref")
+        newsymlink (os.path.join (test_source_dir, "ref"), "./ref")
     if os.path.exists (os.path.join (test_source_dir, "src")) and not os.path.exists("./src") :
-        os.symlink (os.path.join (test_source_dir, "src"), "./src")
+        newsymlink (os.path.join (test_source_dir, "src"), "./src")
     if not os.path.exists("./data") :
-        os.symlink (test_source_dir, "./data")
+        newsymlink (test_source_dir, "./data")
     if not os.path.exists("../common") :
-        os.symlink ("../../../testsuite/common", "../common")
+        newsymlink (os.path.join(os.environ['OIIO_TESTSUITE_ROOT'], "common"),
+                    "../common")
+
+
+# Disable this test on Travis when using leak sanitizer, because the error
+# condition makes a leak we can't stop, but that's ok.
+import os
+if (os.getenv("TRAVIS") and (os.getenv("SANITIZE") in ["leak","address"])
+    and os.path.exists(os.path.join (test_source_dir,"TRAVIS_SKIP_LSAN"))) :
+    sys.exit (0)
+
+pythonbin = 'python'
+if os.getenv("PYTHON_VERSION") :
+    pythonbin += os.getenv("PYTHON_VERSION")
+#print ("pythonbin = ", pythonbin)
 
 
 # Disable this test on Travis when using leak sanitizer, because the error
@@ -104,8 +167,10 @@ def text_diff (fromfile, tofile, diff_file=None):
     try:
         fromdate = time.ctime (os.stat (fromfile).st_mtime)
         todate = time.ctime (os.stat (tofile).st_mtime)
-        fromlines = open (fromfile, 'rU').readlines()
-        tolines   = open (tofile, 'rU').readlines()
+        fromlines = open (fromfile, 'r').readlines()
+        tolines   = open (tofile, 'r').readlines()
+        if replace_relative:
+            tolines = replace_relative(tolines)
     except:
         print ("Unexpected error:", sys.exc_info()[0])
         return -1
@@ -127,13 +192,6 @@ def text_diff (fromfile, tofile, diff_file=None):
         except:
             print ("Unexpected error:", sys.exc_info()[0])
     return 1
-
-
-
-def oiio_relpath (path, start=os.curdir):
-    "Wrapper around os.path.relpath which always uses '/' as the separator."
-    p = os.path.relpath (path, start)
-    return p if sys.platform != "win32" else p.replace ('\\', '/')
 
 
 def oiio_app (app):
@@ -158,7 +216,7 @@ def info_command (file, extraargs="", safematch=False, hash=True,
     if hash :
         args += " --hash"
     return (oiio_app("oiiotool") + args + " " + extraargs
-            + " " + oiio_relpath(file,tmpdir) + " >> out.txt ;\n")
+            + " " + oiio_relpath(file,tmpdir) + redirect + ";\n")
 
 
 # Construct a command that will compare two images, appending output to
@@ -175,7 +233,7 @@ def diff_command (fileA, fileB, extraargs="", silent=False, concat=True) :
                + " " + extraargs + " " + oiio_relpath(fileA,tmpdir) 
                + " " + oiio_relpath(fileB,tmpdir))
     if not silent :
-        command += " >> out.txt"
+        command += redirect
     if concat:
         command += " ;\n"
     return command
@@ -191,7 +249,7 @@ def maketx_command (infile, outfile, extraargs="",
                + " " + extraargs
                + " -o " + oiio_relpath(outfile,tmpdir) )
     if not silent :
-        command += " >> out.txt"
+        command += redirect
     if concat:
         command += " ;\n"
     if showinfo:
@@ -219,31 +277,33 @@ def rw_command (dir, filename, testwrite=True, use_oiiotool=False, extraargs="",
     if testwrite :
         if use_oiiotool :
             cmd = (cmd + oiio_app("oiiotool") + preargs + " " + fn
-                   + " " + extraargs + " -o " + output_filename + " >> out.txt ;\n")
+                   + " " + extraargs + " -o " + output_filename + redirect + ";\n")
         else :
             cmd = (cmd + oiio_app("iconvert") + preargs + " " + fn
-                   + " " + extraargs + " " + output_filename + " >> out.txt ;\n")
+                   + " " + extraargs + " " + output_filename + redirect + ";\n")
         cmd = (cmd + oiio_app("idiff") + " -a " + fn
                + " -fail " + str(failthresh)
                + " -failpercent " + str(failpercent)
                + " -hardfail " + str(hardfail)
                + " -warn " + str(2*failthresh)
-               + " " + idiffextraargs + " " + output_filename + " >> out.txt ;\n")
+               + " " + idiffextraargs + " " + output_filename + redirect + ";\n")
     return cmd
 
 
 # Construct a command that will testtex
 def testtex_command (file, extraargs="") :
     cmd = (oiio_app("testtex") + " " + file + " " + extraargs + " " +
-           " >> out.txt ;\n")
+           redirect + ";\n")
     return cmd
 
 
 # Construct a command that will run oiiotool and append its output to out.txt
 def oiiotool (args, silent=False, concat=True) :
-    cmd = (oiio_app("oiiotool") + " " + args)
+    cmd = (oiio_app("oiiotool") + " "
+           + "-colorconfig " + colorconfig_file + " "
+           + args)
     if not silent :
-        cmd += " >> out.txt"
+        cmd += redirect
     if concat:
         cmd += " ;\n"
     return cmd
@@ -301,6 +361,7 @@ def runtest (command, outputs, failureok=0) :
 #    print ("working dir = " + tmpdir)
     os.chdir (srcdir)
     open ("out.txt", "w").close()    # truncate out.txt
+    open ("out.err.txt", "w").close()    # truncate out.txt
     if os.path.isfile("debug.log") :
         os.remove ("debug.log")
 
@@ -347,15 +408,17 @@ def runtest (command, outputs, failureok=0) :
                 print (open(testfile,'r').read() + "<----------")
                 os.system ("ls -al " +out+" "+testfile)
                 print ("Diff was:\n-------")
-                print (open (out+".diff", 'rU').read())
+                print (open (out+".diff", 'r').read())
             if extension in image_extensions :
                 # If we failed to get a match for an image, send the idiff
                 # results to the console
                 os.system (diff_command (out, testfile, silent=False))
             if os.path.isfile("debug.log") and os.path.getsize("debug.log") :
                 print ("---   DEBUG LOG   ---\n")
+                #flog = open("debug.log", "r")
+                # print (flog.read())
                 with open("debug.log", "r") as flog :
-                    print flog.read()
+                    print (flog.read())
                 print ("--- END DEBUG LOG ---\n")
     return (err)
 

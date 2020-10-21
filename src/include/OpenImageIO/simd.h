@@ -45,10 +45,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /// Additional web resources:
 ///   http://www.codersnotes.com/notes/maths-lib-2016/
 
+// clang-format off
 
 #pragma once
-#ifndef OIIO_SIMD_H
-#define OIIO_SIMD_H 1
 
 #include <OpenImageIO/dassert.h>
 #include <OpenImageIO/missing_math.h>
@@ -88,12 +87,19 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // OIIO_SIMD_HAS_SIMD8 : nonzero if vfloat8, vint8, vbool8 are defined
 // OIIO_SIMD_HAS_SIMD16 : nonzero if vfloat16, vint16, vbool16 are defined
 
-#if defined(_MSC_VER)
+#if defined(_WIN32)
 #  include <intrin.h>
 #elif defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__))
 #  include <x86intrin.h>
 #elif defined(__GNUC__) && defined(__ARM_NEON__)
 #  include <arm_neon.h>
+#endif
+
+// Disable SSE for 32 bit Windows patforms, it's unreliable and hard for us
+// to test thoroughly. We presume that anybody needing high performance
+// badly enough to want SIMD also is on a 64 bit CPU.
+#if defined(_WIN32) && defined(__i386__) && !defined(__x86_64__) && !defined(OIIO_NO_SSE)
+#define OIIO_NO_SSE 1
 #endif
 
 #if (defined(__SSE2__) || (_MSC_VER >= 1300 && !_M_CEE_PURE)) && !defined(OIIO_NO_SSE)
@@ -118,7 +124,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #  endif
 #  define OIIO_SIMD 4
 #  define OIIO_SIMD_MAX_SIZE_BYTES 16
-#  define OIIO_SIMD_ALIGN OIIO_ALIGN(16)
 #  define OIIO_SIMD4_ALIGN OIIO_ALIGN(16)
 #  define OIIO_SSE_ALIGN OIIO_ALIGN(16)
 #else
@@ -212,7 +217,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #  define OIIO_SIMD 4
 #  define OIIO_SIMD_NEON 1
 #  define OIIO_SIMD_MAX_SIZE_BYTES 16
-#  define OIIO_SIMD_ALIGN OIIO_ALIGN(16)
 #  define OIIO_SIMD4_ALIGN OIIO_ALIGN(16)
 #  define OIIO_SSE_ALIGN OIIO_ALIGN(16)
 #else
@@ -222,11 +226,17 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef OIIO_SIMD
    // No SIMD available
 #  define OIIO_SIMD 0
-#  define OIIO_SIMD_ALIGN
 #  define OIIO_SIMD4_ALIGN
-#  define OIIO_SIMD8_ALIGN
 #  define OIIO_SIMD_MAX_SIZE_BYTES 16
 #endif
+
+#ifndef OIIO_SIMD8_ALIGN
+#  define OIIO_SIMD8_ALIGN OIIO_SIMD4_ALIGN
+#endif
+#ifndef OIIO_SIMD16_ALIGN
+#  define OIIO_SIMD16_ALIGN OIIO_SIMD8_ALIGN
+#endif
+
 
 // General features that client apps may want to test for, for conditional
 // compilation. Will add to this over time as needed. Note that just
@@ -237,6 +247,18 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define OIIO_SIMD_HAS_FLOAT8 1   /* DEPRECATED(1.8) */
 #define OIIO_SIMD_HAS_SIMD8 1    /* vfloat8, vint8, vbool8 defined */
 #define OIIO_SIMD_HAS_SIMD16 1   /* vfloat16, vint16, vbool16 defined */
+
+
+#include "missing_math.h"
+
+
+// Embarrassing hack: Xlib.h #define's True and False!
+#ifdef True
+#    undef True
+#endif
+#ifdef False
+#    undef False
+#endif
 
 
 
@@ -313,6 +335,7 @@ template<typename T,int elements> struct VecType {};
 template<> struct VecType<int,1>   { typedef int type; };
 template<> struct VecType<float,1> { typedef float type; };
 template<> struct VecType<int,4>   { typedef vint4 type; };
+template<> struct VecType<float,4>   { typedef vfloat4 type; };
 template<> struct VecType<float,3> { typedef vfloat3 type; };
 template<> struct VecType<bool,4>  { typedef vbool4 type; };
 template<> struct VecType<int,8>   { typedef vint8 type; };
@@ -1142,6 +1165,10 @@ void transpose (const vint4& a, const vint4& b, const vint4& c, const vint4& d,
 
 vint4 AxBxCxDx (const vint4& a, const vint4& b, const vint4& c, const vint4& d);
 
+// safe_mod(a,b) is like a%b, but safely returns 0 when b==0.
+vint4 safe_mod (const vint4& a, const vint4& b);
+vint4 safe_mod (const vint4& a, int b);
+
 
 
 
@@ -1429,6 +1456,10 @@ vint8 andnot (const vint8& a, const vint8& b);
 vint8 bitcast_to_int (const vbool8& x);
 vint8 bitcast_to_int (const vfloat8& x);
 vfloat8 bitcast_to_float (const vint8& x);
+
+// safe_mod(a,b) is like a%b, but safely returns 0 when b==0.
+vint8 safe_mod (const vint8& a, const vint8& b);
+vint8 safe_mod (const vint8& a, int b);
 
 
 
@@ -1731,6 +1762,10 @@ vint16 bitcast_to_int (const vbool16& x);
 vint16 bitcast_to_int (const vfloat16& x);
 vfloat16 bitcast_to_float (const vint16& x);
 
+// safe_mod(a,b) is like a%b, but safely returns 0 when b==0.
+vint16 safe_mod (const vint16& a, const vint16& b);
+vint16 safe_mod (const vint16& a, int b);
+
 
 
 
@@ -1786,15 +1821,11 @@ public:
     /// Cast to a Imath::V3f
     const Imath::V3f& V3f () const { return *(const Imath::V3f*)this; }
 
-#if defined(ILMBASE_VERSION_MAJOR) && ILMBASE_VERSION_MAJOR >= 2
-    // V4f is not defined for older Ilmbase. It's certainly safe for 2.x.
-
     /// Construct from a Imath::V4f
     vfloat4 (const Imath::V4f &v) { load ((const float *)&v); }
 
     /// Cast to a Imath::V4f
     const Imath::V4f& V4f () const { return *(const Imath::V4f*)this; }
-#endif
 
     /// Construct from a pointer to 4 unsigned short values
     explicit vfloat4 (const unsigned short *vals) { load(vals); }
@@ -1835,10 +1866,8 @@ public:
     /// Set all components to 0.0
     void clear ();
 
-#if defined(ILMBASE_VERSION_MAJOR) && ILMBASE_VERSION_MAJOR >= 2
     /// Assign from a Imath::V4f
     const vfloat4 & operator= (const Imath::V4f &v);
-#endif
 
     /// Assign from a Imath::V3f
     const vfloat4 & operator= (const Imath::V3f &v);
@@ -2242,7 +2271,7 @@ public:
         m_row[2].load (f+8);
         m_row[3].load (f+12);
 #else
-        memcpy (&m_mat, f, 16*sizeof(float));
+        m_mat = *(const Imath::M44f*)f;
 #endif
     }
 
@@ -2307,6 +2336,9 @@ public:
 
     /// Transform 3-vector V by the transpose of 4x4 matrix M.
     vfloat3 transformvT (const vfloat3 &V) const;
+
+    friend vfloat4 operator* (const vfloat4 &V, const matrix44& M);
+    friend vfloat4 operator* (const matrix44& M, const vfloat4 &V);
 
     bool operator== (const matrix44& m) const;
 
@@ -2962,6 +2994,48 @@ vfloat16 madd (const vfloat16& a, const vfloat16& b, const vfloat16& c); // a*b 
 vfloat16 msub (const vfloat16& a, const vfloat16& b, const vfloat16& c); // a*b - c
 vfloat16 nmadd (const vfloat16& a, const vfloat16& b, const vfloat16& c); // -a*b + c
 vfloat16 nmsub (const vfloat16& a, const vfloat16& b, const vfloat16& c); // -a*b - c
+
+
+
+// Odds and ends, other CPU hardware tricks
+
+// Try to set the flush_zero_mode CPU flag on x86. Return true if we are
+// able, otherwise false (because it's not available on that platform,
+// or because it's gcc 4.8 which has a bug that lacks this intrinsic).
+inline bool set_flush_zero_mode (bool on) {
+#if (defined(__x86_64__) || defined(__i386__)) && (OIIO_GNUC_VERSION == 0 || OIIO_GNUC_VERSION > 40900)
+    _MM_SET_FLUSH_ZERO_MODE (on ? _MM_FLUSH_ZERO_ON : _MM_FLUSH_ZERO_OFF);
+    return true;
+#endif
+    return false;
+}
+
+// Try to set the denorms_zero_mode CPU flag on x86. Return true if we are
+// able, otherwise false (because it's not available on that platform,
+// or because it's gcc 4.8 which has a bug that lacks this intrinsic).
+inline bool set_denorms_zero_mode (bool on) {
+#if (defined(__x86_64__) || defined(__i386__)) && (OIIO_GNUC_VERSION == 0 || OIIO_GNUC_VERSION > 40900)
+    _MM_SET_DENORMALS_ZERO_MODE (on ? _MM_DENORMALS_ZERO_ON : _MM_DENORMALS_ZERO_OFF);
+    return true;
+#endif
+    return false;
+}
+
+// Get the flush_zero_mode CPU flag on x86.
+inline bool get_flush_zero_mode () {
+#if (defined(__x86_64__) || defined(__i386__)) && (OIIO_GNUC_VERSION == 0 || OIIO_GNUC_VERSION > 40900)
+    return _MM_GET_FLUSH_ZERO_MODE() == _MM_FLUSH_ZERO_ON;
+#endif
+    return false;
+}
+
+// Get the denorms_zero_mode CPU flag on x86.
+inline bool get_denorms_zero_mode () {
+#if (defined(__x86_64__) || defined(__i386__)) && (OIIO_GNUC_VERSION == 0 || OIIO_GNUC_VERSION > 40900)
+    return _MM_GET_DENORMALS_ZERO_MODE() == _MM_DENORMALS_ZERO_ON;
+#endif
+    return false;
+}
 
 
 
@@ -3912,7 +3986,9 @@ OIIO_FORCEINLINE void vint4::load (const int *values) {
 OIIO_FORCEINLINE void vint4::load (const int *values, int n)
 {
     DASSERT (n >= 0 && n <= elements);
-#if OIIO_SIMD_SSE
+#if OIIO_SIMD_AVX >= 512 && OIIO_AVX512VL_ENABLED
+    m_simd = _mm_maskz_loadu_epi32 (__mmask8(~(0xf << n)), values);
+#elif OIIO_SIMD_SSE
     switch (n) {
     case 1:
         m_simd = _mm_castps_si128 (_mm_load_ss ((const float *)values));
@@ -4025,7 +4101,7 @@ OIIO_FORCEINLINE void vint4::load_mask (int mask, const value_t *values) {
 #elif OIIO_SIMD_AVX >= 2
     m_simd = _mm_maskload_epi32 (values, _mm_castps_si128(vbool_t::from_bitmask(mask)));
 #else
-    SIMD_CONSTRUCT ((mask>>i) & 1 ? values[i] : 0.0f);
+    SIMD_CONSTRUCT ((mask>>i) & 1 ? values[i] : 0);
 #endif
 }
 
@@ -4036,7 +4112,7 @@ OIIO_FORCEINLINE void vint4::load_mask (const vbool_t& mask, const value_t *valu
 #elif OIIO_SIMD_AVX >= 2
     m_simd = _mm_maskload_epi32 (values, _mm_castps_si128(mask));
 #else
-    SIMD_CONSTRUCT (mask[i] ? values[i] : 0.0f);
+    SIMD_CONSTRUCT (mask[i] ? values[i] : 0);
 #endif
 }
 
@@ -4383,7 +4459,10 @@ inline std::ostream& operator<< (std::ostream& cout, const vint4& val) {
 
 OIIO_FORCEINLINE void vint4::store (int *values, int n) const {
     DASSERT (n >= 0 && n <= elements);
-#if OIIO_SIMD_AVX >= 512 && OIIO_AVX512VL_ENABLED
+#if 0 && OIIO_SIMD_AVX >= 512 && OIIO_AVX512VL_ENABLED
+    // This SHOULD be fast, but in my benchmarks, it is slower!
+    // (At least on the AVX512 hardware I have, Xeon Silver 4110.)
+    // Re-test this periodically with new Intel hardware.
     _mm_mask_storeu_epi32 (values, __mmask8(~(0xf << n)), m_simd);
 #elif OIIO_SIMD
     // For full SIMD, there is a speed advantage to storing all components.
@@ -4397,7 +4476,8 @@ OIIO_FORCEINLINE void vint4::store (int *values, int n) const {
         values[i] = m_val[i];
 #endif
 }
-// FIXME(SSE,AVX): is there a faster way to do a partial store? 512!
+
+
 
 
 
@@ -4652,6 +4732,17 @@ OIIO_FORCEINLINE vbool4::vbool4 (const vint4& ival) {
 
 
 
+OIIO_FORCEINLINE vint4 safe_mod (const vint4& a, const vint4& b) {
+    // NO INTEGER MODULUS IN SSE!
+    SIMD_RETURN (vint4, b[i] ? a[i] % b[i] : 0);
+}
+
+OIIO_FORCEINLINE vint4 safe_mod (const vint4& a, int b) {
+    return b ? (a % b) : vint4::Zero();
+}
+
+
+
 
 //////////////////////////////////////////////////////////////////////
 // vint8 implementation
@@ -4811,7 +4902,7 @@ OIIO_FORCEINLINE void vint8::load_mask (int mask, const int *values) {
 #elif OIIO_SIMD_AVX >= 2
     m_simd = _mm256_maskload_epi32 (values, _mm256_castps_si256(vbool8::from_bitmask(mask)));
 #else
-    SIMD_CONSTRUCT ((mask>>i) & 1 ? values[i] : 0.0f);
+    SIMD_CONSTRUCT ((mask>>i) & 1 ? values[i] : 0);
 #endif
 }
 
@@ -4822,7 +4913,7 @@ OIIO_FORCEINLINE void vint8::load_mask (const vbool8& mask, const int *values) {
 #elif OIIO_SIMD_AVX >= 2
     m_simd = _mm256_maskload_epi32 (values, _mm256_castps_si256(mask));
 #else
-    SIMD_CONSTRUCT (mask[i] ? values[i] : 0.0f);
+    SIMD_CONSTRUCT (mask[i] ? values[i] : 0);
 #endif
 }
 
@@ -5175,14 +5266,19 @@ inline std::ostream& operator<< (std::ostream& cout, const vint8& val) {
 
 OIIO_FORCEINLINE void vint8::store (int *values, int n) const {
     DASSERT (n >= 0 && n <= elements);
-#if OIIO_SIMD_AVX >= 512 && OIIO_AVX512VL_ENABLED
+#if 0 && OIIO_SIMD_AVX >= 512 && OIIO_AVX512VL_ENABLED
+    // This SHOULD be fast, but in my benchmarks, it is slower!
+    // (At least on the AVX512 hardware I have, Xeon Silver 4110.)
+    // Re-test this periodically with new Intel hardware.
     _mm256_mask_storeu_epi32 (values, __mmask8(~(0xff << n)), m_simd);
 #elif OIIO_SIMD_SSE
     if (n <= 4) {
         lo().store (values, n);
-    } else if (n <= 8) {
+    } else if (n < 8) {
         lo().store (values);
         hi().store (values+4, n-4);
+    } else {
+        store (values);
     }
 #else
     for (int i = 0; i < n; ++i)
@@ -5418,6 +5514,17 @@ OIIO_FORCEINLINE vint8 andnot (const vint8& a, const vint8& b) {
 // Implementation had to be after the definition of vint8::Zero.
 OIIO_FORCEINLINE vbool8::vbool8 (const vint8& ival) {
     m_simd = (ival != vint8::Zero());
+}
+
+
+
+OIIO_FORCEINLINE vint8 safe_mod (const vint8& a, const vint8& b) {
+    // NO INTEGER MODULUS IN SSE!
+    SIMD_RETURN (vint8, b[i] ? a[i] % b[i] : 0);
+}
+
+OIIO_FORCEINLINE vint8 safe_mod (const vint8& a, int b) {
+    return b ? (a % b) : vint8::Zero();
 }
 
 
@@ -5941,7 +6048,10 @@ inline std::ostream& operator<< (std::ostream& cout, const vint16& val) {
 
 OIIO_FORCEINLINE void vint16::store (int *values, int n) const {
     DASSERT (n >= 0 && n <= elements);
-#if OIIO_SIMD_AVX >= 512
+#if 0 && OIIO_SIMD_AVX >= 512
+    // This SHOULD be fast, but in my benchmarks, it is slower!
+    // (At least on the AVX512 hardware I have, Xeon Silver 4110.)
+    // Re-test this periodically with new Intel hardware.
     _mm512_mask_storeu_epi32 (values, __mmask16(~(0xffff << n)), m_simd);
 #else
     if (n > 8) {
@@ -6189,6 +6299,17 @@ OIIO_FORCEINLINE vint16 andnot (const vint16& a, const vint16& b) {
 
 
 
+OIIO_FORCEINLINE vint16 safe_mod (const vint16& a, const vint16& b) {
+    // NO INTEGER MODULUS IN SSE!
+    SIMD_RETURN (vint16, b[i] ? a[i] % b[i] : 0);
+}
+
+OIIO_FORCEINLINE vint16 safe_mod (const vint16& a, int b) {
+    return b ? (a % b) : vint16::Zero();
+}
+
+
+
 
 
 //////////////////////////////////////////////////////////////////////
@@ -6229,12 +6350,10 @@ OIIO_FORCEINLINE void vfloat4::clear () {
 #endif
 }
 
-#if defined(ILMBASE_VERSION_MAJOR) && ILMBASE_VERSION_MAJOR >= 2
 OIIO_FORCEINLINE const vfloat4 & vfloat4::operator= (const Imath::V4f &v) {
     load ((const float *)&v);
     return *this;
 }
-#endif
 
 OIIO_FORCEINLINE const vfloat4 & vfloat4::operator= (const Imath::V3f &v) {
     load (v[0], v[1], v[2], 0.0f);
@@ -6290,7 +6409,9 @@ OIIO_FORCEINLINE void vfloat4::load (const float *values) {
 
 OIIO_FORCEINLINE void vfloat4::load (const float *values, int n) {
     DASSERT (n >= 0 && n <= elements);
-#if OIIO_SIMD_SSE
+#if OIIO_SIMD_AVX >= 512 && OIIO_AVX512VL_ENABLED
+    m_simd = _mm_maskz_loadu_ps (__mmask8(~(0xf << n)), values);
+#elif OIIO_SIMD_SSE
     switch (n) {
     case 1:
         m_simd = _mm_load_ss (values);
@@ -6422,7 +6543,12 @@ OIIO_FORCEINLINE void vfloat4::store (float *values) const {
 
 OIIO_FORCEINLINE void vfloat4::store (float *values, int n) const {
     DASSERT (n >= 0 && n <= 4);
-#if OIIO_SIMD_SSE
+#if 0 && OIIO_SIMD_AVX >= 512 && OIIO_AVX512VL_ENABLED
+    // This SHOULD be fast, but in my benchmarks, it is slower!
+    // (At least on the AVX512 hardware I have, Xeon Silver 4110.)
+    // Re-test this periodically with new Intel hardware.
+    _mm_mask_storeu_ps (values, __mmask8(~(0xf << n)), m_simd);
+#elif OIIO_SIMD_SSE
     switch (n) {
         case 1:
         _mm_store_ss (values, m_simd);
@@ -7482,7 +7608,7 @@ OIIO_FORCEINLINE vint4 AxBxCxDx (const vint4& a, const vint4& b,
 //////////////////////////////////////////////////////////////////////
 // vfloat3 implementation
 
-OIIO_FORCEINLINE vfloat3::vfloat3 (const vfloat3 &other) {
+OIIO_FORCEINLINE vfloat3::vfloat3 (const vfloat3 &other)  : vfloat4(other) {
 #if OIIO_SIMD_SSE || OIIO_SIMD_NEON
     m_simd = other.m_simd;
 #else
@@ -7736,6 +7862,39 @@ OIIO_FORCEINLINE vfloat3 matrix44::transformvT (const vfloat3 &V) const {
     return vfloat3(R);
 #endif
 }
+
+OIIO_FORCEINLINE vfloat4 operator* (const vfloat4 &V, const matrix44& M)
+{
+#if OIIO_SIMD_SSE
+    return shuffle<0>(V) * M[0] + shuffle<1>(V) * M[1] +
+           shuffle<2>(V) * M[2] + shuffle<3>(V) * M[3];
+#else
+    return vfloat4(V.V4f() * M.M44f());
+#endif
+}
+
+OIIO_FORCEINLINE vfloat4 operator* (const matrix44& M, const vfloat4 &V)
+{
+#if OIIO_SIMD_SSE >= 3
+    vfloat4 m0v = M[0] * V;  // [ M00*Vx, M01*Vy, M02*Vz, M03*Vw ]
+    vfloat4 m1v = M[1] * V;  // [ M10*Vx, M11*Vy, M12*Vz, M13*Vw ]
+    vfloat4 m2v = M[2] * V;  // [ M20*Vx, M21*Vy, M22*Vz, M23*Vw ]
+    vfloat4 m3v = M[3] * V;  // [ M30*Vx, M31*Vy, M32*Vz, M33*Vw ]
+    vfloat4 s01 = _mm_hadd_ps(m0v, m1v);
+       // [ M00*Vx + M01*Vy, M02*Vz + M03*Vw, M10*Vx + M11*Vy, M12*Vz + M13*Vw ]
+    vfloat4 s23 = _mm_hadd_ps(m2v, m3v);
+       // [ M20*Vx + M21*Vy, M22*Vz + M23*Vw, M30*Vx + M31*Vy, M32*Vz + M33*Vw ]
+    vfloat4 result = _mm_hadd_ps(s01, s23);
+       // [ M00*Vx + M01*Vy + M02*Vz + M03*Vw,
+       //   M10*Vx + M11*Vy + M12*Vz + M13*Vw,
+       //   M20*Vx + M21*Vy + M22*Vz + M23*Vw,
+       //   M30*Vx + M31*Vy + M32*Vz + M33*Vw ]
+    return result;
+#else
+    return vfloat4(dot(M[0], V), dot(M[1], V), dot(M[2], V), dot(M[3], V));
+#endif
+}
+
 
 OIIO_FORCEINLINE bool matrix44::operator== (const matrix44& m) const {
 #if OIIO_SIMD_SSE
@@ -8045,7 +8204,10 @@ OIIO_FORCEINLINE void vfloat8::load (const float *values) {
 
 OIIO_FORCEINLINE void vfloat8::load (const float *values, int n) {
     DASSERT (n >= 0 && n <= elements);
-#if OIIO_SIMD_AVX >= 512 && OIIO_AVX512VL_ENABLED
+#if 0 && OIIO_AVX512VL_ENABLED
+    // This SHOULD be fast, but in my benchmarks, it is slower!
+    // (At least on the AVX512 hardware I have, Xeon Silver 4110.)
+    // Re-test this periodically with new Intel hardware.
     m_simd = _mm256_maskz_loadu_ps ((~(0xff << n)), values);
 #elif OIIO_SIMD_SSE
     if (n > 4) {
@@ -8137,8 +8299,12 @@ OIIO_FORCEINLINE void vfloat8::store (float *values) const {
 
 OIIO_FORCEINLINE void vfloat8::store (float *values, int n) const {
     DASSERT (n >= 0 && n <= elements);
-    // FIXME: is this faster with AVX masked stores?
-#if OIIO_SIMD_SSE
+#if 0 && OIIO_AVX512VL_ENABLED
+    // This SHOULD be fast, but in my benchmarks, it is slower!
+    // (At least on the AVX512 hardware I have, Xeon Silver 4110.)
+    // Re-test this periodically with new Intel hardware.
+    _mm256_mask_storeu_ps (values,  __mmask8(~(0xff << n)), m_simd);
+#elif OIIO_SIMD_SSE
     if (n <= 4) {
         lo().store (values, n);
     } else if (n <= 8) {
@@ -8767,7 +8933,7 @@ OIIO_FORCEINLINE vfloat8 vfloat16::lo () const {
 }
 
 OIIO_FORCEINLINE vfloat8 vfloat16::hi () const {
-#if OIIO_SIMD_AVX >= 512
+#if OIIO_SIMD_AVX >= 512 && OIIO_AVX512DQ_ENABLED
     return _mm512_extractf32x8_ps (simd(), 1);
 #else
     return m_8[1];
@@ -8982,14 +9148,19 @@ OIIO_FORCEINLINE void vfloat16::store (float *values) const {
 OIIO_FORCEINLINE void vfloat16::store (float *values, int n) const {
     DASSERT (n >= 0 && n <= elements);
     // FIXME: is this faster with AVX masked stores?
-#if OIIO_SIMD_AVX >= 512
+#if 0 && OIIO_SIMD_AVX >= 512
+    // This SHOULD be fast, but in my benchmarks, it is slower!
+    // (At least on the AVX512 hardware I have, Xeon Silver 4110.)
+    // Re-test this periodically with new Intel hardware.
     _mm512_mask_storeu_ps (values, __mmask16(~(0xffff << n)), m_simd);
 #else
     if (n <= 8) {
         lo().store (values, n);
-    } else {
+    } else if (n < 16) {
         lo().store (values);
         hi().store (values+8, n-8);
+    } else {
+        store (values);
     }
 #endif
 }
@@ -9558,5 +9729,3 @@ OIIO_NAMESPACE_END
 #undef SIMD_CONSTRUCT_PAD
 #undef SIMD_RETURN
 #undef SIMD_RETURN_REDUCE
-
-#endif /* OIIO_SIMD_H */

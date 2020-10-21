@@ -1,17 +1,27 @@
+
+Testing color conversions:
+linear src=[0.000 0.000 0.000 1.000 ] [0.250 0.250 0.250 1.000 ] 
+[0.500 0.500 0.500 1.000 ] [1.000 1.000 1.000 1.000 ] 
+to srgb =[0.000 0.000 0.000 1.000 ] [0.537 0.537 0.537 1.000 ] 
+[0.735 0.735 0.735 1.000 ] [1.000 1.000 1.000 1.000 ] 
+back to linear =[0.000 0.000 0.000 1.000 ] [0.250 0.250 0.250 1.000 ] 
+[0.500 0.500 0.500 1.000 ] [1.000 1.000 1.000 1.000 ] 
+after *M =[0.000 0.000 0.100 1.000 ] [0.125 0.500 0.350 1.000 ] 
+[0.250 1.000 0.600 1.000 ] [0.500 2.000 1.100 1.000 ] 
 Stats for tahoe-small.tif:
-  min         =  (0.0, 0.003921568859368563, 0.007843137718737125)
-  max         =  (0.8784314393997192, 1.0, 1.0)
-  avg         =  (0.10193096846342087, 0.21669696271419525, 0.4254732131958008)
-  stddev      =  (0.13176831603050232, 0.23792722821235657, 0.3826749324798584)
-  nancount    =  (0, 0, 0)
-  infcount    =  (0, 0, 0)
-  finitecount =  (196608, 196608, 196608)
+  min         =  [0.0, 0.003921568859368563, 0.007843137718737125]
+  max         =  [0.8784314393997192, 1.0, 1.0]
+  avg         =  [0.10193096846342087, 0.21669696271419525, 0.4254732131958008]
+  stddev      =  [0.13176831603050232, 0.23792722821235657, 0.3826749324798584]
+  nancount    =  [0L, 0L, 0L]
+  infcount    =  [0L, 0L, 0L]
+  finitecount =  [196608L, 196608L, 196608L]
 Comparison: of flip.tif and flop.tif
   mean = 0.0068759
   rms  = 0.051175
   PSNR = 25.819
   max  = 0.45098
-  max @ (214, 88, 0, 0)
+  max @ (214L, 88L, 0L, 0L)
   warns 2034 fails 2034
 isConstantColor on pink image is (1 0.50196 0.50196)
 isConstantColor on checker is  None
@@ -19,6 +29,9 @@ Is cmul1.exr monochrome?  True
 Is cmul2.exr monochrome?  False
 Nonzero region is:  100 180 100 180 0 1 0 3
 SHA-1 of bsplinekernel.exr is: D5826B66A5313F9A32D42C5CF49C90EC4E7F84BF
+R hist:  (10000L, 0L, 0L, 0L)
+G hist:  (10000L, 0L, 0L, 0L)
+B hist:  (0L, 10000L, 0L, 0L)
 Done.
 Comparing "black.tif" and "ref/black.tif"
 PASS
@@ -92,6 +105,10 @@ Comparing "cmul2.exr" and "../../../../testsuite/oiiotool/ref/cmul2.exr"
 PASS
 Comparing "mad.exr" and "../../../../testsuite/oiiotool/ref/mad.exr"
 PASS
+Comparing "mad2.exr" and "ref/mad2.exr"
+PASS
+Comparing "mad3.exr" and "ref/mad3.exr"
+PASS
 Comparing "cpow1.exr" and "../../../../testsuite/oiiotool/ref/cpow1.exr"
 PASS
 Comparing "cpow2.exr" and "../../../../testsuite/oiiotool/ref/cpow2.exr"
@@ -106,9 +123,9 @@ Comparing "invert.tif" and "../../../../testsuite/oiiotool/ref/invert.tif"
 PASS
 Comparing "chsum.tif" and "../../../../testsuite/oiiotool/ref/chsum.tif"
 PASS
-Comparing "colormap-spectrum.tif" and "../../../../testsuite/oiiotool/ref/colormap-spectrum.tif"
+Comparing "colormap-inferno.tif" and "../../../../testsuite/oiiotool-color/ref/colormap-inferno.tif"
 PASS
-Comparing "colormap-custom.tif" and "../../../../testsuite/oiiotool/ref/colormap-custom.tif"
+Comparing "colormap-custom.tif" and "../../../../testsuite/oiiotool-color/ref/colormap-custom.tif"
 PASS
 Comparing "grid-clamped.tif" and "../../../../testsuite/oiiotool/ref/grid-clamped.tif"
 PASS
@@ -116,9 +133,17 @@ Comparing "rangecompress.tif" and "../../../../testsuite/oiiotool/ref/rangecompr
 PASS
 Comparing "rangeexpand.tif" and "../../../../testsuite/oiiotool/ref/rangeexpand.tif"
 PASS
+Comparing "contrast-stretch.tif" and "../../../../testsuite/oiiotool-color/ref/contrast-stretch.tif"
+PASS
+Comparing "contrast-shrink.tif" and "../../../../testsuite/oiiotool-color/ref/contrast-shrink.tif"
+PASS
+Comparing "contrast-sigmoid5.tif" and "../../../../testsuite/oiiotool-color/ref/contrast-sigmoid5.tif"
+PASS
 Comparing "resize.tif" and "../../../../testsuite/oiiotool-xform/ref/resize.tif"
 PASS
 Comparing "resample.tif" and "../../../../testsuite/oiiotool-xform/ref/resample.tif"
+PASS
+Comparing "fit.tif" and "../../../../testsuite/oiiotool-xform/ref/fit.tif"
 PASS
 Comparing "bsplinekernel.exr" and "../../../../testsuite/oiiotool/ref/bsplinekernel.exr"
 PASS

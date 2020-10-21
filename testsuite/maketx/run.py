@@ -1,17 +1,17 @@
 #!/usr/bin/env python 
 
 # location of oiio-images directory
-oiio_images = parent + "/oiio-images/"
+oiio_images = OIIO_TESTSUITE_IMAGEDIR
 
 # Just for simplicity, make a checkerboard with a solid alpha
 command += oiiotool (" --pattern checker 128x128 4 --ch R,G,B,=1.0"
             + " -d uint8 -o " + oiio_relpath("checker.tif") )
 
 # Basic test - recreate the grid texture
-command += maketx_command (oiio_images + "grid.tif", "grid.tx", showinfo=True)
+command += maketx_command (oiio_images + "/grid.tif", "grid.tx", showinfo=True)
 
 # Test --resize (to power of 2) with the grid, which is 1000x1000
-command += maketx_command (oiio_images + "grid.tif", "grid-resize.tx",
+command += maketx_command (oiio_images + "/grid.tif", "grid-resize.tx",
                            "--resize", showinfo=True)
 
 # Test -d to set output data type
@@ -92,9 +92,9 @@ command += maketx_command ("small.tif", "small.tx",
 
 # Test that the oiio:SHA-1 hash is stable, and that that changing filter and
 # using -hicomp result in different images and different hashes.
-command += maketx_command (oiio_images + "grid.tif", "grid-lanczos3.tx",
+command += maketx_command (oiio_images + "/grid.tif", "grid-lanczos3.tx",
                            extraargs = "-filter lanczos3")
-command += maketx_command (oiio_images + "grid.tif", "grid-lanczos3-hicomp.tx",
+command += maketx_command (oiio_images + "/grid.tif", "grid-lanczos3-hicomp.tx",
                            extraargs = "-filter lanczos3 -hicomp")
 command += info_command ("grid.tx",
                          extraargs="--metamatch oiio:SHA-1")
@@ -112,6 +112,13 @@ command += oiiotool (" --pattern constant:color=1,1,1 4x2 3 "
 command += maketx_command ("white.exr", "whiteenv.exr",
                            "--envlatl")
 command += oiiotool ("--stats whiteenv.exr")
+
+#Test --bumpslopes to export a 6 channels height map with gradients
+command += oiiotool (" --pattern noise 64x64 1"
+           + " -d half -o " + oiio_relpath("bump.exr"))
+command += maketx_command ("bump.exr", "bumpslope.exr",
+                           "--bumpslopes -d half", showinfo=True)
+
 
 outputs = [ "out.txt" ]
 

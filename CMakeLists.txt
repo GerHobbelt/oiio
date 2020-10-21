@@ -1,13 +1,13 @@
 cmake_minimum_required (VERSION 3.2.2)
 cmake_policy (SET CMP0048 NEW)  # Allow VERSION specifier in project()
 project (OpenImageIO
-         VERSION 1.8.9
+         VERSION 2.0.10
          LANGUAGES CXX C)
 set (PROJ_NAME OIIO)    # short name, caps
 string (TOLOWER ${PROJ_NAME} PROJ_NAME_LOWER)  # short name lower case
 set (PROJECT_VERSION_RELEASE_TYPE "")   # "dev", "betaX", "RCY", ""
 set (${PROJECT_NAME}_VERSION_RELEASE_TYPE ${PROJECT_VERSION_RELEASE_TYPE})
-set (PROJECT_COPYRIGHTYEARS "2008-2017")
+set (PROJECT_COPYRIGHTYEARS "2008-2019")
 set (PROJECT_AUTHORS "Larry Gritz, et al")
 set (PROJECT_URL "http://openimageio.org")
 
@@ -53,7 +53,7 @@ endif ()
 
 include (GNUInstallDirs)
 
-set (CMAKE_MODULE_PATH
+list(APPEND CMAKE_MODULE_PATH
      "${PROJECT_SOURCE_DIR}/src/cmake/modules"
      "${PROJECT_SOURCE_DIR}/src/cmake")
 
@@ -71,10 +71,19 @@ option (OIIO_BUILD_TESTS "Build the unit tests" ON)
 option (USE_OPENGL "Include OpenGL support" ON)
 option (USE_QT "Include Qt support" ON)
 option (USE_PYTHON "Build the Python bindings" ON)
-set (PYTHON_VERSION "2.7" CACHE STRING "Target version of python to find")
-option (PYLIB_INCLUDE_SONAME "If ON, soname/soversion will be set for Python module library")
-option (PYLIB_LIB_PREFIX "If ON, prefix the Python module with 'lib'")
+if (NOT "$ENV{OIIO_PYTHON_VERSION}" STREQUAL "")
+    set (PYTHON_VERSION "$ENV{OIIO_PYTHON_VERSION}" CACHE STRING "Target version of python to find")
+else()
+    set (PYTHON_VERSION "2.7" CACHE STRING "Target version of python to find")
+endif()
+option (PYLIB_INCLUDE_SONAME "If ON, soname/soversion will be set for Python module library" OFF)
+option (PYLIB_LIB_PREFIX "If ON, prefix the Python module with 'lib'" OFF)
+set (PYMODULE_SUFFIX "" CACHE STRING "Suffix to add to Python module init namespace")
 option (USE_FIELD3D "Use Field3D if found" ON)
+option (USE_OPENVDB "Use OpenVDB if found" ON)
+set (OPENVDB_ROOT_DIR "" CACHE STRING "Custom OpenVDB path")
+option (USE_TBB "Use Intel TBB if found" ON)
+set (TBB_ROOT_DIR "" CACHE STRING "Custom Intel TBB path")
 option (USE_FFMPEG "Use FFmpeg if found" ON)
 set (JPEG_PATH "" CACHE STRING "Custom JPEG path")
 option (USE_JPEGTURBO "Use JPEG-Turbo if found" ON)
@@ -82,10 +91,10 @@ set (JPEGTURBO_PATH "" CACHE STRING "Custom JPEG-Turbo path")
 option (USE_OPENJPEG "Use OpenJpeg if found" ON)
 option (USE_OCIO "Use OpenColorIO for color management if found" ON)
 option (USE_OPENCV "Use OpenCV if found" ON)
-option (USE_OPENSSL "Use OpenSSL if found (for faster SHA-1)")
 option (USE_FREETYPE "Use Freetype if found" ON)
 option (USE_GIF "Use GIF if found" ON)
 option (USE_PTEX "Use PTex if found" ON)
+option (USE_WEBP "Use WebP if found" ON)
 option (USE_LIBRAW "Use LibRaw if found" ON)
 set (LIBRAW_PATH "" CACHE STRING "Custom LibRaw path")
 option (OIIO_THREAD_ALLOW_DCLP "OIIO threads may use DCLP for speed" ON)
@@ -99,7 +108,15 @@ option (USE_DICOM "Use DICOM if DCMTK is found" ON)
 set (TEX_BATCH_SIZE "" CACHE STRING "Force TextureSystem SIMD batch size (e.g. 16)")
 set (SOVERSION ${OIIO_VERSION_MAJOR}.${OIIO_VERSION_MINOR}
      CACHE STRING "Set the SO version in the SO name of the output library")
-option (BUILD_OIIOUTIL_ONLY "If ON, will build *only* libOpenImageIO_Util")
+option (BUILD_OIIOUTIL_ONLY "If ON, will build *only* libOpenImageIO_Util" OFF)
+option (BUILD_DOCS "If ON, build documentation and man pages." ON)
+option (INSTALL_DOCS "If ON, install documentation and man pages." ON)
+option (INSTALL_FONTS "If ON, install default fonts" ON)
+option (INSTALL_CMAKE_HELPER "If On, install FindOpenImageIO.cmake" ON)
+set (PLUGIN_SEARCH_PATH "" CACHE STRING "Default plugin search path")
+
+set(OIIO_TESTSUITE_IMAGEDIR "${PROJECT_SOURCE_DIR}/.." CACHE STRING
+    "Location of oiio-images, openexr-images, libtiffpic, etc.." )
 
 if (NOT OIIO_THREAD_ALLOW_DCLP)
     add_definitions ("-DOIIO_THREAD_ALLOW_DCLP=0")
@@ -136,6 +153,9 @@ include (CTest)
 
 # Tell CMake to process the sub-directories
 add_subdirectory (src/libutil)
+
+find_or_download_robin_map ()
+
 
 # Add IO plugin directories -- if we are embedding plugins, we need to visit
 # these directories BEFORE the OpenImageIO target is established (in
@@ -185,15 +205,30 @@ if (NOT EMBEDPLUGINS AND NOT BUILD_OIIOUTIL_ONLY)
 endif ()
 
 if (USE_PYTHON AND NOT BUILD_OIIOUTIL_ONLY)
+    find_or_download_pybind11 ()
     add_subdirectory (src/python)
 endif ()
 
 add_subdirectory (src/include)
-if (INSTALL_DOCS)
+if (BUILD_DOCS)
     add_subdirectory (src/doc)
 endif ()
 add_subdirectory (src/fonts)
 add_subdirectory (src/nuke)
+
+# install pkgconfig file
+IF ( NOT MSVC )
+   configure_file(src/build-scripts/OpenImageIO.pc.in "${CMAKE_BINARY_DIR}/OpenImageIO.pc" @ONLY) 
+   install (FILES "${CMAKE_BINARY_DIR}/OpenImageIO.pc"
+            DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
+            COMPONENT developer)
+ENDIF()
+
+# Oddball: install the FindOpenImageIO.cmake file
+install (FILES src/cmake/modules/FindOpenImageIO.cmake
+         DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/cmake/Modules
+         COMPONENT cmake)
+
 
 
 #########################################################################
@@ -226,22 +261,14 @@ add_custom_command (OUTPUT "${CMAKE_BINARY_DIR}/testsuite/runtest.py"
 add_custom_target ( CopyFiles ALL DEPENDS "${CMAKE_BINARY_DIR}/testsuite/runtest.py" )
 
 # Basic tests that apply even to continuous integration tests:
-oiio_add_tests (
-                gpsread misnamed-file nonwhole-tiles
-                oiiotool oiiotool-attribs
-                oiiotool-composite oiiotool-copy
-                oiiotool-deep oiiotool-fixnan
-                oiiotool-pattern oiiotool-readerror
-                oiiotool-subimage oiiotool-text oiiotool-xform
+#   Tests that require oiio-images:
+oiio_add_tests (gpsread
+                oiiotool oiiotool-attribs oiiotool-readerror oiiotool-xform
+                oiiotool-fixnan ## maketx & oiiotool-maketx depend on this
                 maketx oiiotool-maketx
-                diff
-                dither dup-channels
-                dpx ico iff
-                jpeg-corrupt-exif
-                png
-                psd psd-colormodes
-                rla sgi
-                rational
+                misnamed-file
+                missingcolor
+                dpx ico iff png psd rla sgi zfile
                 texture-interp-bicubic
                 texture-blurtube
                 texture-crop texture-cropover
@@ -253,7 +280,31 @@ oiio_add_tests (
                 texture-width0blur
                 texture-fat texture-skinny texture-wrapfill
                 texture-missing texture-res texture-udim texture-udim2
+                IMAGEDIR oiio-images
               )
+
+#   Tests that require openexr-images:
+oiio_add_tests (oiiotool-deep
+                IMAGEDIR openexr-images
+              )
+
+#   Remaining freestanding tests:
+oiio_add_tests (nonwhole-tiles
+                oiiotool-composite oiiotool-copy
+                oiiotool-pattern
+                oiiotool-subimage oiiotool-text
+                diff
+                dither dup-channels
+                jpeg-corrupt
+                null psd-colormodes
+                rational
+              )
+
+# Travis + old libjpeg seems to not catch an error in this test, skip it
+# for that case.
+if (JPEG_TURBO_FOUND OR NOT DEFINED ENV{TRAVIS})
+    oiio_add_tests (jpeg-corrupt-header)
+endif()
 
 # Add tests that require the Python bindings if we built the Python
 # bindings. This is mostly the test that are specifically about testing
@@ -263,16 +314,22 @@ oiio_add_tests (
 # We also exclude these tests if this is a sanitizer build on Linux,
 # because the Python interpreter itself won't be linked with the right asan
 # libraries to run correctly.
-if (USE_PYTHON AND boost_PYTHON_FOUND AND NOT BUILD_OIIOUTIL_ONLY)
+if (USE_PYTHON AND NOT BUILD_OIIOUTIL_ONLY)
     if (NOT SANITIZE_ON_LINUX)
         oiio_add_tests (
-                python-typedesc python-imagespec python-roi python-deep
+                python-typedesc python-imagespec
+                python-roi python-deep python-colorconfig
                 python-imageinput python-imageoutput
                 python-imagebuf python-imagebufalgo
+                IMAGEDIR oiio-images
             )
     endif ()
 endif ()
 
+# Add tests that require OCIO
+if (USE_OCIO AND OCIO_FOUND)
+    oiio_add_tests (oiiotool-color)
+endif ()
 
 # Advanced tests that are done by hand and for releases:
 # FIXME -- at some point, try to fix these or provide new ref images
@@ -294,7 +351,7 @@ oiio_add_tests (bmp
 
 oiio_add_tests (tiff-suite tiff-depths tiff-misc
     IMAGEDIR libtiffpic
-    URL http://www.remotesensing.org/libtiff/images.html)
+    URL http://www.simplesystems.org/libtiff/images.html)
 
 oiio_add_tests (openexr-suite openexr-multires openexr-chroma openexr-v2 perchannel
     IMAGEDIR openexr-images
@@ -329,20 +386,18 @@ oiio_add_tests (fits
 
 oiio_add_tests (webp
     FOUNDVAR WEBP_FOUND
-    IMAGEDIR webp-images
-    URL http://code.google.com/speed/webp/gallery.html)
+    IMAGEDIR oiio-images/webp
+    URL "Recent checkout of oiio-images")
 
 oiio_add_tests (ptex
     FOUNDVAR PTEX_FOUND)
 
-
-if (NOT DEFINED ENV{TRAVIS})
-
 oiio_add_tests (texture-field3d field3d
     FOUNDVAR FIELD3D_FOUND)
 
-endif ()
 
+oiio_add_tests (openvdb
+    FOUNDVAR OPENVDB_FOUND)
 
 if (SPI_TESTS)
   oiio_add_tests (oiiotool-spi
@@ -366,8 +421,8 @@ set (CPACK_PACKAGE_DESCRIPTION_FILE "${PROJECT_SOURCE_DIR}/src/doc/Description.t
 set (CPACK_PACKAGE_FILE_NAME ${PROJECT_NAME}-${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}-${platform})
 #SET (CPACK_PACKAGE_INSTALL_DIRECTORY "${PROJECT_SOURCE_DIR}")
 file (MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/cpack")
-file (COPY "${PROJECT_SOURCE_DIR}/LICENSE" DESTINATION "${CMAKE_BINARY_DIR}/cpack")
-file (RENAME "${CMAKE_BINARY_DIR}/cpack/LICENSE" "${CMAKE_BINARY_DIR}/cpack/License.txt")
+file (COPY "${PROJECT_SOURCE_DIR}/LICENSE.md" DESTINATION "${CMAKE_BINARY_DIR}/cpack")
+file (RENAME "${CMAKE_BINARY_DIR}/cpack/LICENSE.md" "${CMAKE_BINARY_DIR}/cpack/License.txt")
 set (CPACK_RESOURCE_FILE_LICENSE "${CMAKE_BINARY_DIR}/cpack/License.txt")
 file (COPY "${PROJECT_SOURCE_DIR}/README.md" DESTINATION "${CMAKE_BINARY_DIR}/cpack")
 set (CPACK_RESOURCE_FILE_README "${CMAKE_BINARY_DIR}/cpack/README.md")

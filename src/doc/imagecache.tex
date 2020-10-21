@@ -384,17 +384,20 @@ few for each file you aren't getting any helpful additional information,
 this can cut down on the clutter and the runtime.
 \apiend
 
-\apiitem{string options}
-This catch-all is simply a comma-separated list of {\cf name=value}
-settings of named options.  For example,
-\begin{code}
-        ic->attribute ("options", "max_memory_MB=512.0,autotile=1");
-\end{code}
-\apiend
-
 \apiitem{int max_open_files}
 The maximum number of file handles that the image cache will
 hold open simultaneously.  (Default = 100)
+\apiend
+
+\apiitem{string options}
+This catch-all is simply a comma-separated list of {\cf name=value}
+settings of named options, which will be parsed and individually set.
+\begin{code}
+        ic->attribute ("options", "max_memory_MB=512.0,autotile=1");
+\end{code}
+Note that if an option takes a string value that must itself contain a
+comma, it is permissible to enclose the value in either single ({\cf ' '})
+or double ({\cf " "}) quotes.
 \apiend
 
 \apiitem{int total_files {\rm ~(read only)}}
@@ -654,7 +657,7 @@ texture) will fail this query (return false).
 \item[\rm \kw{stat:tilesread}] Number of tiles read from this file ({\cf int64}).
 
 \item[\rm \kw{stat:bytesread}] Number of bytes of uncompressed pixel data read
-from this file ({cf int64}).
+from this file ({\cf int64}).
 
 \item[\rm \kw{stat:redundant_tiles}] Number of times a tile was read, where
 the same tile had been rad before. ({\cf int64}).
@@ -866,6 +869,16 @@ pixels until they release the tiles they are holding.  If force is true,
 everything will be invalidated, no matter how wasteful it is, but if
 force is false, in actuality files will only be invalidated if their
 modification times have been changed since they were first opened.
+\apiend
+
+\apiitem{void {\ce close} (ustring filename) \\
+void {\ce close_all} ()}
+\NEW % 1.9
+Close any open file handles associated with a named file, or for all
+files, but do not invalidate any image spec information or pixels
+associated with the files.  A client might do this in order to
+release OS file handle resources, or to make it safe for other
+processes to modify cached files.
 \apiend
 
 \subsection{Seeding the cache}
