@@ -27,5 +27,23 @@ if __name__ == "__main__":
 
         shutil.copy(src + '/custom/houdini/dsolib/OpenImageIO_sidefx.lib', lib_dst + "/OpenImageIO.lib")
         shutil.copy(src + '/custom/houdini/dsolib/OpenImageIO_Util_sidefx.lib', lib_dst + "/OpenImageIO_Util.lib")
+    else:
 
-        print ("Completed install")
+        # Remove existing build
+        if os.path.exists(dst):
+            print(" - Removing existing build")
+            shutil.rmtree(dst, ignore_errors=True)
+
+
+        print ("Starting install")
+
+        shutil.copytree(src + "/toolkit/include/OpenImageIO", inc_dst + "/OpenImageIO")
+        
+        os.mkdir(lib_dst)
+
+        shutil.copy(src + '/dsolib/libOpenImageIO_sidefx.so.2.0.10', lib_dst + "/libOpenImageIO.so")
+        shutil.copy(src + '/dsolib/libOpenImageIO_Util_sidefx.so.2.0.10', lib_dst + "/libOpenImageIO_Util.so")
+
+
+
+    print ("Completed install")
