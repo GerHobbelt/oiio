@@ -1,6 +1,6 @@
 name = 'oiio'
 
-version = '2.0.10-houdini-18.5.351-ta.1.0.0'
+version = '2.0.10-houdini-18.5.462-ta.1.0.0'
 
 authors = [
     'benjamin.skinner',
@@ -18,7 +18,7 @@ variants = [
 
 private_build_requires = [
     'python',
-    'houdini-18.5.351',
+    'houdini-18.5.462',
 ]
 
 build_command = "python {root}/rez_build.py"
