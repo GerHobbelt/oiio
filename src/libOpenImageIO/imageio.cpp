@@ -320,6 +320,10 @@ attribute(string_view name, TypeDesc type, const void* val)
         tiff_multithread = *(const int*)val;
         return true;
     }
+    if (name == "use_tbb" && type == TypeInt) {
+        oiio_use_tbb = *(const int*)val;
+        return true;
+    }
     if (name == "debug" && type == TypeInt) {
         oiio_print_debug = *(const int*)val;
         return true;
@@ -405,6 +409,10 @@ getattribute(string_view name, TypeDesc type, void* val)
     }
     if (name == "tiff:multithread" && type == TypeInt) {
         *(int*)val = tiff_multithread;
+        return true;
+    }
+    if (name == "use_tbb" && type == TypeInt) {
+        *(int*)val = oiio_use_tbb;
         return true;
     }
     if (name == "debug" && type == TypeInt) {
@@ -746,7 +754,7 @@ parallel_convert_image(int nchannels, int width, int height, int depth,
 
     int blocksize = std::max(1, height / nthreads);
     parallel_for_chunked(
-        0, height, blocksize, [=](int /*id*/, int64_t ybegin, int64_t yend) {
+        0, height, blocksize, [=](int64_t ybegin, int64_t yend) {
             convert_image(nchannels, width, yend - ybegin, depth,
                           (const char*)src + src_ystride * ybegin, src_type,
                           src_xstride, src_ystride, src_zstride,

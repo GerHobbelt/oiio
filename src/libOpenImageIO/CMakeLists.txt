@@ -140,8 +140,9 @@ target_link_libraries (OpenImageIO
             ${OpenCV_LIBRARIES}
             ${SANITIZE_LIBRARIES}
             ${format_plugin_libs} # Add all the target link libraries from the plugins
-            $<$<BOOL:${OpenColorIO_FOUND}>:OpenColorIO::OpenColorIO>
-            $<$<BOOL:${pugixml_FOUND}>:pugixml::pugixml>
+            $<$<TARGET_EXISTS:OpenColorIO::OpenColorIO>:OpenColorIO::OpenColorIO>
+            $<$<TARGET_EXISTS:pugixml::pugixml>:pugixml::pugixml>
+            $<$<TARGET_EXISTS:TBB::tbb>:TBB::tbb>
             ${BZIP2_LIBRARIES}
             ZLIB::ZLIB
             ${Boost_LIBRARIES}
