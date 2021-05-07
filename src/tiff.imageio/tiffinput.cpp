@@ -610,11 +610,23 @@ static CompressionCode tiff_compressions[] = {
     { COMPRESSION_SGILOG,        "sgilog" },      // SGI log luminance RLE
     { COMPRESSION_SGILOG24,      "sgilog24" },    // SGI log 24bit
     { COMPRESSION_JP2000,        "jp2000" },      // Leadtools JPEG2000
-#if defined(TIFF_VERSION_BIG) && TIFFLIB_VERSION >= 20120922
     // Others supported in more recent TIFF library versions.
+#if OIIO_LIBTIFF_VERSION >= 40000
+    { COMPRESSION_LZMA,          "lzma" },        // LZMA2
+#endif
+#if OIIO_LIBTIFF_VERSION >= 40003
     { COMPRESSION_T85,           "T85" },         // TIFF/FX T.85 JBIG
     { COMPRESSION_T43,           "T43" },         // TIFF/FX T.43 color layered JBIG
-    { COMPRESSION_LZMA,          "lzma" },        // LZMA2
+#endif
+#if OIIO_LIBTIFF_VERSION >= 40010
+    { COMPRESSION_ZSTD,          "zstd" },        // Zstd
+    { COMPRESSION_WEBP,          "webp" },        // WebP
+#endif
+#if OIIO_LIBTIFF_VERSION >= 40302
+    { COMPRESSION_LERC,          "lerc" },        // LERC
+#endif
+#if OIIO_LIBTIFF_VERSION >= 40300
+    { COMPRESSION_JXL,           "jpegxl" },      // JPEGXL
 #endif
     { -1, NULL }
 };
