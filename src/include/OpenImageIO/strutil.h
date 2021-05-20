@@ -48,7 +48,7 @@
 #    pragma GCC diagnostic pop
 #endif
 
-// Allow client software to know if this version of OIIO as Strutil::sprintf
+// Allow client software to know if this version of OIIO has Strutil::sprintf
 #define OIIO_HAS_SPRINTF 1
 
 // Allow client software to know if this version of OIIO has Strutil::format
