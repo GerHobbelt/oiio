@@ -25,7 +25,7 @@ else ()
     add_definitions (-DUSE_GLEW)
     set_target_properties (txReader PROPERTIES
         PREFIX ""
-        COMPILE_FLAGS "-fPIC -msse")
+        COMPILE_FLAGS "-fPIC -msse -std=gnu++1y -Wno-error=unused-variable")
 endif ()
 
 install (TARGETS txReader
