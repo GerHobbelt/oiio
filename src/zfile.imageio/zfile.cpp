@@ -43,7 +43,7 @@ open_gz(const std::string& filename, const char* mode)
     std::wstring wpath = Strutil::utf8_to_utf16(filename);
     gzFile gz          = gzopen_w(wpath.c_str(), mode);
 #else
-    gzFile gz = gzopen(filename.c_str(), mode);
+    gzFile gz = zng_gzopen(filename.c_str(), mode);
 #endif
     return gz;
 }
@@ -151,10 +151,10 @@ ZfileInput::valid_file(const std::string& filename) const
         return false;
 
     ZfileHeader header;
-    gzread(gz, &header, sizeof(header));
+	zng_gzread(gz, &header, sizeof(header));
     bool ok = (header.magic == zfile_magic
                || header.magic == zfile_magic_endian);
-    gzclose(gz);
+	zng_gzclose(gz);
     return ok;
 }
 
@@ -172,7 +172,7 @@ ZfileInput::open(const std::string& name, ImageSpec& newspec)
 
     ZfileHeader header;
     static_assert(sizeof(header) == 136, "header size does not match");
-    gzread(m_gz, &header, sizeof(header));
+	zng_gzread(m_gz, &header, sizeof(header));
 
     if (header.magic != zfile_magic && header.magic != zfile_magic_endian) {
         errorf("Not a valid Zfile");
@@ -209,7 +209,7 @@ bool
 ZfileInput::close()
 {
     if (m_gz) {
-        gzclose(m_gz);
+		zng_gzclose(m_gz);
         m_gz = 0;
     }
 
@@ -239,7 +239,7 @@ ZfileInput::read_native_scanline(int subimage, int miplevel, int y, int /*z*/,
     }
     while (m_next_scanline <= y) {
         // Keep reading until we're read the scanline we really need
-        gzread(m_gz, data, m_spec.width * sizeof(float));
+		zng_gzread(m_gz, data, m_spec.width * sizeof(float));
         ++m_next_scanline;
     }
     if (m_swab)
@@ -318,7 +318,7 @@ ZfileOutput::open(const std::string& name, const ImageSpec& userspec,
 
     bool b = 0;
     if (m_gz) {
-        b = gzwrite(m_gz, &header, sizeof(header));
+        b = zng_gzwrite(m_gz, &header, sizeof(header));
     } else {
         b = fwrite(&header, sizeof(header), 1, m_file);
     }
@@ -350,7 +350,7 @@ ZfileOutput::close()
     }
 
     if (m_gz) {
-        gzclose(m_gz);
+		zng_gzclose(m_gz);
         m_gz = 0;
     }
     if (m_file) {
@@ -379,7 +379,7 @@ ZfileOutput::write_scanline(int y, int /*z*/, TypeDesc format, const void* data,
     }
 
     if (m_gz)
-        gzwrite(m_gz, data, m_spec.width * sizeof(float));
+		zng_gzwrite(m_gz, data, m_spec.width * sizeof(float));
     else {
         size_t b = fwrite(data, sizeof(float), m_spec.width, m_file);
         if (b != (size_t)m_spec.width) {

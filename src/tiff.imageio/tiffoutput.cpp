@@ -1174,7 +1174,7 @@ TIFFOutput::write_scanlines(int ybegin, int yend, int z, TypeDesc format,
     memcpy(scratch.get(), data, scratch_bytes);
     data                    = scratch.get();
     imagesize_t strip_bytes = m_spec.scanline_bytes(true) * m_rowsperstrip;
-    size_t cbound           = compressBound((uLong)strip_bytes);
+    size_t cbound           = zng_compressBound((uLong)strip_bytes);
     std::unique_ptr<char[]> compressed_scratch(new char[cbound * nstrips]);
     unsigned long* compressed_len;
     OIIO_ALLOCATE_STACK_OR_HEAP(compressed_len, unsigned long, nstrips);
@@ -1387,7 +1387,7 @@ TIFFOutput::write_tiles(int xbegin, int xend, int ybegin, int yend, int zbegin,
     // Allocate various temporary space we need
     stride_t tile_bytes = (stride_t)m_spec.tile_bytes(true);
     std::vector<std::vector<unsigned char>> tilebuf(ntiles);
-    size_t cbound = compressBound((uLong)tile_bytes);
+    size_t cbound = zng_compressBound((uLong)tile_bytes);
     std::unique_ptr<char[]> compressed_scratch(new char[ntiles * cbound]);
     unsigned long* compressed_len = OIIO_ALLOCA(unsigned long, ntiles);
 

@@ -1826,7 +1826,7 @@ TIFFInput::read_native_scanlines(int subimage, int miplevel, int ybegin,
     int stripvals = m_spec.width * stripchans
                     * m_rowsperstrip;  // values in a strip
     imagesize_t strip_bytes = stripvals * m_spec.format.size();
-    size_t cbound           = compressBound((uLong)strip_bytes);
+    size_t cbound           = zng_compressBound((uLong)strip_bytes);
     std::unique_ptr<char[]> compressed_scratch;
     std::unique_ptr<char[]> separate_tmp(
         m_separate ? new char[strip_bytes * nstrips * planes] : nullptr);
@@ -2097,7 +2097,7 @@ TIFFInput::read_native_tiles(int subimage, int miplevel, int xbegin, int xend,
     stride_t zstride       = (yend - ybegin) * ystride;
     imagesize_t tile_bytes = m_spec.tile_bytes(true);
     int tilevals           = m_spec.tile_pixels() * m_spec.nchannels;
-    size_t cbound          = compressBound((uLong)tile_bytes);
+    size_t cbound          = zng_compressBound((uLong)tile_bytes);
     std::unique_ptr<char[]> compressed_scratch(new char[cbound * ntiles]);
     std::unique_ptr<char[]> scratch(new char[tile_bytes * ntiles]);
     task_set tasks(pool);
