@@ -62,7 +62,11 @@ private:
         m_fd                = NULL;
         m_copy_coeffs       = NULL;
         m_copy_decompressor = NULL;
-    }
+		m_dither = 0;
+		m_next_scanline = 0;
+		memset(&m_cinfo, 0, sizeof(m_cinfo));
+		memset(&c_jerr, 0, sizeof(c_jerr));
+	}
 
     void set_subsampling(const int components[])
     {
