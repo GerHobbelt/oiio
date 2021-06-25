@@ -1,6 +1,6 @@
 name = "oiio"
 
-version = "1.5.24.x.1.0.0"
+version = "1.5.24.x.1.0.1"
 
 authors = [
     "Larry Gritz and Co."
@@ -17,7 +17,15 @@ description = \
 requires = [
 ]
 
-build_command = "cd {root};make clean;make INSTALLDIR={install_path} USE_NUKE=1 NUKE_HOME=/usr/local/Nuke12.2v3 NUKE_VERSION=12.2"
+variants = [
+    ["nuke-11.3v6"],
+    ["nuke-12.2v3"]
+]
+
+# this is a pretty ugly way of building all the different variants but it works
+build_command = "cd {root};make clean;" \
+                "[ {variant_index}==0 ] && make INSTALLDIR={install_path} USE_NUKE=1 NUKE_HOME=/usr/local/Nuke11.3v6 NUKE_VERSION=11.3 " \
+                " || make INSTALLDIR={install_path} USE_NUKE=1 NUKE_HOME=/usr/local/Nuke12.2v3 NUKE_VERSION=12.2"
 
 uuid = "oiio"
 
