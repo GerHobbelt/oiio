@@ -1,6 +1,6 @@
 name = "oiio"
 
-version = "1.5.24.x.1.0.2"
+version = "1.5.24.x.1.0.3"
 
 authors = [
     "Larry Gritz and Co."
@@ -28,7 +28,7 @@ variants = [
 # libraries
 build_command = "cd {root};make clean;" \
                 "export install_path=`echo {install_path} | sed 's/\/mnt\/oracle\/la//g'`;" \
-                "[ {variant_index}==0 ] && make INSTALLDIR=$install_path USE_NUKE=1 NUKE_HOME=/usr/local/Nuke11.3v6 NUKE_VERSION=11.3 " \
+                "[ {variant_index} == 0 ] && make INSTALLDIR=$install_path USE_NUKE=1 NUKE_HOME=/usr/local/Nuke11.3v6 NUKE_VERSION=11.3 " \
                 " || make INSTALLDIR=$install_path USE_NUKE=1 NUKE_HOME=/usr/local/Nuke12.2v3 NUKE_VERSION=12.2"
 
 
