@@ -1310,6 +1310,9 @@ std::string OIIO_API computePixelHashSHA1 (const ImageBuf &src,
 /// values `[min,max]`. Values < `min` count for bin 0, values > `max` count
 /// for bin `nbins-1`. If `ignore_empty` is `true`, no counts will be
 /// incremented for any pixels whose value is 0 in all channels.
+///
+/// If there was an error, the returned vector will be empty, and an error
+/// message will be retrievable from src.geterror().
 OIIO_API
 std::vector<imagesize_t> histogram (const ImageBuf &src, int channel=0,
                                     int bins=256, float min=0.0f, float max=1.0f,
@@ -1347,6 +1350,9 @@ bool OIIO_API histogram_draw (ImageBuf &dst,
 /// don't scale with the width, and are therefore probably less useful
 /// in most cases.
 ///
+/// The ImageBuf that is returned indicates if there was an error, in which
+/// case return.has_error() will be true and return.geterror() can be used
+/// to retrieve an error message.
 ImageBuf OIIO_API make_kernel (string_view name, float width, float height,
                                float depth = 1.0f, bool normalize = true);
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -2034,6 +2040,14 @@ enum MakeTextureMode {
 ///                           ("height"), a normal map ("normal"), or
 ///                           automatically determine it from the number
 ///                           of channels ("auto", the default).
+///    - `maketx:uvslopes_scale` (float) :
+///                           If nonzero, when used in MakeTxBumpWithSlopes
+///                           mode, this computes derivatives for the
+///                           bumpslopes data in UV space rather than in
+///                           texel space, and divides them by this scale
+///                           factor. The default is 0, disabling the
+///                           feature. If you use this feature, a suggested
+///                           value is 256.
 ///
 /// @param  mode
 ///    Describes what type of texture file we are creating and may
