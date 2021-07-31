@@ -34,9 +34,10 @@ NEW or CHANGED MINIMUM dependencies since the last major release are **bold**.
      * NumPy
  * If you want support for camera "RAW" formats:
      * LibRaw >= 0.15 (tested 0.15 - 0.20; LibRaw >= 0.18 is necessary for
-       ACES support and much better recognition of camera metadata)
+       ACES support and much better recognition of camera metadata; if
+       building with C++17 or higher, LibRaw >= 0.20 is necessary)
  * If you want support for a wide variety of video formats:
-     * ffmpeg >= 2.6 (tested through 4.4)
+     * **ffmpeg >= 3.0** (tested through 4.4)
  * If you want support for jpeg 2000 images:
      * **OpenJpeg >= 2.0** (tested through 2.4)
  * If you want support for Field3D files:
@@ -64,6 +65,8 @@ NEW or CHANGED MINIMUM dependencies since the last major release are **bold**.
      * WebP >= 0.6.1 (tested through 1.1.0)
  * If you want support for OpenColorIO color transformations:
      * OpenColorIO 1.1 or 2.0
+ * If you want support for Ptex:
+     * Ptex >= 2.3.1 (probably works for older; tested through 2.4.0)
  * We use PugiXML for XML parsing. There is a version embedded in the OIIO
    tree, but if you want to use an external, system-installed version (as
    may be required by some software distrbutions with policies against

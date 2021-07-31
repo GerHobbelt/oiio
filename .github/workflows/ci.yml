@@ -316,6 +316,7 @@ jobs:
       OPENCOLORIO_VERSION: v2.0.0
       OPENEXR_VERSION: v3.0.3
       PUGIXML_VERSION: v1.11.4
+      PTEX_VERSION: v2.4.0
       PYBIND11_VERSION: v2.6.2
       PYTHON_VERSION: 3.8
       WEBP_VERSION: v1.1.0
@@ -371,6 +372,7 @@ jobs:
       OPENCOLORIO_VERSION: master
       OPENEXR_VERSION: master
       PUGIXML_VERSION: master
+      PTEX_VERSION: main
       PYBIND11_VERSION: v2.6.2
       # PYBIND11_VERSION: master
       PYTHON_VERSION: 3.8
@@ -428,6 +430,7 @@ jobs:
       USE_OPENCV: 0
       EMBEDPLUGINS: 0
       OPENEXR_VERSION: v2.2.1
+      PTEX_VERSION: v2.3.1
       PYBIND11_VERSION: v2.4.2
       WEBP_VERSION: v1.0.0
       MY_CMAKE_FLAGS: -DBUILD_FMT_VERSION=6.1.2
@@ -631,12 +634,12 @@ jobs:
             build/*/testsuite/*/*.*
             build/*/CMake*.{txt,log}
 
-  linux-clang:
+  linux-clang10-cpp14:
     # Test compiling with clang on Linux.
     name: "Linux clang10: clang10 C++14 avx2 exr2.5"
     runs-on: ubuntu-18.04
     container:
-      image: aswf/ci-osl:2021
+      image: aswf/ci-osl:2021-clang10
     env:
       CXX: clang++
       CMAKE_CXX_STANDARD: 14
@@ -664,6 +667,57 @@ jobs:
             src/build-scripts/ci-startup.bash
       - name: Dependencies
         run: |
+            src/build-scripts/gh-installdeps.bash
+      - name: Build
+        run: |
+            src/build-scripts/ci-build.bash
+      - name: Testsuite
+        run: |
+            src/build-scripts/ci-test.bash
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: ${{ github.job }}
+          path: |
+            build/*/testsuite/*/*.*
+            build/*/CMake*.{txt,log}
+
+  linux-clang11-cpp17:
+    # Test compiling with clang  and C++17 on Linux.
+    name: "Linux clang11: clang11 C++17 avx2 exr3.0"
+    runs-on: ubuntu-18.04
+    container:
+      image: aswf/ci-osl:2021-clang11
+    env:
+      CXX: clang++
+      CMAKE_CXX_STANDARD: 17
+      PYTHON_VERSION: 3.7
+      USE_SIMD: avx2,f16c
+      PYBIND11_VERSION: v2.6.1
+      OPENCOLORIO_VERSION: v2.0.1
+      OPENEXR_VERSION: v3.0.4
+      # Pick an OCIO commit that includes a warning fix we need for clang
+    steps:
+      - uses: actions/checkout@v2
+      - name: Prepare ccache timestamp
+        id: ccache_cache_keys
+        run: |
+          echo "::set-output name=date::`date -u +'%Y-%m-%dT%H:%M:%SZ'`"
+      - name: ccache
+        id: ccache
+        uses: actions/cache@v2
+        with:
+          path: /tmp/ccache
+          key: ${{ github.job }}-${{ steps.ccache_cache_keys.outputs.date }}
+          restore-keys: |
+            ${{ github.job }}-
+      - name: Build setup
+        run: |
+            src/build-scripts/ci-startup.bash
+      - name: Dependencies
+        run: |
+            sudo rm -rf /usr/local/include/OpenEXR
+            sudo rm -rf /usr/local/lib64/cmake/{IlmBase,OpenEXR}
             src/build-scripts/gh-installdeps.bash
       - name: Build
         run: |

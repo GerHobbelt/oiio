@@ -164,7 +164,7 @@ checked_find_package (OpenCV
 #                       SETVARIABLES OIIO_TBB)
 
 checked_find_package (DCMTK VERSION_MIN 3.6.1)  # For DICOM images
-checked_find_package (FFmpeg VERSION_MIN 2.6)
+checked_find_package (FFmpeg VERSION_MIN 3.0)
 checked_find_package (Field3D
                    DEPS         HDF5
                    DEFINITIONS  -DUSE_FIELD3D=1)
@@ -185,7 +185,16 @@ endif ()
 checked_find_package (LibRaw
                       RECOMMEND_MIN 0.18
                       RECOMMEND_MIN_REASON "for ACES support and better camera metadata"
-                      PRINT LibRaw_r_LIBRARIES )
+                      PRINT LibRaw_r_LIBRARIES)
+if (LibRaw_FOUND AND LibRaw_VERSION VERSION_LESS 0.20 AND CMAKE_CXX_STANDARD VERSION_GREATER_EQUAL 17)
+    message (STATUS "${ColorYellow}WARNING When building for C++17, LibRaw should be 0.20 or higher (found ${LibRaw_VERSION}). You may get errors, depending on the compiler.${ColorReset}")
+    # Currently, we issue the above warning and let them take their chances.
+    # If we wish to disable the LibRaw<0.20/C++17 combination that may fail,
+    # just uncomment the following two lines.
+    # set (LibRaw_FOUND 0)
+    # set (LIBRAW_FOUND 0)
+endif ()
+
 checked_find_package (OpenJPEG VERSION_MIN 2.0)
 
 checked_find_package (OpenVDB
@@ -193,7 +202,14 @@ checked_find_package (OpenVDB
                       # DEPS         TBB
                       DEFINITIONS  -DUSE_OPENVDB=1)
 
-checked_find_package (PTex)
+checked_find_package (Ptex PREFER_CONFIG)
+if (NOT Ptex_FOUND OR NOT Ptex_VERSION)
+    # Fallback for inadequate Ptex exported configs. This will eventually
+    # disappear when we can 100% trust Ptex's exports.
+    unset (Ptex_FOUND)
+    checked_find_package (Ptex)
+endif ()
+
 checked_find_package (WebP)
 
 option (USE_R3DSDK "Enable R3DSDK (RED camera) support" OFF)
