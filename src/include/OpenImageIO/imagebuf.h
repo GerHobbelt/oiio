@@ -56,6 +56,64 @@ enum class InitializePixels { No = 0, Yes = 1 };
 /// routines for setting and getting individual pixels, that hides most of
 /// the details of memory layout and data representation (translating
 /// to/from float automatically).
+///
+/// ImageBuf makes an important simplification: all channels are just one
+/// data type. For example, if an image file on disk has a mix of `half` and
+/// `float` channels, the in-memory ImageBuf representation will be entirely
+/// `float` (for mixed data types, it will try to pick one that can best
+/// represent all channels without a loss of precision or range). However,
+/// by using the `set_write_format()` method, it is still possible to write
+/// an ImageBuf to a file with mixed channel types.
+///
+/// Most of the time, ImageBuf data is read lazily (I/O only happens when
+/// you first call methods that actually need metadata or pixel data).
+/// Explicit calls to `read()` are therefore optional and are only needed
+/// if you want to specify non-default arguments (such as choosing something
+/// other than the first subimage of the file, or forcing the read to
+/// translate into a different data format than appears in the file).
+///
+/// ImageBuf data coming from disk files is backed by ImageCache. That is,
+/// especially for tiled files, specific regions of the image will only
+/// be read if and when they are needed, and if there are many large
+/// ImageBuf's, memory holding pixels not recently accesssed will be
+/// automatically freed. Thus, performance of ImageBuf on very large images
+/// (or if there are many ImageBuf's simultaneously in use) can be sensitive
+/// to choices of the ImageCache parameters such as "autotile". It may be
+/// wise for maximum performance to explicitly `read()` (with `force=true`)
+/// small images into memory rather than using the ImageCache, in cases
+/// where your application has no need for the ImageCache features that
+/// limit memory footprint (such as if you know for sure that your app will
+/// only read a small number of images, of reasonable size, and will need
+/// to access all the pixels of all the images it reads).
+///
+/// Writeable ImageBufs are always stored entirely in memory, and do not use
+/// the ImageCache or any other clever schemes to limit memory. If you have
+/// enough simultaneous writeable large ImageBuf's, you can run out of RAM.
+/// Note that if an ImageBuf starts as readable (backed by ImageCache), any
+/// alterations to its pixels (for example, via `setpixel()` or traversing
+/// it with a non-const `Iterator`) will cause it to be read entirely into
+/// memory and remain in memory thereafter for the rest of the life of that
+/// ImageBuf.
+///
+/// Notes about ImageBuf thread safety:
+///
+/// * The various read-only methods for accessing the spec or the pixels,
+///   including `init_spec()`, `read()`, `spec()`, all the getpixel flavors
+///   and `ConstIterator` over the pixels, and other informational methods
+///   such as `roi()`, all are thread-safe and may be called concurrently
+///   with any of the other thread-safe methods.
+/// * Methods that alter pixel values, such as all the setpixel flavors,
+///   and (non-const) `Iterator` over the pixels, and the `write()` method
+///   are "thread safe" in the sense that you won't crash your app by doing
+///   these concurrently with each other or with the reading functionality,
+///   but on the other hand, if two threads are changing the same pixels
+///   simultaneously or one is writing while others are reading, you may end
+///   up with an inconsistent resulting image.
+/// * Construction and destruction, `reset()`, and anything that alters
+///   image metadata (such as writes through `specmod()`) are NOT THREAD
+///   SAFE and you should ensure that you are not doing any of these calls
+///   simultaneously with any other operations on the same ImageBuf.
+///
 class OIIO_API ImageBuf {
 public:
     /// An ImageBuf can store its pixels in one of several ways (each
@@ -185,8 +243,14 @@ public:
     ///             storage for the pixels. It must be already allocated
     ///             with enough space to hold a full image as described by
     ///             `spec`.
+    /// @param  xstride/ystride/zstride
+    ///             The distance in bytes between successive pixels,
+    ///             scanlines, and image planes in the buffer (or
+    ///             `AutoStride` to indicate "contiguous" data in any of
+    ///             those dimensions).
     ///
-    ImageBuf(const ImageSpec& spec, void* buffer);
+    ImageBuf(const ImageSpec& spec, void* buffer, stride_t xstride = AutoStride,
+             stride_t ystride = AutoStride, stride_t zstride = AutoStride);
 
     // Deprecated/useless synonym for `ImageBuf(spec,buffer)` but also gives
     // it an internal name.
@@ -240,7 +304,9 @@ public:
     /// Destroy any previous contents of the ImageBuf and re-initialize it
     /// as if newly constructed with the same arguments, to "wrap" existing
     /// pixel memory owned by the calling application.
-    void reset(const ImageSpec& spec, void* buffer);
+    void reset(const ImageSpec& spec, void* buffer,
+               stride_t xstride = AutoStride, stride_t ystride = AutoStride,
+               stride_t zstride = AutoStride);
 
     /// Make the ImageBuf be writable. That means that if it was previously
     /// backed by an ImageCache (storage was `IMAGECACHE`), it will force a
@@ -902,6 +968,11 @@ public:
     /// Return a raw pointer to "local" pixel memory, if they are fully in
     /// RAM and not backed by an ImageCache, or `nullptr` otherwise.  You
     /// can also test it like a bool to find out if pixels are local.
+    ///
+    /// Note that the data are not necessarily contiguous; use the
+    /// `pixel_stride()`, `scanline_stride()`, and `z_stride()` methods
+    /// to find out the spacing between pixels, scanlines, and volumetric
+    /// planes, respectively.
     void* localpixels();
     const void* localpixels() const;
 
@@ -911,6 +982,14 @@ public:
     stride_t scanline_stride() const;
     /// Z plane stride within the localpixels memory.
     stride_t z_stride() const;
+
+    /// Is the data layout "contiguous", i.e.,
+    /// ```
+    ///     pixel_stride == nchannels * pixeltype().size()
+    ///     scanline_stride == pixel_stride * spec().width
+    ///     z_stride == scanline_stride * spec().height
+    /// ```
+    bool contiguous() const;
 
     /// Are the pixels backed by an ImageCache, rather than the whole
     /// image being in RAM somewhere?
@@ -974,10 +1053,11 @@ public:
 
     /// Error reporting for ImageBuf: call this with Strutil::format
     /// formatting conventions.  It is not necessary to have the error
-    /// message contain a trailing newline.Beware, this is in transition, is
-    /// currently printf-like but will someday change to python-like!
+    /// message contain a trailing newline. Beware, this is in transition,
+    /// is currently printf-like but will someday change to python-like!
     template<typename... Args>
-    void error(const char* fmt, const Args&... args) const
+    OIIO_FORMAT_DEPRECATED void error(const char* fmt,
+                                      const Args&... args) const
     {
         error(Strutil::format(fmt, args...));
     }
@@ -1329,7 +1409,7 @@ public:
         int m_tilexbegin, m_tileybegin, m_tilezbegin;
         int m_tilexend;
         int m_nchannels;
-        size_t m_pixel_bytes;
+        stride_t m_pixel_stride;
         char* m_proxydata = nullptr;
         WrapMode m_wrap   = WrapBlack;
 
@@ -1348,11 +1428,11 @@ public:
             m_img_zend    = spec.z + spec.depth;
             m_nchannels   = spec.nchannels;
             //            m_tilewidth = spec.tile_width;
-            m_pixel_bytes = spec.pixel_bytes();
-            m_x           = 1 << 31;
-            m_y           = 1 << 31;
-            m_z           = 1 << 31;
-            m_wrap        = (wrap == WrapDefault ? WrapBlack : wrap);
+            m_pixel_stride = m_ib->pixel_stride();
+            m_x            = 1 << 31;
+            m_y            = 1 << 31;
+            m_z            = 1 << 31;
+            m_wrap         = (wrap == WrapDefault ? WrapBlack : wrap);
         }
 
         // Helper called by ctrs -- make the iteration range the full
@@ -1374,7 +1454,7 @@ public:
         {
             OIIO_DASSERT(m_exists && m_valid);   // precondition
             OIIO_DASSERT(valid(m_x, m_y, m_z));  // should be true by definition
-            m_proxydata += m_pixel_bytes;
+            m_proxydata += m_pixel_stride;
             if (m_localpixels) {
                 if (OIIO_UNLIKELY(m_x >= m_img_xend)) {
                     // Ran off the end of the row

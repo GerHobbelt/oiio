@@ -1586,6 +1586,7 @@ public:
     /// Use with caution! Some day this will change to be fmt-like rather
     /// than printf-like.
     template<typename... Args>
+    OIIO_FORMAT_DEPRECATED
     void error(const char* fmt, const Args&... args) const {
         append_error(Strutil::format (fmt, args...));
     }
@@ -2169,11 +2170,11 @@ public:
 
     /// @}
 
-    /// Read the current subimage of `in`, and write it as the next
-    /// subimage of `*this`, in a way that is efficient and does not alter
-    /// pixel values, if at all possible.  Both `in` and `this` must be a
-    /// properly-opened `ImageInput` and `ImageOutput`, respectively, and
-    /// their current images must match in size and number of channels.
+    /// Read the pixels of the current subimage of `in`, and write it as the
+    /// next subimage of `*this`, in a way that is efficient and does not
+    /// alter pixel values, if at all possible.  Both `in` and `this` must
+    /// be a properly-opened `ImageInput` and `ImageOutput`, respectively,
+    /// and their current images must match in size and number of channels.
     ///
     /// If a particular ImageOutput implementation does not supply a
     /// `copy_image` method, it will inherit the default implementation,
@@ -2227,6 +2228,7 @@ public:
     /// Use with caution! Some day this will change to be fmt-like rather
     /// than printf-like.
     template<typename... Args>
+    OIIO_FORMAT_DEPRECATED
     void error(const char* fmt, const Args&... args) const {
         append_error(Strutil::format (fmt, args...));
     }
@@ -2829,6 +2831,7 @@ void debugf (const char* fmt, const T1& v1, const Args&... args)
 /// debug output with the same conventions as Strutil::format. Beware, this
 /// will change one day!
 template<typename T1, typename... Args>
+OIIO_FORMAT_DEPRECATED
 void debug (const char* fmt, const T1& v1, const Args&... args)
 {
     debug (Strutil::format(fmt, v1, args...));

@@ -225,6 +225,12 @@ contents of an expression may be any of:
     comma-separated)
   * `AVGCOLOR` : the average pixel value of the image (channels are
     comma-separated)
+  * `METABRIEF` : a string containing the brief one-line description that
+    would be printed with `oiiotool -info`.
+  * `META` : a multi-line string containing the full metadata that would
+    be printed with `oiiotool -info -v`.
+  * `STATS` : a multi-line string containing the image statistics that would
+    be printed with `oiiotool -stats`.
 
 * *imagename.'metadata'*
 
@@ -3424,7 +3430,7 @@ bottom you will see the list of all color spaces, looks, and displays that
     location. Without this, the default is to use the `$OCIO` environment
     variable as a guide for the location of the configuration file.
 
-.. option:: --colorconvert <fromspace tospace>
+.. option:: --colorconvert <fromspace> <tospace>
 
     Replace the current image with a new image whose pixels are transformed
     from the named *fromspace* color space into the named *tospace*
@@ -3627,12 +3633,6 @@ bottom you will see the list of all color spaces, looks, and displays that
 
       `:subimages=` *indices-or-names*
         Include/exclude subimages (see :ref:`sec-oiiotool-subimage-modifier`).
-
-    This command is only meaningful if OIIO was compiled with OCIO support
-    and the environment variable `$OCIO` is set to point to a valid
-    OpenColorIO configuration file.  If you ask for :program:`oiiotool` help
-    (`oiiotool --help`), at the very bottom you will see the list of all
-    looks that :program:`oiiotool` knows about.
 
     Examples::
 

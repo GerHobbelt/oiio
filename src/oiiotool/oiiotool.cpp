@@ -1264,6 +1264,32 @@ Oiiotool::express_parse_atom(const string_view expr, string_view& s,
                 for (size_t i = 0; i < pixstat.avg.size(); ++i)
                     out << (i ? "," : "") << pixstat.avg[i];
                 result = out.str();
+            } else if (metadata == "META") {
+                std::stringstream out;
+                print_info_options opt;
+                opt.verbose   = true;
+                opt.subimages = true;
+                std::string error;
+                OiioTool::print_info(out, *this, img.get(), opt, error);
+                result = out.str();
+                if (result.size() && result.back() == '\n')
+                    result.pop_back();
+            } else if (metadata == "METABRIEF") {
+                std::stringstream out;
+                print_info_options opt;
+                opt.verbose   = false;
+                opt.subimages = false;
+                std::string error;
+                OiioTool::print_info(out, *this, img.get(), opt, error);
+                result = out.str();
+                if (result.size() && result.back() == '\n')
+                    result.pop_back();
+            } else if (metadata == "STATS") {
+                std::stringstream out;
+                OiioTool::print_stats(out, *this, (*img)());
+                result = out.str();
+                if (result.size() && result.back() == '\n')
+                    result.pop_back();
             } else {
                 express_error(expr, s,
                               Strutil::sprintf("unknown attribute name `%s'",
@@ -4591,7 +4617,7 @@ input_file(int argc, const char* argv[])
             pio.nometamatch        = ot.printinfo_nometamatch;
             pio.infoformat         = infoformat;
             std::string error;
-            bool ok = OiioTool::print_info(ot, filename, pio, error);
+            bool ok = OiioTool::print_info(std::cout, ot, filename, pio, error);
             if (!ok) {
                 ot.error("read", ot.format_read_error(filename, error));
                 break;
@@ -4705,6 +4731,8 @@ prep_texture_config(ImageSpec& configspec, ParamValueList& fileoptions)
                              "prman_options", fileoptions.get_string("prman")));
     configspec.attribute("maketx:bumpformat",
                          fileoptions.get_string("bumpformat", "auto"));
+    configspec.attribute("uvslopes_scale",
+                         fileoptions.get_int("uvslopes_scale", 0));
     // if (mipimages.size())
     //     configspec.attribute ("maketx:mipimages", Strutil::join(mipimages,";"));
 
@@ -5127,13 +5155,14 @@ output_file(int /*argc*/, const char* argv[])
 
 
 
+// --echo
 static void
 do_echo(cspan<const char*> argv)
 {
     OIIO_DASSERT(argv.size() == 2);
 
     string_view command = ot.express(argv[0]);
-    string_view message = ot.express(argv[1]);
+    std::string message = ot.express(Strutil::unescape_chars(argv[1]));
 
     auto options = ot.extract_options(command);
     int newline  = options.get_int("newline", 1);
@@ -5564,7 +5593,7 @@ getargs(int argc, char* argv[])
       .help("Output the current image as a latlong env map")
       .action(output_file);
     ap.arg("-obump %s:FILENAME")
-      .help("Output the current bump texture map as a 6 channels texture including the first and second moment of the bump slopes (options: bumpformat=height|normal|auto)")
+      .help("Output the current bump texture map as a 6 channels texture including the first and second moment of the bump slopes (options: bumpformat=height|normal|auto, uvslopes_scale=val>=0)")
       .action(output_file);
     ap.separator("Options that affect subsequent image output:");
     ap.arg("-d %s:TYPE")
