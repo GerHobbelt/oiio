@@ -144,6 +144,7 @@ target_link_libraries (OpenImageIO
             ${SANITIZE_LIBRARIES}
             ${format_plugin_libs} # Add all the target link libraries from the plugins
             $<$<TARGET_EXISTS:OpenColorIO::OpenColorIO>:OpenColorIO::OpenColorIO>
+            $<$<TARGET_EXISTS:OpenColorIO::OpenColorIOHeaders>:OpenColorIO::OpenColorIOHeaders>
             $<$<TARGET_EXISTS:pugixml::pugixml>:pugixml::pugixml>
             $<$<TARGET_EXISTS:TBB::tbb>:TBB::tbb>
             ${BZIP2_LIBRARIES}
