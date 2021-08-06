@@ -84,7 +84,7 @@ const std::string dummy_extension
 #endif
 
 std::string
-Filesystem::filename(const std::string& filepath) noexcept
+Filesystem::filename(string_view filepath) noexcept
 {
     // To simplify dealing with platform-specific separators and whatnot,
     // just use the Boost routines:
@@ -98,7 +98,7 @@ Filesystem::filename(const std::string& filepath) noexcept
 
 
 std::string
-Filesystem::extension(const std::string& filepath, bool include_dot) noexcept
+Filesystem::extension(string_view filepath, bool include_dot) noexcept
 {
     std::string s;
     try {
@@ -113,7 +113,7 @@ Filesystem::extension(const std::string& filepath, bool include_dot) noexcept
 
 
 std::string
-Filesystem::parent_path(const std::string& filepath) noexcept
+Filesystem::parent_path(string_view filepath) noexcept
 {
     try {
         return pathstr(u8path(filepath).parent_path());
@@ -897,8 +897,12 @@ Filesystem::scan_for_matching_filenames(const std::string& pattern_,
     std::string suffix(format_match.suffix().first,
                        format_match.suffix().second);
 
-    std::string pattern_re_str = prefix + "([0-9]{" + thepadding + ",})"
-                                 + suffix;
+    // N.B. make sure that the prefix and suffix are regex-safe by
+    // backslashing anything that might be in a literal filename that will
+    // be problematic in a regex.
+    std::string pattern_re_str = Filesystem::filename_to_regex(prefix, false)
+                                 + "([0-9]{" + thepadding + ",})"
+                                 + Filesystem::filename_to_regex(suffix, false);
     std::vector<std::pair<int, std::string>> matches;
 
     // There are some corner cases regex that could be constructed here that
@@ -936,6 +940,30 @@ Filesystem::scan_for_matching_filenames(const std::string& pattern_,
     }
 
     return true;
+}
+
+
+
+std::string
+Filesystem::filename_to_regex(string_view pattern, bool simple_glob)
+{
+    // Replace dot unconditionally, since it's so common in filenames.
+    std::string p = Strutil::replace(pattern, ".", "\\.", true);
+    // Other problematic chars are rare in filenames, do a quick test to
+    // prevent needless string manipulation.
+    if (Strutil::contains_any_char(p, "()[]{}")) {
+        p = Strutil::replace(p, "(", "\\(", true);
+        p = Strutil::replace(p, ")", "\\)", true);
+        p = Strutil::replace(p, "[", "\\[", true);
+        p = Strutil::replace(p, "]", "\\]", true);
+        p = Strutil::replace(p, "{", "\\{", true);
+        p = Strutil::replace(p, "}", "\\}", true);
+    }
+    if (simple_glob && Strutil::contains_any_char(p, "?*")) {
+        p = Strutil::replace(p, "?", ".?", true);
+        p = Strutil::replace(p, "*", ".*", true);
+    }
+    return p;
 }
 
 
