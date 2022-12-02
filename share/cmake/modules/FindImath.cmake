@@ -166,8 +166,13 @@ if(NOT Imath_FOUND AND OCIO_INSTALL_EXT_PACKAGES AND NOT OCIO_INSTALL_EXT_PACKAG
 
     set(_Imath_LIB_VER "${_Imath_ExternalProject_VERSION_MAJOR}_${_Imath_ExternalProject_VERSION_MINOR}")
 
-    set(Imath_LIBRARY
+    if(MSVC)
+        set(Imath_LIBRARY
+        "${_EXT_DIST_ROOT}/${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}Imath-${_Imath_LIB_VER}${_Imath_LIB_SUFFIX}${CMAKE_DEBUG_POSTFIX}${CMAKE_STATIC_LIBRARY_SUFFIX}")
+    else()
+        set(Imath_LIBRARY
         "${_EXT_DIST_ROOT}/${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}Imath-${_Imath_LIB_VER}${_Imath_LIB_SUFFIX}${CMAKE_STATIC_LIBRARY_SUFFIX}")
+    endif()
 
     if(_Imath_TARGET_CREATE)
         if(MSVC)
