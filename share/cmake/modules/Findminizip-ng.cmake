@@ -191,12 +191,6 @@ if(NOT minizip-ng_FOUND AND NOT OCIO_INSTALL_EXT_PACKAGES STREQUAL NONE)
         BUILD_BYPRODUCTS ${minizip-ng_LIBRARY}
         CMAKE_ARGS ${MINIZIP-NG_CMAKE_ARGS}
         EXCLUDE_FROM_ALL TRUE
-        BUILD_COMMAND ""
-        INSTALL_COMMAND
-            ${CMAKE_COMMAND} --build .
-                             --config ${CMAKE_BUILD_TYPE}
-                             --target install
-                             --parallel
     )
 
     add_dependencies(minizip-ng::minizip-ng minizip-ng_install)

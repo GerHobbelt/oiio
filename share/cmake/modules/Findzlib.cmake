@@ -134,12 +134,6 @@ if(NOT ZLIB_FOUND AND NOT OCIO_INSTALL_EXT_PACKAGES STREQUAL NONE)
             ${ZLIB_LIBRARIES}
         CMAKE_ARGS ${ZLIB_CMAKE_ARGS}
         EXCLUDE_FROM_ALL TRUE
-        BUILD_COMMAND ""
-        INSTALL_COMMAND
-            ${CMAKE_COMMAND} --build .
-                             --config ${CMAKE_BUILD_TYPE}
-                             --target install
-                             --parallel
     )
 
     ExternalProject_Add_Step(

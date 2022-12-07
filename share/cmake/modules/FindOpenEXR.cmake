@@ -193,12 +193,6 @@ if(NOT OpenEXR_FOUND AND NOT OCIO_INSTALL_EXT_PACKAGES STREQUAL NONE)
                 ${OpenEXRUtil_LIBRARY}
             CMAKE_ARGS ${OpenEXR_CMAKE_ARGS}
             EXCLUDE_FROM_ALL TRUE
-            BUILD_COMMAND ""
-            INSTALL_COMMAND
-                ${CMAKE_COMMAND} --build .
-                                 --config ${CMAKE_BUILD_TYPE}
-                                 --target install
-                                 --parallel
         )
 
         # Additional targets. ALIAS to UNKNOWN imported target is only possible
