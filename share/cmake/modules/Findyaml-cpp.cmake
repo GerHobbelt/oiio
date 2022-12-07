@@ -235,12 +235,6 @@ if(NOT yaml-cpp_FOUND AND OCIO_INSTALL_EXT_PACKAGES AND NOT OCIO_INSTALL_EXT_PAC
             BUILD_BYPRODUCTS ${yaml-cpp_LIBRARY}
             CMAKE_ARGS ${yaml-cpp_CMAKE_ARGS}
             EXCLUDE_FROM_ALL TRUE
-            BUILD_COMMAND ""
-            INSTALL_COMMAND
-                ${CMAKE_COMMAND} --build .
-                                 --config ${CMAKE_BUILD_TYPE}
-                                 --target install
-                                 --parallel
         )
 
         add_dependencies(yaml-cpp yaml-cpp_install)
@@ -261,7 +255,7 @@ if(_yaml-cpp_TARGET_CREATE)
 
     if(WIN32)
        set_target_properties(yaml-cpp PROPERTIES
-           IMPORTED_LOCATION_DEBUG "${_EXT_DIST_ROOT}/lib/libyaml-cppmdd${CMAKE_STATIC_LIBRARY_SUFFIX}")
+           IMPORTED_LOCATION_DEBUG "${_EXT_DIST_ROOT}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}yaml-cppd${CMAKE_STATIC_LIBRARY_SUFFIX}")
     endif()
 
     mark_as_advanced(yaml-cpp_INCLUDE_DIR yaml-cpp_LIBRARY yaml-cpp_VERSION)

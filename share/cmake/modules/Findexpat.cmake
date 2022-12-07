@@ -307,12 +307,6 @@ if(NOT expat_FOUND AND OCIO_INSTALL_EXT_PACKAGES AND NOT OCIO_INSTALL_EXT_PACKAG
             SOURCE_SUBDIR expat
             CMAKE_ARGS ${EXPAT_CMAKE_ARGS}
             EXCLUDE_FROM_ALL TRUE
-            BUILD_COMMAND ""
-            INSTALL_COMMAND
-                ${CMAKE_COMMAND} --build .
-                                 --config ${CMAKE_BUILD_TYPE}
-                                 --target install
-                                 --parallel
         )
 
         add_dependencies(expat::expat expat_install)
@@ -331,7 +325,7 @@ if(_expat_TARGET_CREATE)
 
     if(WIN32)
         set_target_properties(expat::expat PROPERTIES
-            IMPORTED_LOCATION_DEBUG "${_EXT_DIST_ROOT}/${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}expatdMD${CMAKE_STATIC_LIBRARY_SUFFIX}")
+            IMPORTED_LOCATION_DEBUG "${_EXT_DIST_ROOT}/${CMAKE_INSTALL_LIBDIR}/${_expat_LIB_PREFIX}expatdMD${CMAKE_STATIC_LIBRARY_SUFFIX}")
     endif()
 
     mark_as_advanced(expat_INCLUDE_DIR expat_LIBRARY expat_VERSION)
