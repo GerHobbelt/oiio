@@ -356,7 +356,7 @@ if(UNIX AND NOT APPLE)
     # dependencies.
     set_property (TARGET OpenColorIO
                   APPEND PROPERTY LINK_FLAGS "-Wl,--exclude-libs,ALL")
-elseif(APPLE)
+elseif(APPLE AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 12 )
     # Hide the expat symbols.
     set_property (TARGET OpenColorIO
                   APPEND PROPERTY LINK_FLAGS "-Wl,-hidden-lexpat")
