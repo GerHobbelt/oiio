@@ -274,7 +274,7 @@ Comparing "../oiio-images/libtiffpic/quad-tile.tif" and "quad-tile.tif"
 PASS
 Reading ../oiio-images/libtiffpic/quad-jpeg.tif
 ../oiio-images/libtiffpic/quad-jpeg.tif :  512 x  384, 3 channel, uint8 tiff
-    SHA-1: 3EF052D81D73F129B65F2199DFDD74E0A8E6356B
+    SHA-1: F907BED70BDEA0315FEB94F3042F9BDE61142BDA
     channel list: R, G, B
     compression: "jpeg"
     planarconfig: "contig"

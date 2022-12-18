@@ -1,6 +1,6 @@
 Reading ../oiio-images/tahoe-gps.jpg
 ../oiio-images/tahoe-gps.jpg : 2048 x 1536, 3 channel, uint8 jpeg
-    SHA-1: C3B420EF8C20C4771F6F7BF89EA9D9D4002BA016
+    SHA-1: B5183E383D55949944FE40DC55A67844739E0B7B
     channel list: R, G, B
     Make: "HTC"
     Model: "T-Mobile G1"
@@ -32,7 +32,7 @@ Reading ../oiio-images/tahoe-gps.jpg
     oiio:ColorSpace: "sRGB"
 Reading tahoe-gps.jpg
 tahoe-gps.jpg        : 2048 x 1536, 3 channel, uint8 jpeg
-    SHA-1: 2623446988E34395C6B0A4AA4FC75107C708BF18
+    SHA-1: A74C7DF2B01825DCB6881407AE77C11DC56AB741
     channel list: R, G, B
     Make: "HTC"
     Model: "T-Mobile G1"

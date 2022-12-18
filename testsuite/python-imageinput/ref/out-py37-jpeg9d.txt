@@ -1,5 +1,5 @@
 Could not open "badname.tif"
-	Error:  Could not open file: badname.tif: Cannot open
+	Error:  Could not open file: badname.tif: No such file or directory
 Opened "../oiio-images/tahoe-gps.jpg" as a jpeg
   resolution 2048x1536+0+0
   untiled
@@ -97,41 +97,41 @@ Subimage 0 MIP level 10 :
 
 Testing read_image:
 Opened "../oiio-images/tahoe-gps.jpg" as a jpeg
-@ (0L, 0L) = [40 35 57]
-@ (2047L, 1535L) = [37 56 89]
-@ (1024L, 768L) = [137 183 233]
+@ (0, 0) = [40 35 57]
+@ (2047, 1535) = [39 55 89]
+@ (1024, 768) = [136 183 235]
 
 Opened "../oiio-images/tahoe-gps.jpg" as a jpeg
-@ (0L, 0L) = [ 0.15686275  0.13725491  0.22352943]
-@ (2047L, 1535L) = [ 0.14509805  0.21960786  0.34901962]
-@ (1024L, 768L) = [ 0.53725493  0.71764708  0.91372555]
+@ (0, 0) = [0.15686275 0.13725491 0.22352943]
+@ (2047, 1535) = [0.15294118 0.21568629 0.34901962]
+@ (1024, 768) = [0.53333336 0.7176471  0.9215687 ]
 
 Opened "../oiio-images/tahoe-gps.jpg" as a jpeg
-@ (0L, 0L) = [40]
-@ (2047L, 1535L) = [37]
-@ (1024L, 768L) = [137]
+@ (0, 0) = [40]
+@ (2047, 1535) = [39]
+@ (1024, 768) = [136]
 
 Testing read_scanline:
 Opened "../oiio-images/tahoe-gps.jpg" as a jpeg
-@ (0L, 0L) = [40 35 57]
-@ (0L, 1535L) = [ 82  94 136]
+@ (0, 0) = [40 35 57]
+@ (0, 1535) = [ 84  93 136]
 
 Testing read_tile:
 Opened "grid.tx" as a tiff
-@ (32L, 32L) = [  1   1   1 255]
-@ (32L, 32L) = [255 127 127 255]
+@ (32, 32) = [  1   1   1 255]
+@ (32, 32) = [255 127 127 255]
 
 Testing read_scanlines:
 Opened "../oiio-images/tahoe-gps.jpg" as a jpeg
-@ (0L, 0L) = [40 35 57]
-@ (2047L, 1535L) = [37 56 89]
-@ (1024L, 768L) = [137 183 233]
+@ (0, 0) = [40 35 57]
+@ (2047, 1535) = [39 55 89]
+@ (1024, 768) = [136 183 235]
 
 Testing read_tiles:
 Opened "grid.tx" as a tiff
-@ (0L, 0L) = [  0   0   0 255]
-@ (1023L, 1023L) = [  0   0   0 255]
-@ (512L, 512L) = [  0   0   0 255]
+@ (0, 0) = [  0   0   0 255]
+@ (1023, 1023) = [  0   0   0 255]
+@ (512, 512) = [  0   0   0 255]
 
 Test read_image native u16:
 Opened "testu16.tif" as a tiff

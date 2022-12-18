@@ -3,7 +3,7 @@
 # https://github.com/OpenImageIO/oiio/blob/master/LICENSE.md
 
 cmake_minimum_required (VERSION 3.12)
-project (OpenImageIO VERSION 2.3.7.0
+project (OpenImageIO VERSION 2.4.0.0
          HOMEPAGE_URL "https://openimageio.org"
          LANGUAGES CXX C)
 set (PROJ_NAME OIIO)    # short name, caps
@@ -273,8 +273,10 @@ install (EXPORT OIIO_EXPORTED_TARGETS
         NAMESPACE ${PROJECT_NAME}::)
 
 
-oiio_add_all_tests()
-
+if (NOT ${PROJECT_NAME}_IS_SUBPROJECT)
+    oiio_setup_test_data()
+    oiio_add_all_tests()
+endif ()
 
 if (NOT ${PROJECT_NAME}_IS_SUBPROJECT)
     include (packaging)
