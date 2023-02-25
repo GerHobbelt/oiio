@@ -1631,7 +1631,7 @@ bool OIIO_API erode (ImageBuf &dst, const ImageBuf &src,
 ///             establish a context (for example, a shot-specific transform).
 /// @param  processor
 ///             For the varieties of `colorconvert()` that have a
-///             `processor` paramater, it is a raw `ColorProcessor*` object
+///             `processor` parameter, it is a raw `ColorProcessor*` object
 ///             that implements the color transformation. This is a special
 ///             object created by a `ColorConfig` (see `OpenImageIO/color.h`
 ///             for details).
