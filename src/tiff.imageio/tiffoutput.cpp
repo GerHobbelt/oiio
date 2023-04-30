@@ -39,7 +39,7 @@ static int MIN_SCANLINES_OR_TILES_PER_CHECKPOINT  = 64;
 class TIFFOutput final : public ImageOutput {
 public:
     TIFFOutput();
-    virtual ~TIFFOutput();
+    virtual ~TIFFOutput() override;
     virtual const char* format_name(void) const override { return "tiff"; }
     virtual int supports(string_view feature) const override;
     virtual bool open(const std::string& name, const ImageSpec& spec,
@@ -827,6 +827,10 @@ bool
 TIFFOutput::put_parameter(const std::string& name, TypeDesc type,
                           const void* data)
 {
+    if (!data || (type == TypeString && *(char**)data == nullptr)) {
+        // we got a null pointer, don't set the field
+        return false;
+    }
     if (Strutil::iequals(name, "Artist") && type == TypeDesc::STRING) {
         TIFFSetField(m_tif, TIFFTAG_ARTIST, *(char**)data);
         return true;

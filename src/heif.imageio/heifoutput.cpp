@@ -15,7 +15,7 @@ OIIO_PLUGIN_NAMESPACE_BEGIN
 class HeifOutput final : public ImageOutput {
 public:
     HeifOutput() {}
-    virtual ~HeifOutput() { close(); }
+    virtual ~HeifOutput() override { close(); }
     virtual const char* format_name(void) const override { return "heif"; }
     virtual int supports(string_view feature) const override
     {
@@ -50,7 +50,7 @@ public:
         : m_ioproxy(ioproxy)
     {
     }
-    virtual heif_error write(const void* data, size_t size)
+    virtual heif_error write(const void* data, size_t size) override
     {
         heif_error herr { heif_error_Ok, heif_suberror_Unspecified, "" };
         if (m_ioproxy && m_ioproxy->mode() == Filesystem::IOProxy::Write
