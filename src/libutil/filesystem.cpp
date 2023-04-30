@@ -14,7 +14,7 @@
 #include <OpenImageIO/dassert.h>
 #include <OpenImageIO/filesystem.h>
 #include <OpenImageIO/platform.h>
-#include <OpenImageIO/refcnt.h>
+// #include <OpenImageIO/refcnt.h>
 #include <OpenImageIO/strutil.h>
 #include <OpenImageIO/ustring.h>
 
@@ -494,7 +494,7 @@ Filesystem::open(OIIO::ifstream& stream, string_view path,
     stream.open(wpath.c_str(), mode);
     stream.seekg(0, std::ios_base::beg);  // force seek, otherwise broken
 #else
-    stream.open(path.c_str(), mode);
+    stream.open(path, mode);
 #endif
 }
 
@@ -510,7 +510,7 @@ Filesystem::open(OIIO::ofstream& stream, string_view path,
     std::wstring wpath = Strutil::utf8_to_utf16(path);
     stream.open(wpath.c_str(), mode);
 #else
-    stream.open(path.c_str(), mode);
+    stream.open(path, mode);
 #endif
 }
 

@@ -1,6 +1,6 @@
 set (libOpenImageIO_Util_srcs argparse.cpp benchmark.cpp
-                  errorhandler.cpp filesystem.cpp
-                  farmhash.cpp filter.cpp hashes.cpp paramlist.cpp
+                  errorhandler.cpp farmhash.cpp filesystem.cpp
+                  fmath.cpp filter.cpp hashes.cpp paramlist.cpp
                   plugin.cpp SHA1.cpp
                   strutil.cpp sysutil.cpp thread.cpp timer.cpp
                   typedesc.cpp ustring.cpp xxhash.cpp)
@@ -8,8 +8,7 @@ set (libOpenImageIO_Util_srcs argparse.cpp benchmark.cpp
 add_library (OpenImageIO_Util ${libOpenImageIO_Util_srcs})
 target_include_directories (OpenImageIO_Util
         PUBLIC
-            ${CMAKE_INSTALL_FULL_INCLUDEDIR}
-            ${IMATH_INCLUDES} ${OPENEXR_INCLUDES}
+            $<INSTALL_INTERFACE:include>
         )
 target_link_libraries (OpenImageIO_Util
         PUBLIC
@@ -26,8 +25,10 @@ target_link_libraries (OpenImageIO_Util
             ${GCC_ATOMIC_LIBRARIES}
             $<$<TARGET_EXISTS:TBB::tbb>:TBB::tbb>
         PRIVATE
+            Boost::filesystem
+            Boost::system
+            Boost::thread
             ${SANITIZE_LIBRARIES}
-            ${Boost_LIBRARIES}
             ${CMAKE_DL_LIBS}
         )
 

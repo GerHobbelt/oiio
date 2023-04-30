@@ -10,6 +10,7 @@
 #include <iostream>
 #include <limits>
 
+#include <OpenImageIO/Imath.h>
 #include <OpenImageIO/dassert.h>
 #include <OpenImageIO/hash.h>
 #include <OpenImageIO/imagebuf.h>
@@ -860,8 +861,8 @@ ImageBufAlgo::computePixelHashSHA1(const ImageBuf& src, string_view extrainfo,
     // blocks computed doesn't matter.)
     SHA1 sha;
     for (int b = 0; b < nblocks; ++b)
-        sha.append(results[b].c_str(), results[b].size());
-    sha.append(extrainfo.c_str(), extrainfo.size());
+        sha.append(results[b]);
+    sha.append(extrainfo);
     return sha.digest();
 }
 

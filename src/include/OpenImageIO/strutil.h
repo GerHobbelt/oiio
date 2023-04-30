@@ -162,7 +162,7 @@ template<typename... Args>
 OIIO_FORMAT_DEPRECATED
 inline std::string format (string_view fmt, const Args&... args)
 {
-    return format (fmt.c_str(), args...);
+    return format ({ fmt.data(), fmt.size() }, args...);
 }
 } // namespace old
 
@@ -811,6 +811,14 @@ std::string OIIO_UTIL_API utf16_to_utf8(const std::wstring& utf16str) noexcept;
 /// guarantees that there will be a termining 0 character.
 OIIO_UTIL_API char * safe_strcpy (char *dst, string_view src, size_t size) noexcept;
 
+
+/// Is the character a whitespace character (space, linefeed, tab, carrage
+/// return)? Note: this is safer than C isspace(), which has undefined
+/// behavior for negative char values. Also note that it differs from C
+/// isspace by not detecting form feed or vertical tab, because who cares.
+inline bool isspace(char c) {
+    return c == ' ' || c == '\n' || c == '\t' || c == '\r';
+}
 
 /// Modify str to trim any leading whitespace (space, tab, linefeed, cr)
 /// from the front.

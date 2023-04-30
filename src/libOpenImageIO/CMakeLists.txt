@@ -107,8 +107,8 @@ source_group ("libtexture" REGULAR_EXPRESSION ".+/libtexture/.+")
 
 target_include_directories (OpenImageIO
                             PUBLIC
-                                ${CMAKE_INSTALL_FULL_INCLUDEDIR}
-                                ${IMATH_INCLUDES} ${OPENEXR_INCLUDES}
+                                $<INSTALL_INTERFACE:include>
+                                ${OPENEXR_INCLUDES}
                             PRIVATE
                                 ${ROBINMAP_INCLUDES}
                                 ${FREETYPE_INCLUDE_DIRS}
@@ -153,7 +153,9 @@ target_link_libraries (OpenImageIO
             $<TARGET_NAME_IF_EXISTS:TBB::tbb>
             ${BZIP2_LIBRARIES}
             ZLIB::ZLIB
-            ${Boost_LIBRARIES}
+            Boost::filesystem
+            Boost::system
+            Boost::thread
             ${CMAKE_DL_LIBS}
         )
 
