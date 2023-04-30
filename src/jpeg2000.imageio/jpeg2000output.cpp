@@ -10,6 +10,16 @@
 #include <OpenImageIO/fmath.h>
 #include <OpenImageIO/imageio.h>
 
+#if defined(OPJ_VERSION_MAJOR)
+// OpenJPEG >= 2.1 defines these symbols
+#    define OIIO_OPJ_VERSION                                 \
+        (OPJ_VERSION_MAJOR * 10000 + OPJ_VERSION_MINOR * 100 \
+         + OPJ_VERSION_BUILD)
+#else
+// Older, assume it's the minimum of 2.0
+#    define OIIO_OPJ_VERSION 20000
+#endif
+
 
 OIIO_PLUGIN_NAMESPACE_BEGIN
 
@@ -39,7 +49,7 @@ public:
     virtual const char* format_name(void) const override { return "jpeg2000"; }
     virtual int supports(string_view feature) const override
     {
-        return (feature == "alpha");
+        return feature == "alpha" || feature == "ioproxy";
         // FIXME: we should support Exif/IPTC, but currently don't.
     }
     virtual bool open(const std::string& name, const ImageSpec& spec,
@@ -53,7 +63,6 @@ public:
 
 private:
     std::string m_filename;
-    FILE* m_file;
     opj_cparameters_t m_compression_parameters;
     opj_image_t* m_image;
     opj_codec_t* m_codec;
@@ -65,11 +74,11 @@ private:
 
     void init(void)
     {
-        m_file          = NULL;
         m_image         = NULL;
         m_codec         = NULL;
         m_stream        = NULL;
         m_convert_alpha = true;
+        ioproxy_clear();
     }
 
     opj_image_t* create_jpeg2000_image();
@@ -103,6 +112,28 @@ private:
     void setup_compression_params();
 
     OPJ_PROG_ORDER get_progression_order(const std::string& progression_order);
+
+    static OPJ_SIZE_T StreamWrite(void* p_buffer, OPJ_SIZE_T p_nb_bytes,
+                                  void* p_user_data)
+    {
+        auto in = static_cast<Jpeg2000Output*>(p_user_data);
+        auto r  = in->ioproxy()->write(p_buffer, p_nb_bytes);
+        return r ? OPJ_SIZE_T(r) : OPJ_SIZE_T(-1);
+    }
+
+    static OPJ_BOOL StreamSeek(OPJ_OFF_T p_nb_bytes, void* p_user_data)
+    {
+        auto in = static_cast<Jpeg2000Output*>(p_user_data);
+        return in->ioseek(p_nb_bytes, SEEK_SET);
+    }
+
+    static OPJ_OFF_T StreamSkip(OPJ_OFF_T p_nb_bytes, void* p_user_data)
+    {
+        auto in = static_cast<Jpeg2000Output*>(p_user_data);
+        return in->ioseek(p_nb_bytes, SEEK_CUR) ? p_nb_bytes : OPJ_SIZE_T(-1);
+    }
+
+    static void StreamFree(void* p_user_data) {}
 };
 
 
@@ -163,11 +194,9 @@ Jpeg2000Output::open(const std::string& name, const ImageSpec& spec,
     m_convert_alpha = m_spec.alpha_channel != -1
                       && !m_spec.get_int_attribute("oiio:UnassociatedAlpha", 0);
 
-    m_file = Filesystem::fopen(m_filename, "wb");
-    if (m_file == NULL) {
-        errorf("Could not open \"%s\"", m_filename);
+    ioproxy_retrieve_from_config(m_spec);
+    if (!ioproxy_use_or_open(name))
         return false;
-    }
 
     // If user asked for tiles -- which this format doesn't support, emulate
     // it by buffering the whole image.
@@ -287,10 +316,7 @@ Jpeg2000Output::close()
     }
     destroy_compressor();
     destroy_stream();
-    if (m_file) {
-        fclose(m_file);
-        m_file = NULL;
-    }
+    init();
     return ok;
 }
 
@@ -309,18 +335,26 @@ Jpeg2000Output::save_image()
 
     opj_setup_encoder(m_codec, &m_compression_parameters, m_image);
 
-#if defined(OPJ_VERSION_MAJOR)
-    // OpenJpeg >= 2.1
-    m_stream = opj_stream_create_default_file_stream(m_filename.c_str(), false);
-#else
-    // OpenJpeg 2.0: need to open a stream ourselves
-    m_file   = Filesystem::fopen(m_filename, "wb");
-    m_stream = opj_stream_create_default_file_stream(m_file, false);
+#if OIIO_OPJ_VERSION >= 20400
+    // Set up multithread in OpenJPEG library -- added in OpenJPEG 2.2,
+    // but it doesn't seem reliably safe until 2.4.
+    int nthreads = threads();
+    if (!nthreads)
+        nthreads = OIIO::get_int_attribute("threads");
+    opj_codec_set_threads(m_codec, nthreads);
 #endif
+
+    m_stream = opj_stream_default_create(false /* is_input */);
     if (!m_stream) {
         errorf("Failed write jpeg2000::save_image");
         return false;
     }
+
+    opj_stream_set_user_data(m_stream, this, StreamFree);
+    opj_stream_set_seek_function(m_stream, StreamSeek);
+    opj_stream_set_skip_function(m_stream, StreamSkip);
+    opj_stream_set_write_function(m_stream, StreamWrite);
+    // opj_stream_set_user_data_length(m_stream, ioproxy()->size());
 
     if (!opj_start_compress(m_codec, m_image, m_stream)
         || !opj_encode(m_codec, m_stream)
@@ -398,7 +432,10 @@ Jpeg2000Output::init_components(opj_image_cmptparm_t* components, int precision)
         components[i].w    = m_spec.width;
         components[i].h    = m_spec.height;
         components[i].prec = precision;
-        components[i].bpp  = precision;
+#if OIIO_OPJ_VERSION < 20500
+        // bpp field is deprecated starting with OpenJPEG 2.5
+        components[i].bpp = precision;
+#endif
         components[i].sgnd = 0;
     }
 }

@@ -42,7 +42,8 @@ NEW or CHANGED MINIMUM dependencies since the last major release are **bold**.
  * If you want support for a wide variety of video formats:
      * **ffmpeg >= 3.0** (tested through 4.4)
  * If you want support for jpeg 2000 images:
-     * **OpenJpeg >= 2.0** (tested through 2.4)
+     * **OpenJpeg >= 2.0** (tested through 2.4; we recommend 2.4 or higher
+       for multithreading support)
  * If you want support for OpenVDB files:
      * OpenVDB >= 5.0 (tested through 9) and Intel TBB >= 2018 (tested
        through 2021)
@@ -81,6 +82,11 @@ Mac OS X, and Windows.
 
 Our build system is based upon 'CMake'.  If you don't already have it
 installed on your system, you can get it from http://www.cmake.org
+
+If certain dependencies (robin-map and fmtlib) are not found, their sources
+will be retrieved and built into libraries, as part of the build process. The 
+sources of those dependences are cloned from their Git repo, hence `git` must 
+be available as a command.
 
 After you build OpenImageIO, if you compiled with the `EMBEDPLUGINS=0` flag
 you will need to set the environment variable `OIIO_LIBRARY_PATH` to point
