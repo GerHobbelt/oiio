@@ -46,11 +46,12 @@ template<typename T> using Queue = boost::lockfree::queue<T>;
 
 #    include <queue>
 
-namespace {
+OIIO_NAMESPACE_BEGIN
+namespace pvt {
 
-template<typename T> class Queue {
+template<typename T> class ThreadsafeQueue {
 public:
-    Queue(int /*size*/) {}
+    ThreadsafeQueue(int /*size*/) {}
     bool push(T const& value)
     {
         std::unique_lock<Mutex> lock(this->mutex);
@@ -84,7 +85,8 @@ private:
     Mutex mutex;
 };
 
-}  // namespace
+}  // namespace pvt
+OIIO_NAMESPACE_END
 
 #endif
 
@@ -350,7 +352,7 @@ private:
     std::vector<std::unique_ptr<std::thread>> threads;
     std::vector<std::unique_ptr<std::thread>> terminating_threads;
     std::vector<std::shared_ptr<std::atomic<bool>>> flags;
-    mutable Queue<std::function<void(int id)>*> q;
+    mutable pvt::ThreadsafeQueue<std::function<void(int id)>*> q;
     std::atomic<bool> isDone;
     std::atomic<bool> isStop;
     std::atomic<int> nWaiting;  // how many threads are waiting
