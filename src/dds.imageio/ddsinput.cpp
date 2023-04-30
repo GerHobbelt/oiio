@@ -473,7 +473,10 @@ DDSInput::internal_seek_subimage(int cubeface, int miplevel, unsigned int& w,
             }
             continue;
         }
-        for (int i = 0; i < miplevel; i++) {
+        // On the target cube face seek to the selected mip level.  On previous faces
+        // seek past all levels.
+        int seekLevel = (j == cubeface) ? miplevel : m_dds.mipmaps;
+        for (int i = 0; i < seekLevel; i++) {
             if (m_compression != Compression::None)
                 len = GetStorageRequirements(w, h, m_compression);
             else
@@ -662,13 +665,15 @@ DDSInput::internal_readimg(unsigned char* dst, int w, int h, int d)
             return ioread(dst, w * m_Bpp, h);
         }
 
-        int k, pixel = 0;
+        std::vector<uint8_t> tmp(w * m_Bpp);
         for (int z = 0; z < d; z++) {
             for (int y = 0; y < h; y++) {
-                for (int x = 0; x < w; x++) {
-                    if (!ioread(&pixel, 1, m_Bpp))
-                        return false;
-                    k          = (z * h * w + y * w + x) * m_spec.nchannels;
+                if (!ioread(tmp.data(), w, m_Bpp))
+                    return false;
+                size_t k = (z * h * w + y * w) * m_spec.nchannels;
+                for (int x = 0; x < w; x++, k += m_spec.nchannels) {
+                    uint32_t pixel;
+                    memcpy(&pixel, tmp.data() + x * m_Bpp, 4);
                     dst[k + 0] = ((pixel & m_dds.fmt.rmask) >> m_redR)
                                  << m_redL;
                     dst[k + 1] = ((pixel & m_dds.fmt.gmask) >> m_greenR)
