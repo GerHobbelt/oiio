@@ -1,6 +1,6 @@
 // Copyright 2008-present Contributors to the OpenImageIO project.
 // SPDX-License-Identifier: BSD-3-Clause
-// https://github.com/OpenImageIO/oiio/blob/master/LICENSE.md
+// https://github.com/OpenImageIO/oiio
 
 
 #include <cmath>
@@ -523,11 +523,6 @@ main(int argc, char* argv[])
     } else {
         ok = convert_file(filenames[0], filenames[1]);
     }
-
-    // Force all files to close, ugh, it's the only way I can find to solve
-    // an occasional problem with static destructor order fiasco with
-    // field3d when building with EMBEDPLUGINS=0 on MacOS.
-    ImageCache::create()->close_all();
 
     return ok ? EXIT_SUCCESS : EXIT_FAILURE;
 }

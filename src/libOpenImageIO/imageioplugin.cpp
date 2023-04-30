@@ -1,6 +1,6 @@
 // Copyright 2008-present Contributors to the OpenImageIO project.
 // SPDX-License-Identifier: BSD-3-Clause
-// https://github.com/OpenImageIO/oiio/blob/master/LICENSE.md
+// https://github.com/OpenImageIO/oiio
 
 #include <cstdio>
 #include <cstdlib>
@@ -243,7 +243,6 @@ PLUGENTRY(dds);
 PLUGENTRY_RO(dicom);
 PLUGENTRY(dpx);
 PLUGENTRY(ffmpeg);
-PLUGENTRY(field3d);
 PLUGENTRY(fits);
 PLUGENTRY(gif);
 PLUGENTRY(heif);
@@ -324,11 +323,6 @@ catalog_builtin_plugins()
 #ifdef USE_FFMPEG
 #if !defined(DISABLE_FFMPEG)
     DECLAREPLUG_RO (ffmpeg);
-#endif
-#endif
-#ifdef USE_FIELD3D
-#if !defined(DISABLE_FIELD3D)
-    DECLAREPLUG (field3d);
 #endif
 #endif
 #if !defined(DISABLE_FITS)

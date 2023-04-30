@@ -1,6 +1,6 @@
 // Copyright 2008-present Contributors to the OpenImageIO project.
 // SPDX-License-Identifier: BSD-3-Clause
-// https://github.com/OpenImageIO/oiio/blob/master/LICENSE.md
+// https://github.com/OpenImageIO/oiio
 
 
 #include <cmath>
@@ -1697,11 +1697,6 @@ main(int argc, const char* argv[])
         std::cout << texsys->getstats(verbose ? 2 : 0) << "\n";
     }
     TextureSystem::destroy(texsys);
-
-    // Force all files to close, ugh, it's the only way I can find to solve
-    // an occasional problem with static destructor order fiasco with
-    // field3d when building with EMBEDPLUGINS=0 on MacOS.
-    ImageCache::create()->close_all();
 
     if (verbose)
         std::cout << "\nustrings: " << ustring::getstats(false) << "\n\n";

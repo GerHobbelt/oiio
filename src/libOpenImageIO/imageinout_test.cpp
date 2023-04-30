@@ -1,6 +1,6 @@
 // Copyright 2008-present Contributors to the OpenImageIO project.
 // SPDX-License-Identifier: BSD-3-Clause
-// https://github.com/OpenImageIO/oiio/blob/master/LICENSE.md
+// https://github.com/OpenImageIO/oiio
 
 /////////////////////////////////////////////////////////////////////////
 // Tests related to ImageInput and ImageOutput
@@ -262,9 +262,7 @@ test_all_formats()
         if (formatname == "null" || formatname == "socket"
             || formatname == "term")
             continue;
-        // Field3d very finicky. Skip for now. FIXME?
-        if (formatname == "field3d")
-            continue;
+
         auto extensions = Strutil::splitsv(fmtexts[1], ",");
         bool ok         = true;
 

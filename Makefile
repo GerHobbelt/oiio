@@ -10,7 +10,7 @@
 #
 # Copyright 2008-present Contributors to the OpenImageIO project.
 # SPDX-License-Identifier: BSD-3-Clause
-# https://github.com/OpenImageIO/oiio/blob/master/LICENSE.md
+# https://github.com/OpenImageIO/oiio
 #########################################################################
 
 
@@ -378,7 +378,7 @@ help:
 	@echo "      For each dependeny Foo, defining ENABLE_Foo=0 disables it, even"
 	@echo "      if found. And you can hint where to find it with Foo_ROOT=path"
 	@echo "      Note that it is case sensitive! The list of package names is:"
-	@echo "          DCMTK  FFmpeg  Field3D  Freetype  GIF  JPEGTurbo"
+	@echo "          DCMTK  FFmpeg  Freetype  GIF  JPEGTurbo"
 	@echo "          LibRaw  OpenColorIO  OpenCV  OpenGL  OpenJpeg  OpenVDB"
 	@echo "          PTex  R3DSDK  TBB  TIFF  Webp"
 	@echo "  Finding and Using Dependencies:"

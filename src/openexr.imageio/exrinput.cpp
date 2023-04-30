@@ -1,6 +1,6 @@
 // Copyright 2008-present Contributors to the OpenImageIO project.
 // SPDX-License-Identifier: BSD-3-Clause
-// https://github.com/OpenImageIO/oiio/blob/master/LICENSE.md
+// https://github.com/OpenImageIO/oiio
 
 #include <cerrno>
 #include <cmath>
@@ -636,10 +636,7 @@ OpenEXRInput::PartInfo::parse_header(OpenEXRInput* in,
         case Imf::B44_COMPRESSION: comp = "b44"; break;
         case Imf::B44A_COMPRESSION: comp = "b44a"; break;
 #endif
-#if defined(OPENEXR_VERSION_MAJOR)                                  \
-    && (OPENEXR_VERSION_MAJOR * 10000 + OPENEXR_VERSION_MINOR * 100 \
-        + OPENEXR_VERSION_PATCH)                                    \
-           >= 20200
+#if OPENEXR_CODED_VERSION >= 20200
         case Imf::DWAA_COMPRESSION: comp = "dwaa"; break;
         case Imf::DWAB_COMPRESSION: comp = "dwab"; break;
 #endif

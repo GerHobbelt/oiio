@@ -2,7 +2,7 @@
 
 # Copyright 2008-present Contributors to the OpenImageIO project.
 # SPDX-License-Identifier: BSD-3-Clause
-# https://github.com/OpenImageIO/oiio/blob/master/LICENSE.md
+# https://github.com/OpenImageIO/oiio
 
 # DEP_DIR="$PWD/ext/dist"
 DEP_DIR="$PWD/dist/$PLATFORM"
@@ -53,7 +53,6 @@ time vcpkg install boost-math:x64-windows
 time vcpkg install boost-stacktrace:x64-windows
 time vcpkg install boost-system:x64-windows
 time vcpkg install boost-thread:x64-windows
-time vcpkg install boost-tokenizer:x64-windows
 
 # # vcpkg install zlib:x64-windows
 vcpkg install tiff:x64-windows
