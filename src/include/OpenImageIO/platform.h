@@ -137,7 +137,11 @@
 //   __INTEL_LLVM_COMPILER is defined only for icx
 //   _MSC_VER is defined for MSVS compiler (not gcc/clang/icc even on Windows)
 //   _WIN32 is defined on Windows regardless of compiler
-//   __CUDACC__ is defined for nvcc and clang during Cuda compilation.
+//   __CUDACC__   is defined any time we are compiling a module for Cuda
+//                (both for the host pass and the device pass). "Do this
+//                when using nvcc or clang with ptx target."
+//   __CUDA_ARCH__  is only defined when doing the device pass. "Do this only
+//                for code that will actually run on the GPU."
 
 
 // Define OIIO_GNUC_VERSION to hold an encoded gcc version (e.g. 40802 for
@@ -151,7 +155,7 @@
 // Define OIIO_CLANG_VERSION to hold an encoded generic Clang version (e.g.
 // 30402 for clang 3.4.2), or 0 if not a generic Clang release.
 // N.B. This will be 0 for the clang Apple distributes (which has different
-// version numbers entirely).
+// version numbers entirely) and for the Intel clang-based compiler.
 #if defined(__clang__) && !defined(__apple_build_version__) && !defined(__INTEL_LLVM_COMPILER)
 #  define OIIO_CLANG_VERSION (10000*__clang_major__ + 100*__clang_minor__ + __clang_patchlevel__)
 #else
@@ -172,12 +176,12 @@
 #  define OIIO_APPLE_CLANG_VERSION 0
 #endif
 
-// Define OIIO_INTEL_COMPILER_VERSION to hold an encoded Intel compiler
-// version (e.g. 1900), or 0 if not an Intel compiler.
+// Define OIIO_INTEL_CLASSIC_COMPILER_VERSION to hold an encoded Intel
+// compiler version (e.g. 1900), or 0 if not an Intel compiler.
 #if defined(__INTEL_COMPILER)
-#  define OIIO_INTEL_COMPILER_VERSION __INTEL_COMPILER
+#  define OIIO_INTEL_CLASSIC_COMPILER_VERSION __INTEL_COMPILER
 #else
-#  define OIIO_INTEL_COMPILER_VERSION 0
+#  define OIIO_INTEL_CLASSIC_COMPILER_VERSION 0
 #endif
 
 // DEPRECATED(2.4) phase out OIIO_NON_INTEL_CLANG for OIIO_INTEL_LLVM_COMPILER.
@@ -211,6 +215,7 @@
 
 // Tests for MSVS versions, always 0 if not MSVS at all.
 #if defined(_MSC_VER)
+#  define OIIO_MSVS_VERSION       _MSC_VER
 #  define OIIO_MSVS_AT_LEAST_2013 (_MSC_VER >= 1800)
 #  define OIIO_MSVS_BEFORE_2013   (_MSC_VER <  1800)
 #  define OIIO_MSVS_AT_LEAST_2015 (_MSC_VER >= 1900)
@@ -221,6 +226,7 @@
 #    error "This version of OIIO is meant to work only with Visual Studio 2017 or later"
 #  endif
 #else
+#  define OIIO_MSVS_VERSION       0
 #  define OIIO_MSVS_AT_LEAST_2013 0
 #  define OIIO_MSVS_BEFORE_2013   0
 #  define OIIO_MSVS_AT_LEAST_2015 0
