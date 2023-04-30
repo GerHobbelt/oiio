@@ -113,7 +113,8 @@ dump_flat_data(std::ostream& out, ImageInput* input,
     const ImageSpec& spec(input->spec());
     std::vector<T> buf(spec.image_pixels() * spec.nchannels);
     if (!input->read_image(BaseTypeFromC<T>::value, &buf[0])) {
-        Strutil::print(out, "    dump data: could not read image\n");
+        Strutil::print(out, "    dump data Error: could not read image: {}\n",
+                       input->geterror());
         return false;
     }
     const T* ptr = &buf[0];
@@ -401,7 +402,6 @@ OiioTool::print_stats(std::ostream& out, Oiiotool& ot, const ImageBuf& input,
         Imath::V3i mindepth_pixel(-1, -1, -1), maxdepth_pixel(-1, -1, -1);
         Imath::V3i nonfinite_pixel(-1, -1, -1);
         int nonfinite_pixel_samp(-1), nonfinite_pixel_chan(-1);
-        size_t sampoffset    = 0;
         int nchannels        = dd->channels();
         int depthchannel     = -1;
         long long nonfinites = 0;
@@ -454,7 +454,6 @@ OiioTool::print_stats(std::ostream& out, Oiiotool& ot, const ImageBuf& input,
                             }
                         }
                     }
-                    sampoffset += samples;
                 }
             }
         }

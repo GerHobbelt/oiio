@@ -17,7 +17,7 @@ NEW or CHANGED MINIMUM dependencies since the last major release are **bold**.
  * **C++14** (also builds with C++17, and C++20)
      * The default build mode is C++14. This can be controlled by via the
        CMake configuration flag: `-DCMAKE_CXX_STANDARD=17`, etc.
- * Compilers: **gcc 6.1 - 11.2**, **clang 3.4 - 12**, **MSVS 2017 - 2019**,
+ * Compilers: **gcc 6.1 - 11.2**, **clang 3.4 - 13**, **MSVS 2017 - 2019**,
    **icc 17+**.
  * CMake >= 3.12 (tested through 3.21)
  * OpenEXR/Imath >= 2.3 (recommended: 2.4 or higher; tested through 3.1)
@@ -31,10 +31,10 @@ NEW or CHANGED MINIMUM dependencies since the last major release are **bold**.
      * OpenGL
  * If you are building the Python bindings or running the testsuite:
      * Python >= 2.7 (tested against 2.7, 3.6, 3.7, 3.8, 3.9)
-     * pybind11 >= 2.4.2 (Tested through 2.7.)
+     * pybind11 >= 2.4.2 (Tested through 2.8.)
      * NumPy
  * If you want support for camera "RAW" formats:
-     * LibRaw >= 0.15 (tested 0.15 - 0.20; LibRaw >= 0.18 is necessary for
+     * LibRaw >= 0.15 (tested 0.15 - 0.20.2; LibRaw >= 0.18 is necessary for
        ACES support and much better recognition of camera metadata; if
        building with C++17 or higher, LibRaw >= 0.20 is necessary)
  * If you want support for a wide variety of video formats:
