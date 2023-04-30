@@ -595,9 +595,9 @@ public:
 
     ~ImageCacheTile();
 
-    /// Actually read the pixels.  The caller had better be the thread
-    /// that constructed the tile.
-    void read(ImageCachePerThreadInfo* thread_info);
+    /// Actually read the pixels.  The caller had better be the thread that
+    /// constructed the tile.  Return true for success, false for failure.
+    OIIO_NODISCARD bool read(ImageCachePerThreadInfo* thread_info);
 
     /// Return pointer to the raw pixel data
     const void* data(void) const { return &m_pixels[0]; }
@@ -671,12 +671,26 @@ public:
     int channelsize() const { return m_channelsize; }
     int pixelsize() const { return m_pixelsize; }
 
+    // 1D index of the 2D tile coordinate. 64 bit safe.
+    imagesize_t pixel_index(int tile_s, int tile_t) const
+    {
+        return imagesize_t(tile_t) * m_tile_width + tile_s;
+    }
+
+    // Offset in bytes into the tile memory of the given 2D tile pixel
+    // coordinates.  64 bit safe.
+    imagesize_t pixel_offset(int tile_s, int tile_t) const
+    {
+        return m_pixelsize * pixel_index(tile_s, tile_t);
+    }
+
 private:
     TileID m_id;                       ///< ID of this tile
     std::unique_ptr<char[]> m_pixels;  ///< The pixel data
     size_t m_pixels_size { 0 };        ///< How much m_pixels has allocated
     int m_channelsize { 0 };           ///< How big is each channel (bytes)
     int m_pixelsize { 0 };             ///< How big is each pixel (bytes)
+    int m_tile_width { 0 };            ///< Tile width
     bool m_valid { false };            ///< Valid pixels
     bool m_nofree { false };  ///< We do NOT own the pixels, do not free!
     volatile bool m_pixels_ready {
@@ -958,8 +972,8 @@ public:
 
     /// Add the tile to the cache.  This will also enforce cache memory
     /// limits.
-    void add_tile_to_cache(ImageCacheTileRef& tile,
-                           ImageCachePerThreadInfo* thread_info);
+    OIIO_NODISCARD bool add_tile_to_cache(ImageCacheTileRef& tile,
+                                          ImageCachePerThreadInfo* thread_info);
 
     /// Find the tile specified by id.  If found, return true and place
     /// the tile ref in thread_info->tile; if not found, return false.

@@ -123,11 +123,6 @@ public:
                             int chbegin, int chend, TypeDesc format, void* data,
                             stride_t xstride, stride_t ystride,
                             stride_t zstride) override;
-    virtual bool set_ioproxy(Filesystem::IOProxy* ioproxy) override
-    {
-        m_io = ioproxy;
-        return true;
-    }
 
 private:
     TIFF* m_tif;                            ///< libtiff handle
@@ -157,7 +152,6 @@ private:
     std::vector<unsigned short> m_colormap;   ///< Color map for palette images
     std::vector<uint32_t> m_rgbadata;         ///< Sometimes we punt
     std::vector<ImageSpec> m_subimage_specs;  ///< Cached subimage specs
-    Filesystem::IOProxy* m_io = nullptr;
 
     // Reset everything to initial state
     void init()
@@ -174,7 +168,7 @@ private:
         m_colormap.clear();
         m_use_rgba_interface = false;
         m_subimage_specs.clear();
-        m_io = nullptr;
+        ioproxy_clear();
     }
 
     // Just close the TIFF file handle, but don't forget anything we
@@ -712,12 +706,8 @@ bool
 TIFFInput::open(const std::string& name, ImageSpec& newspec,
                 const ImageSpec& config)
 {
-    const ParamValue* param = config.find_attribute("oiio:ioproxy",
-                                                    TypeDesc::PTR);
-    if (param)
-        m_io = param->get<Filesystem::IOProxy*>();
-
     // Check 'config' for any special requests
+    ioproxy_retrieve_from_config(config);
     if (config.get_int_attribute("oiio:UnassociatedAlpha", 0) == 1)
         m_keep_unassociated_alpha = true;
     if (config.get_int_attribute("oiio:RawColor", 0) == 1)
@@ -759,14 +749,14 @@ TIFFInput::seek_subimage(int subimage, int miplevel)
     bool read_meta = !(m_emulate_mipmap && m_tif && m_subimage >= 0);
 
     if (!m_tif) {
-        if (m_io) {
+        if (ioproxy_opened()) {
             static_assert(sizeof(thandle_t) == sizeof(void*),
                           "thandle_t must be same size as void*");
             // Strutil::print("\n\nOpening client \"{}\"\n", m_filename);
-            m_io->seek(0);
-            m_tif = TIFFClientOpen(m_filename.c_str(), "rm", m_io, readproc,
-                                   writeproc, seekproc, closeproc, sizeproc,
-                                   mapproc, unmapproc);
+            ioseek(0);
+            m_tif = TIFFClientOpen(m_filename.c_str(), "rm", ioproxy(),
+                                   readproc, writeproc, seekproc, closeproc,
+                                   sizeproc, mapproc, unmapproc);
         } else {
 #ifdef _WIN32
             std::wstring wfilename = Strutil::utf8_to_utf16(m_filename);
@@ -816,11 +806,27 @@ TIFFInput::seek_subimage(int subimage, int miplevel)
         if (size_t(subimage) >= m_subimage_specs.size())  // make room
             m_subimage_specs.resize(
                 subimage > 0 ? round_to_multiple(subimage + 1, 4) : 1);
-        if (m_subimage_specs[subimage]
-                .undefined())  // haven't cached this spec yet
+        if (m_subimage_specs[subimage].undefined()) {
+            // haven't cached this spec yet
             m_subimage_specs[subimage] = m_spec;
+        }
         if (m_spec.format == TypeDesc::UNKNOWN) {
             errorf("No support for data format of \"%s\"", m_filename);
+            return false;
+        }
+        if (pvt::limit_channels && m_spec.nchannels > pvt::limit_channels) {
+            errorfmt(
+                "{} channels exceeds \"limits:channels\" = {}. Possible corrupt input?\nIf you're sure this is a valid file, raise the OIIO global attribute \"limits:channels\".",
+                m_spec.nchannels, pvt::limit_channels);
+            return false;
+        }
+        if (pvt::limit_imagesize_MB
+            && m_spec.image_bytes(true)
+                   > pvt::limit_imagesize_MB * imagesize_t(1024 * 1024)) {
+            errorfmt(
+                "Uncompressed image size {:.1f} MB exceeds \"limits:imagesize_MB\" = {}. Possible corrupt input?\nIf you're sure this is a valid file, raise the OIIO global attribute \"limits:imagesize_MB\".",
+                float(m_spec.image_bytes(true)) / float(1024 * 1024),
+                pvt::limit_imagesize_MB);
             return false;
         }
         return true;

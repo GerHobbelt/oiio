@@ -1923,20 +1923,20 @@ public:
     ///  - `"ioproxy"`
     ///         Does the image file format support writing to an `IOProxy`?
     ///
-    /// - `"procedural"` :
-    ///       Is this a purely procedural output that doesn't write an
-    ///       actual file?
+    ///  - `"procedural"` :
+    ///        Is this a purely procedural output that doesn't write an
+    ///        actual file?
     ///
-    /// - `"thumbnail"` :
-    ///       Does this format writer support adding a  reduced resolution
-    ///       copy of the image via the `thumbnail()` method?
+    ///  - `"thumbnail"` :
+    ///        Does this format writer support adding a  reduced resolution
+    ///        copy of the image via the `thumbnail()` method?
     ///
-    /// - `"thumbnail_after_write"` :
-    ///       Does this format writer support calling `thumbnail()` after
-    ///       the scanlines or tiles have been specified? (Supporting
-    ///       `"thumbnail"` but not `"thumbnail_after_write"` means that any
-    ///       thumbnail must be supplied immediately after `open()`, prior
-    ///       to any of the `write_*()` calls.)
+    ///  - `"thumbnail_after_write"` :
+    ///        Does this format writer support calling `thumbnail()` after
+    ///        the scanlines or tiles have been specified? (Supporting
+    ///        `"thumbnail"` but not `"thumbnail_after_write"` means that any
+    ///        thumbnail must be supplied immediately after `open()`, prior
+    ///        to any of the `write_*()` calls.)
     ///
     /// This list of queries may be extended in future releases. Since this
     /// can be done simply by recognizing new query strings, and does not
@@ -2663,6 +2663,23 @@ OIIO_API std::string geterror(bool clear = true);
 ///
 ///    When nonzero, use the new "OpenEXR core C library" when available,
 ///    for OpenEXR >= 3.1. This is experimental, and currently defaults to 0.
+///
+/// - `int limits:channels` (1024)
+///
+///    When nonzero, the maximum number of color channels in an image. Image
+///    files whose headers indicate they have more channels might be assumed
+///    to be corrupted or malicious files.  In situations when more channels
+///    are expected to be encountered, the application should raise this
+///    limit. The default is 1024 channels.
+///
+/// - `int limits:imagesize_MB` (32768)
+///
+///    When nonzero, the maximum size in MB of the uncompressed pixel data of
+///    a single 2D image. Images whose headers indicate that they are larger
+///    than this might be assumed to be corrupted or malicious files. The
+///    default is 32768 (32 GB of uncompressed pixel data -- equivalent to 64k
+///    x 64k x 4 channel x half). In situations when images larger than this
+///    are expected to be encountered, you should raise this limit.
 ///
 /// - `int log_times`
 ///
