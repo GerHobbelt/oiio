@@ -137,7 +137,7 @@ TermOutput::output()
     string_view TERM(Sysutil::getenv("TERM"));
     string_view TERM_PROGRAM(Sysutil::getenv("TERM_PROGRAM"));
     string_view TERM_PROGRAM_VERSION(Sysutil::getenv("TERM_PROGRAM_VERSION"));
-    Sysutil::Term term;
+    Sysutil::Term term(std::cout);
 
     string_view method(m_method);
     if (method.empty()) {
@@ -203,8 +203,9 @@ TermOutput::output()
                 m_buf.get_pixels(ROI(x, x + 1, y, y + 2, z, z + 1, 0, 3),
                                  TypeDesc::UINT8, &rgb);
                 std::cout << term.ansi_fgcolor(rgb[0][0], rgb[0][1], rgb[0][2]);
-                std::cout << term.ansi_bgcolor(rgb[1][0], rgb[1][1], rgb[1][2])
-                          << "\u2580";
+                std::cout
+                    << term.ansi_bgcolor(rgb[1][0], rgb[1][1], rgb[1][2])
+                    << "\x5C\x75\x32\x35\x38\x30";  // utf8 encoding of "\u2580"
             }
             std::cout << term.ansi("default") << "\n";
         }
