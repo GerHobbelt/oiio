@@ -13,14 +13,14 @@ target_include_directories (OpenImageIO_Util
 target_link_libraries (OpenImageIO_Util
         PUBLIC
             $<TARGET_NAME_IF_EXISTS:Threads::Threads>
-            ${GCC_ATOMIC_LIBRARIES}
             $<TARGET_NAME_IF_EXISTS:TBB::tbb>
-        ${OPENIMAGEIO_IMATH_DEPENDENCY_VISIBILITY}
+            ${GCC_ATOMIC_LIBRARIES}
+            ${OPENIMAGEIO_IMATH_DEPENDENCY_VISIBILITY}
             ${OPENIMAGEIO_IMATH_TARGETS}
         PRIVATE
-            Boost::filesystem
-            Boost::system
-            Boost::thread
+            $<TARGET_NAME_IF_EXISTS:Boost::filesystem>
+            $<TARGET_NAME_IF_EXISTS:Boost::system>
+            $<TARGET_NAME_IF_EXISTS:Boost::thread>
             ${SANITIZE_LIBRARIES}
             ${CMAKE_DL_LIBS}
         )
