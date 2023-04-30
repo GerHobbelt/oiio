@@ -847,6 +847,29 @@ values.  For example,
       neutral = (0.3127, 0.329)
       spec.attribute ("adoptedNeutral", "float[2]", neutral)
 
+Additionally, the `["key"]` notation may be used to set metadata in the
+spec as if it were an associative array or dictionary:
+
+.. tabs::
+
+    .. code-tab:: c++
+
+        // spec["key"] = value  sets the value of the metadata, using
+        // the type of value as a guide for the type of the metadata.
+        spec["Orientation"] = 1;   // int
+        spec["PixelAspectRatio"] = 1.0f;   // float
+        spec["ImageDescription"] = "selfie";  // string
+        spec["worldtocamera"] = Imath::M44f(...)  // matrix
+
+    .. code-tab:: py
+
+        // spec["key"] = value  sets the value of the metadata, just
+        // like a Python dict.
+        spec["Orientation"] = 1
+        spec["PixelAspectRatio"] = 1.0
+        spec["ImageDescription"] = "selfie"
+        spec["worldtocamera"] = (1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)
+
 In general, most image file formats (and therefore most ``ImageOutput``
 implementations) are aware of only a small number of name/value pairs
 that they predefine and will recognize.  Some file formats (OpenEXR,
@@ -1379,7 +1402,7 @@ Here is an example of using these methods to write a deep image:
 
       # Prepare the spec for 'half' RGBA, 'float' z
       int nchannels = 5
-      ImageSpec spec (xres, yres, nchannels)
+      spec = ImageSpec(xres, yres, nchannels)
       spec.channelnames = ("R", "G", "B", "A", "Z")
       spec.channeltypes = ("half", "half", "half", "half", "float")
       spec.alpha_channel = 3

@@ -604,22 +604,51 @@ Section :ref:`sec-ImageSpec`, is replicated for Python.
 
 
 
-.. py:attribute:: ImageSpec[name]
+.. py:attribute:: ImageSpec[key]
 
-    *NEW in 2.1*
+    ImageSpec provides a Python `dict`-like interface for metadata,
+    in addition to `attribute()` and `getattribute()`. 
+    
+    The `ImageSpec["key"] = value` notation can be used to set an
+    attribute (just like calling `ImageSpec.attribute("key", value)`).
+    Also, `ImageSpec["key"]` can retrieve an attribute if it is present,
+    or raise a `KeyError` exception if not found.
 
-    Retrieve or set metadata using a dictionary-like syntax, rather than
-    `attribute()` and `getattribute()`. This is best illustrated by
-    example:
+    Like dictionaries, `'key' in spec` is True if the attribute is present,
+    and `del spec['key']` will remove the attribute.
+    
+    Examples:
 
     .. code-block:: python
 
-        comp = spec["Compression"]
-        # Same as:  comp = spec.getattribute("Compression")
-
-        spec["Compression"] = comp
         # Same as: spec.attribute("Compression", comp)
+        spec["Compression"] = comp
 
+        # Same as:  comp = spec.getattribute("Compression")
+        # if it succeeds, or raises a KeyError if not found.
+        comp = spec["Compression"]
+
+        # Failed spec["key"] will raise a KeyError
+        try:
+            r = spec["unknown"]
+        except:
+            print("'unknown' key was not found")
+
+        # "key" in spec is True if the key is present
+        if "Compression" in spec:
+            print("'Compression' metadata is present")
+
+        # del spec["key"] removes the key
+        del key["Compression"]
+
+        # ImageSpec.get("key") returns the value, or None if not found
+        comp = spec.get("Compression")
+        # and optionally, a default value may be passed
+        comp = spec.get("Compression", "none")
+
+    The basic `["key"]` setting and retrieval was added in OpenImageIO in 2.1.
+    The `"key" in` and `del` operators, and the `get()` method, were added in
+    OpenImageIO 2.4.
 
 
 .. py:method:: ImageSpec.metadata_val (paramval, human=False)
@@ -1556,6 +1585,28 @@ awaiting a call to `reset()` or `copy()` before it is useful.
         buf = ImageBuf (spec)
 
 
+.. py:method:: ImageBuf (data)
+
+    Construct a writable ImageBuf of the dimensions of `data`, which is a
+    NumPy `ndarray` of values indexed as `[y][x][channel]` for normal 2D
+    images, or for 3D volumetric images, as `[z][y][x][channel]`. The data
+    will be copied into the ImageBuf's internal storage. The NumPy array may
+    be strided for z, y, or x, but must have "contiguous" channel data within
+    each pixel. The pixel data type is also deduced from the contents of the
+    `data` array.
+
+    Note that this Python ImageBuf will contain its own copy of the data, so
+    further changes to the `data` array will not affect the ImageBuf. This is
+    different from the C++ ImageBuf constructor from a pointer, which will
+    "wrap" the existing user-provided buffer but not make its own copy.
+
+    Example:
+
+    .. code-block:: python
+
+        pixels = numpy.zeros ((640, 480, 3), dtype = numpy.float32)
+        buf = ImageBuf (pixels)
+
 
 .. py:method:: ImageBuf.clear ()
 
@@ -1587,6 +1638,22 @@ awaiting a call to `reset()` or `copy()` before it is useful.
     ImageBuf specified by an ImageSpec. The pixels will be iniialized to
     black/empty if `zero` is True, otherwise the pixel values will remain
     uninitialized.
+
+
+.. py:method:: ImageBuf.reset (data)
+
+    Reset the ImageBuf to be sized to the dimensions of `data`, which is a
+    NumPy `ndarray` of values indexed as `[y][x][channel]` for normal 2D
+    images, or for 3D volumetric images, as `[z][y][x][channel]`. The data
+    will be copied into the ImageBuf's internal storage. The NumPy array may
+    be strided for z, y, or x, but must have "contiguous" channel data within
+    each pixel. The pixel data type is also deduced from the contents of the
+    `data` array.
+
+    Note that this Python ImageBuf will contain its own copy of the data, so
+    further changes to the `data` array will not affect the ImageBuf. This is
+    different from the C++ ImageBuf constructor from a pointer, which will
+    "wrap" the existing user-provided buffer but not make its own copy.
 
 
 .. py:method:: ImageBuf.read(subimage=0, miplevel=0, force=False, convert=oiio.UNKNOWN)
@@ -2275,6 +2342,17 @@ Pattern generation
         ImageBufAlgo.zero (buf)
         ImageBufAlgo.noise (buf, 'white', 0.25, 0.75)
 
+
+.. py:method:: ImageBuf ImageBufAlgo.bluenoise_image ()
+
+    Return a reference to a singleton ImageBuf containing a 4-channel float
+    periodic blue noise image.
+
+    Example:
+
+    .. code-block:: python
+
+        buf = ImageBufAlgo.bluenoise_image ()
 
 
 .. py:method:: ImageBufAlgo.render_point (dst, x, y, color=(1,1,1,1))
