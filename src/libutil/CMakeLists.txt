@@ -12,18 +12,11 @@ target_include_directories (OpenImageIO_Util
         )
 target_link_libraries (OpenImageIO_Util
         PUBLIC
-            # For OpenEXR/Imath 3.x:
-            $<TARGET_NAME_IF_EXISTS:Imath::Imath>
-            $<TARGET_NAME_IF_EXISTS:Imath::Half>
-            # For OpenEXR >= 2.4/2.5 with reliable exported targets
-            $<TARGET_NAME_IF_EXISTS:IlmBase::Imath>
-            $<TARGET_NAME_IF_EXISTS:IlmBase::Half>
-            $<TARGET_NAME_IF_EXISTS:IlmBase::IlmThread>
-            $<TARGET_NAME_IF_EXISTS:IlmBase::Iex>
-            # For OpenEXR <= 2.3:
-            ${ILMBASE_LIBRARIES}
+            $<TARGET_NAME_IF_EXISTS:Threads::Threads>
             ${GCC_ATOMIC_LIBRARIES}
-            $<$<TARGET_EXISTS:TBB::tbb>:TBB::tbb>
+            $<TARGET_NAME_IF_EXISTS:TBB::tbb>
+        ${OPENIMAGEIO_IMATH_DEPENDENCY_VISIBILITY}
+            ${OPENIMAGEIO_IMATH_TARGETS}
         PRIVATE
             Boost::filesystem
             Boost::system
@@ -107,7 +100,8 @@ if (OIIO_BUILD_TESTS)
     add_test (unit_strutil ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/strutil_test)
 
     add_executable (fmath_test fmath_test.cpp)
-    target_link_libraries (fmath_test PRIVATE OpenImageIO_Util)
+    target_link_libraries (fmath_test PRIVATE OpenImageIO_Util
+                                              ${OPENIMAGEIO_IMATH_TARGETS})
     set_target_properties (fmath_test PROPERTIES FOLDER "Unit Tests")
     add_test (unit_fmath ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/fmath_test)
 
@@ -142,7 +136,8 @@ if (OIIO_BUILD_TESTS)
     add_test (unit_thread ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/thread_test)
 
     add_executable (simd_test simd_test.cpp)
-    target_link_libraries (simd_test PRIVATE OpenImageIO)
+    target_link_libraries (simd_test PRIVATE OpenImageIO
+                                             ${OPENIMAGEIO_IMATH_TARGETS})
     set_target_properties (simd_test PROPERTIES FOLDER "Unit Tests")
     add_test (unit_simd ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/simd_test)
 
@@ -152,7 +147,8 @@ if (OIIO_BUILD_TESTS)
     add_test (unit_filter ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/filter_test)
 
     add_executable (paramlist_test paramlist_test.cpp)
-    target_link_libraries (paramlist_test PRIVATE OpenImageIO)
+    target_link_libraries (paramlist_test PRIVATE OpenImageIO
+                                                  ${OPENIMAGEIO_IMATH_TARGETS})
     set_target_properties (paramlist_test PROPERTIES FOLDER "Unit Tests")
     add_test (unit_paramlist ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/paramlist_test)
 
@@ -163,12 +159,7 @@ if (OIIO_BUILD_TESTS)
 
     add_executable (typedesc_test typedesc_test.cpp)
     target_link_libraries (typedesc_test PRIVATE OpenImageIO_Util
-                           # For OpenEXR/Imath 3.x:
-                           $<TARGET_NAME_IF_EXISTS:OpenEXR::OpenEXR>
-                           # For OpenEXR >= 2.4/2.5 with reliable exported targets
-                           $<TARGET_NAME_IF_EXISTS:OpenEXR::IlmImf>
-                           # For OpenEXR <= 2.3:
-                           ${OPENEXR_LIBRARIES})
+                           ${OPENIMAGEIO_OPENEXR_TARGETS})
     set_target_properties (typedesc_test PROPERTIES FOLDER "Unit Tests")
     add_test (unit_typedesc ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/typedesc_test)
 

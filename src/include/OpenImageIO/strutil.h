@@ -26,27 +26,8 @@
 #include <OpenImageIO/platform.h>
 #include <OpenImageIO/string_view.h>
 
+#include <OpenImageIO/detail/fmt.h>
 #include <OpenImageIO/detail/farmhash.h>
-
-#if OIIO_GNUC_VERSION >= 70000
-#    pragma GCC diagnostic push
-#    pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
-#endif
-#ifndef FMT_HEADER_ONLY
-#    define FMT_HEADER_ONLY
-#endif
-#ifndef FMT_EXCEPTIONS
-#    define FMT_EXCEPTIONS 0
-#endif
-#ifndef FMT_USE_GRISU
-#    define FMT_USE_GRISU 1
-#endif
-#include "detail/fmt/ostream.h"
-#include "detail/fmt/format.h"
-#include "detail/fmt/printf.h"
-#if OIIO_GNUC_VERSION >= 70000
-#    pragma GCC diagnostic pop
-#endif
 
 // Allow client software to know if this version of OIIO has Strutil::sprintf
 #define OIIO_HAS_SPRINTF 1
@@ -319,7 +300,7 @@ strhash (size_t len, const char *s)
 /// Hash a string_view. This is OIIO's default favorite string hasher.
 /// Currently, it uses farmhash, is constexpr (for C++14), and works in
 /// Cuda. This is rigged, though, so that empty strings hash always hash to
-/// 0 (that isn't would a raw farmhash would give you, but it's a useful
+/// 0 (that isn't what a raw farmhash would give you, but it's a useful
 /// property, especially for trivial initialization).
 inline OIIO_CONSTEXPR14 size_t
 strhash (string_view s)
