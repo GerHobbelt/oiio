@@ -26,6 +26,7 @@ extern recursive_mutex imageio_mutex;
 extern atomic_int oiio_threads;
 extern int oiio_use_tbb;
 extern atomic_int oiio_read_chunk;
+extern ustring font_searchpath;
 extern ustring plugin_searchpath;
 extern std::string format_list;
 extern std::string input_format_list;
@@ -34,6 +35,7 @@ extern std::string extension_list;
 extern std::string library_list;
 extern int oiio_print_debug;
 extern int oiio_log_times;
+extern int openexr_core;
 
 
 // For internal use - use error() below for a nicer interface.

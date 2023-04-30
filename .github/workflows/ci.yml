@@ -171,18 +171,16 @@ jobs:
             !build/testsuite/j2kp4files_v1_5
 
   vfxplatform-2022:
-    name: "Linux VFX Platform 2022: gcc9/C++17 py3.9 boost1.73 exr-3.1 ocio2.1 qt-5.15"
+    name: "Linux VFX Platform 2022: gcc9/C++17 py3.9 boost1.76 exr3.1 ocio2.1 qt5.15"
     runs-on: ubuntu-latest
     container:
-      image: aswf/ci-osl:2022-clang11.7
+      image: aswf/ci-osl:2022-clang11
     env:
       CXX: g++
       CC: gcc
       CMAKE_CXX_STANDARD: 17
       PYTHON_VERSION: 3.9
       USE_SIMD: avx2,f16c
-      OPENCOLORIO_VERSION: v2.1.0
-      OPENEXR_VERSION: v3.1.1
     steps:
       - uses: actions/checkout@v2
       - name: Prepare ccache timestamp
@@ -202,8 +200,6 @@ jobs:
             src/build-scripts/ci-startup.bash
       - name: Dependencies
         run: |
-            sudo rm -rf /usr/local/include/{OpenEXR,OpenColorIO}
-            sudo rm -rf /usr/local/lib64/cmake/{IlmBase,OpenEXR,OpenColorIO}
             src/build-scripts/gh-installdeps.bash
       - name: Build
         run: |
@@ -395,7 +391,8 @@ jobs:
       PYBIND11_VERSION: master
       PYTHON_VERSION: 3.8
       WEBP_VERSION: master
-      MY_CMAKE_FLAGS: -DBUILD_FMT_VERSION=master -DOIIO_USE_EXR_C_API=ON
+      MY_CMAKE_FLAGS: -DBUILD_FMT_VERSION=master
+      OPENIMAGEIO_OPTIONS: "openexr:core=1"
       USE_OPENVDB: 0
       # The old installed OpenVDB has a TLS conflict with Python 3.8
     steps:

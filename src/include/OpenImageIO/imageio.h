@@ -2496,10 +2496,15 @@ OIIO_API std::string geterror(bool clear = true);
 ///    If zero, they will try to use OIIO's native thread pool even if TBB
 ///    is available.
 ///
+/// - `string font_searchpath`
+///
+///    Colon-separated (or semicolon-separated) list of directories to search
+///    if fonts are needed. (Such as for `ImageBufAlgo::render_text()`.)
+///
 /// - `string plugin_searchpath`
 ///
-///    Colon-separated list of directories to search for dynamically-loaded
-///    format plugins.
+///    Colon-separated (or semicolon-separated) list of directories to search
+///    for dynamically-loaded format plugins.
 ///
 /// - `int read_chunk`
 ///
@@ -2545,6 +2550,11 @@ OIIO_API std::string geterror(bool clear = true);
 ///    When nonzero, allows TIFF to write `half` pixel data. N.B. Most apps
 ///    may not read these correctly, but OIIO will. That's why the default
 ///    is not to support it.
+///
+/// - `int openexr:core`
+///
+///    When nonzero, use the new "OpenEXR core C library" when available,
+///    for OpenEXR >= 3.1. This is experimental, and currently defaults to 0.
 ///
 /// - `int log_times`
 ///

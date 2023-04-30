@@ -11,16 +11,19 @@
 #include <memory>
 #include <numeric>
 
+#include <OpenImageIO/platform.h>
+
 #include <boost/version.hpp>
-#if BOOST_VERSION >= 106900
+
+#if OIIO_CPLUSPLUS_VERSION >= 17
+using std::gcd;
+#elif BOOST_VERSION >= 106900
 #    include <boost/integer/common_factor_rt.hpp>
 using boost::integer::gcd;
 #else
 #    include <boost/math/common_factor_rt.hpp>
 using boost::math::gcd;
 #endif
-
-#include <OpenImageIO/platform.h>
 
 #include <OpenEXR/ImfChannelList.h>
 #include <OpenEXR/ImfEnvmap.h>
@@ -79,6 +82,10 @@ OIIO_PRAGMA_WARNING_POP
 OIIO_PRAGMA_VISIBILITY_POP
 
 #include <OpenEXR/ImfCRgbaFile.h>
+
+#if OPENEXR_CODED_VERSION >= 30100 && defined(OIIO_USE_EXR_C_API)
+#    define USE_OPENEXR_CORE
+#endif
 
 #include "imageio_pvt.h"
 #include <OpenImageIO/dassert.h>
@@ -284,6 +291,13 @@ OIIO_PLUGIN_EXPORTS_BEGIN
 OIIO_EXPORT ImageInput*
 openexr_input_imageio_create()
 {
+#ifdef USE_OPENEXR_CORE
+    if (pvt::openexr_core) {
+        // Strutil::print("selecting core\n");
+        extern ImageInput* openexrcore_input_imageio_create();
+        return openexrcore_input_imageio_create();
+    }
+#endif
     return new OpenEXRInput;
 }
 
@@ -811,7 +825,7 @@ OpenEXRInput::PartInfo::parse_header(OpenEXRInput* in,
                 r[1] = static_cast<int>(d);
                 spec.attribute(oname, TypeRational, r);
             } else {
-                int f = static_cast<int>(gcd<long long>(n, d));
+                int f = static_cast<int>(gcd(int64_t(n), int64_t(d)));
                 if (f > 1) {
                     int r[2];
                     r[0] = n / f;

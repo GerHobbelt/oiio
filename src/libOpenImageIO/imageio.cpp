@@ -37,8 +37,10 @@ recursive_mutex imageio_mutex;
 atomic_int oiio_threads(threads_default());
 atomic_int oiio_exr_threads(threads_default());
 atomic_int oiio_read_chunk(256);
+int openexr_core(0);  // Should we use "Exr core C library"?
 int tiff_half(0);
 int tiff_multithread(1);
+ustring font_searchpath;
 ustring plugin_searchpath(OIIO_DEFAULT_PLUGIN_SEARCHPATH);
 std::string format_list;         // comma-separated list of all formats
 std::string input_format_list;   // comma-separated list of readable formats
@@ -305,12 +307,20 @@ attribute(string_view name, TypeDesc type, const void* val)
         oiio_read_chunk = *(const int*)val;
         return true;
     }
+    if (name == "font_searchpath" && type == TypeString) {
+        font_searchpath = ustring(*(const char**)val);
+        return true;
+    }
     if (name == "plugin_searchpath" && type == TypeString) {
         plugin_searchpath = ustring(*(const char**)val);
         return true;
     }
     if (name == "exr_threads" && type == TypeInt) {
         oiio_exr_threads = OIIO::clamp(*(const int*)val, -1, maxthreads);
+        return true;
+    }
+    if (name == "openexr:core" && type == TypeInt) {
+        openexr_core = *(const int*)val;
         return true;
     }
     if (name == "tiff:half" && type == TypeInt) {
@@ -366,6 +376,10 @@ getattribute(string_view name, TypeDesc type, void* val)
         *(int*)val = oiio_read_chunk;
         return true;
     }
+    if (name == "font_searchpath" && type == TypeString) {
+        *(ustring*)val = font_searchpath;
+        return true;
+    }
     if (name == "plugin_searchpath" && type == TypeString) {
         *(ustring*)val = plugin_searchpath;
         return true;
@@ -402,6 +416,10 @@ getattribute(string_view name, TypeDesc type, void* val)
     }
     if (name == "exr_threads" && type == TypeInt) {
         *(int*)val = oiio_exr_threads;
+        return true;
+    }
+    if (name == "openexr:core" && type == TypeInt) {
+        *(int*)val = openexr_core;
         return true;
     }
     if (name == "tiff:half" && type == TypeInt) {
