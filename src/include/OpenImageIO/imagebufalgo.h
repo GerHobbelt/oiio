@@ -1948,11 +1948,11 @@ bool OIIO_API ociolook (ImageBuf &dst, const ImageBuf &src, string_view looks,
 /// alpha. Any additional channels will be simply copied unaltered.
 ///
 /// @param  display
-///             The OCIO "display" to apply. If this is the empty string,
-///             the default display will be used.
+///             The OCIO "display" to apply. If this is `"default"` or the
+///             empty string `""`, the default display will be used.
 /// @param  view
-///             The OCIO "view" to use. If this is the empty string, the
-///             default view for this display will be used.
+///             The OCIO "view" to use. If this is `"default"` or the empty
+///             string `""`, the default view for this display will be used.
 /// @param  fromspace
 ///             If `fromspace` is not supplied, it will assume that the
 ///             source color space is whatever is indicated by the source
@@ -2200,15 +2200,16 @@ enum MakeTextureMode {
 ///                           If set, will specify the output file format.
 ///                           (default: "", meaning infer the format from
 ///                           the output filename)
-///    - `maketx:prman_metadata` (int) :
-///                           If set, output some metadata that PRMan will
-///                           need for its textures. (0)
 ///    - `maketx:oiio_options` (int) :
 ///                           (Deprecated; all are handled by default)
 ///    - `maketx:prman_options` (int) :
 ///                           If nonzero, override a whole bunch of settings
 ///                           as needed to make textures that are
-///                           compatible with PRMan. (0)
+///                           compatible with PRMan. This also enables
+///                           prman_metadata. (0)
+///    - `maketx:prman_metadata` (int) :
+///                           If set, output some metadata that PRMan will
+///                           need for its textures. (0)
 ///    - `maketx:mipimages` (string) :
 ///                           Semicolon-separated list of alternate images
 ///                           to be used for individual MIPmap levels,
