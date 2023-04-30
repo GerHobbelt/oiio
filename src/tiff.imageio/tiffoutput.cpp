@@ -218,15 +218,10 @@ oiio_tiff_set_error_handler();
 
 
 
-struct CompressionCode {
-    int code;
-    const char* name;
-};
-
 // We comment out a lot of these because we only support a subset for
 // writing. These can be uncommented on a case by case basis as they are
 // thoroughly tested and included in the testsuite.
-static CompressionCode tiff_compressions[] = {
+static std::pair<int, const char*> tiff_output_compressions[] = {
 // clang-format off
     { COMPRESSION_NONE, "none" },          // no compression
     { COMPRESSION_LZW, "lzw" },            // LZW
@@ -272,16 +267,15 @@ static CompressionCode tiff_compressions[] = {
 #if OIIO_LIBTIFF_VERSION >= 40300
 //  { COMPRESSION_JXL,           "jpegxl" },      // JPEGXL
 #endif
-    { -1, NULL }
 // clang-format on
 };
 
 static int
 tiff_compression_code(string_view name)
 {
-    for (int i = 0; tiff_compressions[i].name; ++i)
-        if (Strutil::iequals(name, tiff_compressions[i].name))
-            return tiff_compressions[i].code;
+    for (const auto& c : tiff_output_compressions)
+        if (Strutil::iequals(name, c.second))
+            return c.first;
     return COMPRESSION_ADOBE_DEFLATE;  // default
 }
 
@@ -348,17 +342,17 @@ allval(const std::vector<T>& d, T v = T(0))
 }
 
 
-static tsize_t readproc(thandle_t, tdata_t, tsize_t) { return 0; }
+static tsize_t writer_readproc(thandle_t, tdata_t, tsize_t) { return 0; }
 
 static tsize_t
-writeproc(thandle_t handle, tdata_t data, tsize_t size)
+writer_writeproc(thandle_t handle, tdata_t data, tsize_t size)
 {
     auto io = static_cast<Filesystem::IOProxy*>(handle);
     return io->write(data, size);
 }
 
 static toff_t
-seekproc(thandle_t handle, toff_t offset, int origin)
+writer_seekproc(thandle_t handle, toff_t offset, int origin)
 {
     auto io = static_cast<Filesystem::IOProxy*>(handle);
     // Strutil::print("iop seek {} {} ({})\n",
@@ -367,7 +361,7 @@ seekproc(thandle_t handle, toff_t offset, int origin)
 }
 
 static int
-closeproc(thandle_t handle)
+writer_closeproc(thandle_t handle)
 {
     // auto io = static_cast<Filesystem::IOProxy*>(handle);
     // if (io && io->opened()) {
@@ -380,7 +374,7 @@ closeproc(thandle_t handle)
 }
 
 static toff_t
-sizeproc(thandle_t handle)
+writer_sizeproc(thandle_t handle)
 {
     auto io = static_cast<Filesystem::IOProxy*>(handle);
     // Strutil::print("iop size\n");
@@ -388,12 +382,12 @@ sizeproc(thandle_t handle)
 }
 
 static int
-mapproc(thandle_t, tdata_t*, toff_t*)
+writer_mapproc(thandle_t, tdata_t*, toff_t*)
 {
     return 0;
 }
 
-static void unmapproc(thandle_t, tdata_t, toff_t) {}
+static void writer_unmapproc(thandle_t, tdata_t, toff_t) {}
 
 
 
@@ -461,9 +455,11 @@ TIFFOutput::open(const std::string& name, const ImageSpec& userspec,
     // Open the file
     if (ioproxy_opened()) {
         ioseek(0);
-        m_tif = TIFFClientOpen(name.c_str(), openmode, ioproxy(), readproc,
-                               writeproc, seekproc, closeproc, sizeproc,
-                               mapproc, unmapproc);
+        m_tif = TIFFClientOpen(name.c_str(), openmode, ioproxy(),
+                               writer_readproc, writer_writeproc,
+                               writer_seekproc, writer_closeproc,
+                               writer_sizeproc, writer_mapproc,
+                               writer_unmapproc);
     } else {
 #ifdef _WIN32
         m_tif = TIFFOpenW(Strutil::utf8_to_utf16(name).c_str(), openmode);
