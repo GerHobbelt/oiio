@@ -65,7 +65,9 @@
 // OIIO_SIMD_HAS_SIMD8 : nonzero if vfloat8, vint8, vbool8 are defined
 // OIIO_SIMD_HAS_SIMD16 : nonzero if vfloat16, vint16, vbool16 are defined
 
-#if defined(_WIN32)
+#if defined(__CUDA_ARCH__)
+    // Cuda -- don't include any of these headers
+#elif defined(_WIN32)
 #  include <intrin.h>
 #elif defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__)) || defined(__e2k__)
 #  include <x86intrin.h>
@@ -77,6 +79,11 @@
 // to test thoroughly. We presume that anybody needing high performance
 // badly enough to want SIMD also is on a 64 bit CPU.
 #if defined(_WIN32) && defined(__i386__) && !defined(__x86_64__) && !defined(OIIO_NO_SSE)
+#define OIIO_NO_SSE 1
+#endif
+
+// Make sure to disable SSE intrinsics when compiling for Cuda.
+#if defined(__CUDA_ARCH__) && !defined(OIIO_NO_SSE)
 #define OIIO_NO_SSE 1
 #endif
 
@@ -3073,7 +3080,7 @@ vfloat16 nmsub (const vfloat16& a, const vfloat16& b, const vfloat16& c); // -a*
 // able, otherwise false (because it's not available on that platform,
 // or because it's gcc 4.8 which has a bug that lacks this intrinsic).
 inline bool set_flush_zero_mode (bool on) {
-#if (defined(__x86_64__) || defined(__i386__)) && (OIIO_GNUC_VERSION == 0 || OIIO_GNUC_VERSION > 40900)
+#if (defined(__x86_64__) || defined(__i386__)) && (OIIO_GNUC_VERSION == 0 || OIIO_GNUC_VERSION > 40900) && !defined(__CUDA_ARCH__)
     _MM_SET_FLUSH_ZERO_MODE (on ? _MM_FLUSH_ZERO_ON : _MM_FLUSH_ZERO_OFF);
     return true;
 #endif
@@ -3084,7 +3091,7 @@ inline bool set_flush_zero_mode (bool on) {
 // able, otherwise false (because it's not available on that platform,
 // or because it's gcc 4.8 which has a bug that lacks this intrinsic).
 inline bool set_denorms_zero_mode (bool on) {
-#if (defined(__x86_64__) || defined(__i386__)) && (OIIO_GNUC_VERSION == 0 || OIIO_GNUC_VERSION > 40900)
+#if (defined(__x86_64__) || defined(__i386__)) && (OIIO_GNUC_VERSION == 0 || OIIO_GNUC_VERSION > 40900) && !defined(__CUDA_ARCH__)
     _MM_SET_DENORMALS_ZERO_MODE (on ? _MM_DENORMALS_ZERO_ON : _MM_DENORMALS_ZERO_OFF);
     return true;
 #endif
@@ -3093,7 +3100,7 @@ inline bool set_denorms_zero_mode (bool on) {
 
 // Get the flush_zero_mode CPU flag on x86.
 inline bool get_flush_zero_mode () {
-#if (defined(__x86_64__) || defined(__i386__)) && (OIIO_GNUC_VERSION == 0 || OIIO_GNUC_VERSION > 40900)
+#if (defined(__x86_64__) || defined(__i386__)) && (OIIO_GNUC_VERSION == 0 || OIIO_GNUC_VERSION > 40900) && !defined(__CUDA_ARCH__)
     return _MM_GET_FLUSH_ZERO_MODE() == _MM_FLUSH_ZERO_ON;
 #endif
     return false;
@@ -3101,7 +3108,7 @@ inline bool get_flush_zero_mode () {
 
 // Get the denorms_zero_mode CPU flag on x86.
 inline bool get_denorms_zero_mode () {
-#if (defined(__x86_64__) || defined(__i386__)) && (OIIO_GNUC_VERSION == 0 || OIIO_GNUC_VERSION > 40900)
+#if (defined(__x86_64__) || defined(__i386__)) && (OIIO_GNUC_VERSION == 0 || OIIO_GNUC_VERSION > 40900) && !defined(__CUDA_ARCH__)
     return _MM_GET_DENORMALS_ZERO_MODE() == _MM_DENORMALS_ZERO_ON;
 #endif
     return false;
