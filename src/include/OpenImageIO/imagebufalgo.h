@@ -254,7 +254,12 @@ bool OIIO_API checker (ImageBuf &dst, int width, int height, int depth,
 ///
 /// - "gaussian"   adds Gaussian (normal distribution) noise values with
 ///                   mean value A and standard deviation B.
-/// - "uniform"    adds noise values uniformly distributed on range [A,B).
+/// - "white"      adds independent uniformly distributed values on range
+///                [A,B).
+/// - "uniform"    (synonym for "white")
+/// - "blue"       adds "blue noise" uniformly distributed on range [A,B) but
+///                not independent; rather, they are chosen for good spectral
+///                properties for sampling and dither.
 /// - "salt"       changes to value A a portion of pixels given by B.
 ///
 /// If the `mono` flag is true, a single noise value will be applied to all
@@ -274,6 +279,13 @@ ImageBuf OIIO_API noise (string_view noisetype,
 bool OIIO_API noise (ImageBuf &dst, string_view noisetype,
                      float A = 0.0f, float B = 0.1f, bool mono = false,
                      int seed = 0, ROI roi={}, int nthreads=0);
+
+
+/// Return a const reference to a periodic bluenoise texture with float data
+/// in 4 channels that are uncorrelated to each other. Note that unlike most
+/// other ImageBufAlgo functions, it does not return an ImageBuf by value, but
+/// by const reference.
+OIIO_API const ImageBuf& bluenoise_image();
 
 
 /// Render a single point at (x,y) of the given color "over" the existing
@@ -404,12 +416,11 @@ ROI OIIO_API text_size (string_view text, int fontsize=16,
 ///             `src`.
 /// @param  shuffle_channel_names
 ///             If true, the channel names will be taken from the
-///             corresponding channels of the source image -- be careful
-///             with this, shuffling both channel ordering and their names
-///             could result in no semantic change at all, if you catch the
-///             drift. If false (the default), If false, the resulting `dst`
-///             image will have default channel names in the usual order
-///             ("R", "G", etc.), but i
+///             corresponding channels of the source image -- be careful with
+///             this, shuffling both channel ordering and their names could
+///             result in no semantic change at all, if you catch the drift.
+///             If false (the default), the resulting `dst` image will have
+///             default channel names in the usual order ("R", "G", etc.).
 ///
 ImageBuf OIIO_API channels (const ImageBuf &src,
                         int nchannels, cspan<int> channelorder,

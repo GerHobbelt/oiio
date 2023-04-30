@@ -940,30 +940,41 @@ TextureSystemImpl::fill_gray_channels(const ImageSpec& spec, int nchannels,
     if (specchans == 1 && nchannels >= 3) {
         // Asked for RGB or RGBA, texture was just R...
         // copy the one channel to G and B
-        *(simd::vfloat4*)result = simd::shuffle<0, 0, 0, 3>(
-            *(simd::vfloat4*)result);
+        result[1] = result[0];
+        result[2] = result[0];
         if (dresultds) {
-            *(simd::vfloat4*)dresultds = simd::shuffle<0, 0, 0, 3>(
-                *(simd::vfloat4*)dresultds);
-            *(simd::vfloat4*)dresultdt = simd::shuffle<0, 0, 0, 3>(
-                *(simd::vfloat4*)dresultdt);
-            if (dresultdr)
-                *(simd::vfloat4*)dresultdr = simd::shuffle<0, 0, 0, 3>(
-                    *(simd::vfloat4*)dresultdr);
+            dresultds[1] = dresultds[0];
+            dresultds[2] = dresultds[0];
+            dresultdt[1] = dresultdt[0];
+            dresultdt[2] = dresultdt[0];
+            if (dresultdr) {
+                dresultdr[1] = dresultdr[0];
+                dresultdr[2] = dresultdr[0];
+            }
         }
     } else if (specchans == 2 && nchannels == 4 && spec.alpha_channel == 1) {
         // Asked for RGBA, texture was RA
         // Shuffle into RRRA
-        *(simd::vfloat4*)result = simd::shuffle<0, 0, 0, 1>(
-            *(simd::vfloat4*)result);
+        float a;
+        a         = result[1];
+        result[1] = result[0];
+        result[2] = result[0];
+        result[3] = a;
         if (dresultds) {
-            *(simd::vfloat4*)dresultds = simd::shuffle<0, 0, 0, 1>(
-                *(simd::vfloat4*)dresultds);
-            *(simd::vfloat4*)dresultdt = simd::shuffle<0, 0, 0, 1>(
-                *(simd::vfloat4*)dresultdt);
-            if (dresultdr)
-                *(simd::vfloat4*)dresultdr = simd::shuffle<0, 0, 0, 1>(
-                    *(simd::vfloat4*)dresultdr);
+            a            = dresultds[1];
+            dresultds[1] = dresultds[0];
+            dresultds[2] = dresultds[0];
+            dresultds[3] = a;
+            a            = dresultdt[1];
+            dresultdt[1] = dresultdt[0];
+            dresultdt[2] = dresultdt[0];
+            dresultdt[3] = a;
+            if (dresultdr) {
+                a            = dresultdr[1];
+                dresultdr[1] = dresultdr[0];
+                dresultdr[2] = dresultdr[0];
+                dresultdr[3] = a;
+            }
         }
     }
 }
@@ -1073,6 +1084,8 @@ TextureSystemImpl::texture(TextureHandle* texture_handle_,
         &TextureSystemImpl::texture_lookup,
         &TextureSystemImpl::texture_lookup_nomip,
         &TextureSystemImpl::texture_lookup_trilinear_mipmap,
+        &TextureSystemImpl::texture_lookup_trilinear_mipmap,
+        &TextureSystemImpl::texture_lookup,
         &TextureSystemImpl::texture_lookup_trilinear_mipmap,
         &TextureSystemImpl::texture_lookup
     };
@@ -1262,6 +1275,7 @@ TextureSystemImpl::texture(TextureHandle* texture_handle,
             opt.tblur  = options.tblur[i];
             opt.swidth = options.swidth[i];
             opt.twidth = options.twidth[i];
+            opt.rnd    = options.rnd[i];
             // rblur, rwidth not needed for 2D texture
             if (dresultds) {
                 ok &= texture(texture_handle, thread_info, opt, s[i], t[i],
@@ -1471,6 +1485,10 @@ compute_miplevels(TextureSystemImpl::TextureFile& texturefile,
         float filtwidth_ras = minorlength
                               * std::min(subinfo.spec(m).width,
                                          subinfo.spec(m).height);
+        // FIXME: We should store the min(width,height) of each level directly
+        // in an array in subinfo, so we're not rifling through the specs
+        // and taking mins in this loop every single time.
+
         // Once the filter width is smaller than one texel at this level,
         // we've gone too far, so we know that we want to interpolate the
         // previous level and the current level.  Note that filtwidth_ras
@@ -1509,6 +1527,18 @@ compute_miplevels(TextureSystemImpl::TextureFile& texturefile,
     if (options.mipmode == TextureOpt::MipModeOneLevel) {
         miplevel[0] = miplevel[1];
         levelblend  = 0;
+    }
+    if (options.mipmode == TextureOpt::MipModeStochasticTrilinear
+        || options.mipmode == TextureOpt::MipModeStochasticAniso) {
+        // If using stochastic sampling, the random deviate is a threshold
+        // versus the levelblend to determine which ONE of the two MIP
+        // levels to use.
+        if (options.rnd > levelblend) {
+            miplevel[1] = miplevel[0];
+        } else {
+            miplevel[0] = miplevel[1];
+        }
+        levelblend = 0;
     }
     levelweight[0] = 1.0f - levelblend;
     levelweight[1] = levelblend;

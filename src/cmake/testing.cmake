@@ -161,6 +161,7 @@ macro (oiio_add_all_tests)
                     misnamed-file
                     texture-crop texture-cropover
                     texture-filtersize
+                    texture-filtersize-stochastic
                     texture-overscan
                     texture-wrapfill
                     texture-res texture-maxres
@@ -191,6 +192,8 @@ macro (oiio_add_all_tests)
                     texture-interp-closest
                     texture-mip-nomip texture-mip-onelevel
                     texture-mip-trilinear
+                    texture-mip-stochastictrilinear
+                    texture-mip-stochasticaniso
                     texture-missing
                     texture-pointsample
                     texture-udim texture-udim2
@@ -266,7 +269,7 @@ macro (oiio_add_all_tests)
                         IMAGEDIR openexr-images
                         URL http://github.com/AcademySoftwareFoundation/openexr-images)
     endif ()
-    oiio_add_tests (openvdb
+    oiio_add_tests (openvdb texture-texture3d
                     FOUNDVAR OpenVDB_FOUND ENABLEVAR ENABLE_OpenVDB)
     oiio_add_tests (png
                     ENABLEVAR ENABLE_PNG

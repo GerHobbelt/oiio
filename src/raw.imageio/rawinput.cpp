@@ -29,9 +29,6 @@ template<class T> using auto_ptr = unique_ptr<T>;
 }
 #endif
 
-#include <libraw/libraw.h>
-#include <libraw/libraw_version.h>
-
 
 // This plugin utilises LibRaw:
 //   http://www.libraw.org/
@@ -39,6 +36,18 @@ template<class T> using auto_ptr = unique_ptr<T>;
 //   http://www.libraw.org/docs
 // Example raw images from many camera models:
 //   https://www.rawsamples.ch
+
+#include <libraw/libraw.h>
+#include <libraw/libraw_version.h>
+
+#if LIBRAW_VERSION < LIBRAW_MAKE_VERSION(0, 15, 0)
+#    error "OpenImageIO does not support such an old LibRaw"
+#endif
+
+// Some structure layouts changed mid-release on this snapshot
+#define LIBRAW_VERSION_AT_LEAST_SNAPSHOT_202110      \
+    (LIBRAW_VERSION >= LIBRAW_MAKE_VERSION(0, 21, 0) \
+     && LIBRAW_SHLIB_CURRENT >= 22)
 
 
 OIIO_PLUGIN_NAMESPACE_BEGIN
@@ -533,6 +542,12 @@ RawInput::open_raw(bool unpack, const std::string& name,
         m_processor->imgdata.params.output_color = 1;
         m_processor->imgdata.params.gamm[0]      = 1.0 / 2.4;
         m_processor->imgdata.params.gamm[1]      = 12.92;
+    } else if (Strutil::iequals(cs, "sRGB-linear")
+               || Strutil::iequals(cs, "linear") /* DEPRECATED */) {
+        // Request "sRGB" primaries, linear reponse
+        m_processor->imgdata.params.output_color = 1;
+        m_processor->imgdata.params.gamm[0]      = 1.0;
+        m_processor->imgdata.params.gamm[1]      = 1.0;
     } else if (Strutil::iequals(cs, "Adobe")) {
         // Request Adobe color space with 2.2 gamma (no linear toe)
         m_processor->imgdata.params.output_color = 2;
@@ -545,8 +560,13 @@ RawInput::open_raw(bool unpack, const std::string& name,
     } else if (Strutil::iequals(cs, "ProPhoto")) {
         // ProPhoto by convention has gamma 1.8
         m_processor->imgdata.params.output_color = 4;
-        m_processor->imgdata.params.gamm[0]      = 1.8;
+        m_processor->imgdata.params.gamm[0]      = 1.0 / 1.8;
         m_processor->imgdata.params.gamm[1]      = 0.0;
+    } else if (Strutil::iequals(cs, "ProPhoto-linear")) {
+        // Linear version of PhotoPro
+        m_processor->imgdata.params.output_color = 4;
+        m_processor->imgdata.params.gamm[0]      = 1.0;
+        m_processor->imgdata.params.gamm[1]      = 1.0;
     } else if (Strutil::iequals(cs, "XYZ")) {
         // XYZ linear
         m_processor->imgdata.params.output_color = 5;
@@ -585,12 +605,6 @@ RawInput::open_raw(bool unpack, const std::string& name,
                  cs, LIBRAW_VERSION_STR);
         return false;
 #endif
-    } else if (Strutil::iequals(cs, "sRGB-linear")
-               || Strutil::iequals(cs, "linear") /* DEPRECATED */) {
-        // Request "sRGB" primaries, linear reponse
-        m_processor->imgdata.params.output_color = 1;
-        m_processor->imgdata.params.gamm[0]      = 1.0;
-        m_processor->imgdata.params.gamm[1]      = 1.0;
     } else {
         errorf("raw:ColorSpace set to unknown value \"%s\"", cs);
         return false;
@@ -1016,6 +1030,16 @@ RawInput::get_makernotes_canon()
     MAKERF(ContinuousDrive);
     MAKER(SensorWidth, 0);
     MAKER(SensorHeight, 0);
+#    if LIBRAW_VERSION_AT_LEAST_SNAPSHOT_202110
+    add(m_make, "SensorLeftBorder", mn.DefaultCropAbsolute.l, false, 0);
+    add(m_make, "SensorTopBorder", mn.DefaultCropAbsolute.t, false, 0);
+    add(m_make, "SensorRightBorder", mn.DefaultCropAbsolute.r, false, 0);
+    add(m_make, "SensorBottomBorder", mn.DefaultCropAbsolute.b, false, 0);
+    add(m_make, "BlackMaskLeftBorder", mn.LeftOpticalBlack.l, false, 0);
+    add(m_make, "BlackMaskTopBorder", mn.LeftOpticalBlack.t, false, 0);
+    add(m_make, "BlackMaskRightBorder", mn.LeftOpticalBlack.r, false, 0);
+    add(m_make, "BlackMaskBottomBorder", mn.LeftOpticalBlack.b, false, 0);
+#    else
     MAKER(SensorLeftBorder, 0);
     MAKER(SensorTopBorder, 0);
     MAKER(SensorRightBorder, 0);
@@ -1024,6 +1048,7 @@ RawInput::get_makernotes_canon()
     MAKER(BlackMaskTopBorder, 0);
     MAKER(BlackMaskRightBorder, 0);
     MAKER(BlackMaskBottomBorder, 0);
+#    endif
 #endif
 #if LIBRAW_VERSION >= LIBRAW_MAKE_VERSION(0, 19, 0)
     // Extra added with libraw 0.19:
