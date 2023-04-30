@@ -91,15 +91,14 @@ isdigit(char c)
 
 
 
-OIIO_NO_SANITIZE_ADDRESS
-const char*
-string_view::c_str() const
+OIIO_NO_SANITIZE_ADDRESS const char*
+c_str(string_view str)
 {
     // Usual case: either empty, or null-terminated
-    if (m_len == 0)  // empty string
+    if (str.size() == 0)  // empty string
         return "";
 
-    // This clause attempts to find out if there's a string-teriminating
+    // This clause attempts to find out if there's a string-terminating
     // '\0' character just beyond the boundary of the string_view, in which
     // case, simply returning m_chars (with no ustring creation) is a valid
     // C string.
@@ -117,38 +116,40 @@ string_view::c_str() const
     // in C++17 string_view. So maybe we'll find ourselves relying on it a
     // lot less, and therefore the performance hit of doing it foolproof
     // won't be as onerous.
-    if (m_chars[m_len] == 0)  // 0-terminated
-        return m_chars;
+    if (str[str.size()] == 0)  // 0-terminated
+        return str.data();
 
     // Rare case: may not be 0-terminated. Bite the bullet and construct a
     // 0-terminated string.  We use ustring as a way to avoid any issues of
     // who cleans up the allocation, though it means that it will stay in
     // the ustring table forever. Punt on this for now, it's an edge case
     // that we need to handle, but is not likely to ever be an issue.
-    return ustring(m_chars, 0, m_len).c_str();
+    return ustring(str).c_str();
 }
 
 
 
 void
-Strutil::sync_output(FILE* file, string_view str)
+Strutil::sync_output(FILE* file, string_view str, bool flush)
 {
     if (str.size() && file) {
         std::unique_lock<std::mutex> lock(output_mutex);
         fwrite(str.data(), 1, str.size(), file);
-        fflush(file);
+        if (flush)
+            fflush(file);
     }
 }
 
 
 
 void
-Strutil::sync_output(std::ostream& file, string_view str)
+Strutil::sync_output(std::ostream& file, string_view str, bool flush)
 {
     if (str.size()) {
         std::unique_lock<std::mutex> lock(output_mutex);
         file << str;
-        file.flush();
+        if (flush)
+            file.flush();
     }
 }
 
