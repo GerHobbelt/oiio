@@ -345,6 +345,38 @@ ImageSpec::attribute(string_view name, TypeDesc type, string_view value)
 
 
 void
+ImageSpec::attribute(string_view name, string_view value)
+{
+    if (name.empty())  // Guard against bogus empty names
+        return;
+    // Don't allow duplicates
+    ParamValue* f = find_attribute(name);
+    if (f) {
+        *f = ParamValue(name, value);
+    } else {
+        extra_attribs.emplace_back(name, value);
+    }
+}
+
+
+
+void
+ImageSpec::attribute(string_view name, ustring value)
+{
+    if (name.empty())  // Guard against bogus empty names
+        return;
+    // Don't allow duplicates
+    ParamValue* f = find_attribute(name);
+    if (f) {
+        *f = ParamValue(name, value);
+    } else {
+        extra_attribs.emplace_back(name, value);
+    }
+}
+
+
+
+void
 ImageSpec::erase_attribute(string_view name, TypeDesc searchtype,
                            bool casesensitive)
 {
@@ -355,7 +387,7 @@ ImageSpec::erase_attribute(string_view name, TypeDesc searchtype,
             = std::regex_constants::basic;
         if (!casesensitive)
             flag |= std::regex_constants::icase;
-        std::regex re(name.str(), flag);
+        std::regex re(std::string(name), flag);
         auto matcher = [&](const ParamValue& p) {
             return std::regex_match(p.name().string(), re)
                    && (searchtype == TypeUnknown || searchtype == p.type());
@@ -861,7 +893,7 @@ static xml_node
 add_node(xml_node& node, string_view node_name, const char* val)
 {
     xml_node newnode = node.append_child();
-    newnode.set_name(node_name.c_str());
+    newnode.set_name(std::string(node_name).c_str());
     newnode.append_child(node_pcdata).set_value(val);
     return newnode;
 }
