@@ -56,6 +56,7 @@ struct print_info_options {
     bool dumpdata           = false;
     bool dumpdata_showempty = true;
     bool dumpdata_C         = false;
+    bool native             = false;
     std::string dumpdata_C_name;
     std::string metamatch;
     std::string nometamatch;
@@ -98,6 +99,7 @@ public:
     bool eval_enable;              // Enable evaluation of expressions
     bool skip_bad_frames = false;  // Just skip a bad frame, don't exit
     bool nostderr        = false;  // If true, use stdout for errors
+    bool noerrexit       = false;  // Don't exit on error
     std::string dumpdata_C_name;
     std::string full_command_line;
     std::string printinfo_metamatch;

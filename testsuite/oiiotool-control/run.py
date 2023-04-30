@@ -6,7 +6,8 @@
 # command += oiiotool ("--pattern constant:color=0.5,0.5,0.5 64x64 3 -d half -o grey64.exr")
 # command += oiiotool ("--create 256x256 3 --fill:color=1,.5,.5 256x256 --fill:color=0,1,0 80x80+100+100 -d uint8 -o filled.tif")
 # wrapper_cmd = "time"
-# redirect = "2>&1"
+redirect += " 2>&1"
+failureok = True
 
 # test expression substitution
 command += oiiotool ('-echo "42+2 = {42+2}" ' +
@@ -78,6 +79,7 @@ command += oiiotool ('-echo "Testing --set of implied types:" ' +
 command += oiiotool ('-echo "Testing --set of various explicit types:" ' +
                      '-set:type=int i 42 -set:type=float f 3.5 ' +
                      '-set:type=string s "hello world" ' +
+                     '-set:type="string[3]" sarr "hello","world","wide" ' +
                      '-set:type=timecode tc 01:02:03:04 ' +
                      '-set:type=rational rat 1/2 ' +
                      '-echo "  i = {i}, f = {f}, s = {s}, tc = {tc}, rat = {rat}"')
@@ -90,14 +92,19 @@ command += oiiotool ('-echo "Testing if with true cond (expect output):" -set i 
 command += oiiotool ('-echo "Testing if with false cond (expect NO output):" -set i 0 -if "{i}" -echo "  inside if clause, i={i}" -endif -echo "  done" -echo " "')
 command += oiiotool ('-echo "Testing if/else with true cond:" -set i 42 -if "{i}" -echo "  inside if clause, i={i}" -else -echo "  inside else clause, i={i}" -endif -echo "  done" -echo " "')
 command += oiiotool ('-echo "Testing if/else with false cond:" -set i 0 -if "{i}" -echo "  inside if clause, i={i}" -else -echo "  inside else clause, i={i}" -endif -echo "  done" -echo " "')
+command += oiiotool ('-echo "Testing else without if:" -else -echo "bad" -endif -echo " "')
+command += oiiotool ('-echo "Testing endif without if:" -endif -echo " "')
 
 # Test --while --endwhile
 command += oiiotool ('-echo "Testing while (expect output 0..2):" -set i 0 --while "{i < 3}" --echo "  i = {i}" --set i "{i+1}" --endwhile -echo " "')
+command += oiiotool ('-echo "Testing endwhile without while:" -endwhile -echo " "')
 
 # Test --for --endfor
 command += oiiotool ('-echo "Testing for i 5 (expect output 0..4):" --for i 5 --echo "  i = {i}" --endfor -echo " "')
 command += oiiotool ('-echo "Testing for i 5,10 (expect output 5..9):" --for i 5,10 --echo "  i = {i}" --endfor -echo " "')
 command += oiiotool ('-echo "Testing for i 5,10,2 (expect output 5,7,9):" --for i 5,10,2 --echo "  i = {i}" --endfor -echo " "')
+command += oiiotool ('-echo "Testing endfor without for:" -endfor -echo " "')
+command += oiiotool ('-echo "Testing for i 5,10,2,8 (bad range):" --for i 5,10,2,8 --echo "  i = {i}" --endfor -echo " "')
 
 # test sequences
 command += oiiotool ("../common/tahoe-tiny.tif -o copyA.1-10#.jpg")
@@ -107,9 +114,11 @@ command += oiiotool ("--frames -5-5 --echo \"Sequence -5-5:  {FRAME_NUMBER}\"")
 command += oiiotool ("--frames -5--2 --echo \"Sequence -5--2:  {FRAME_NUMBER}\"")
 
 # Test stats and metadata expression substitution
-command += oiiotool ("../common/tahoe-tiny.tif --echo \"\\nBrief: {TOP.METABRIEF}\"")
-command += oiiotool ("../common/tahoe-tiny.tif --echo \"\\nMeta: {TOP.META}\"")
-command += oiiotool ("../common/tahoe-tiny.tif --echo \"\\nStats:\\n{TOP.STATS}\\n\"")
+command += oiiotool ("../common/tahoe-tiny.tif"
+                     + " --echo \"\\nBrief: {TOP.METABRIEF}\""
+                     + " --echo \"\\nBrief native: {TOP.METANATIVEBRIEF}\""
+                     + " --echo \"\\nMeta native: {TOP.METANATIVE}\""
+                     + " --echo \"\\nStats:\\n{TOP.STATS}\\n\"")
 
 # Test IMG[]
 command += oiiotool ("../common/tahoe-tiny.tif ../common/tahoe-small.tif " +
@@ -120,6 +129,10 @@ command += oiiotool ("../common/tahoe-tiny.tif " +
                      "--echo \"filename={TOP.filename} file_extension={TOP.file_extension} file_noextension={TOP.file_noextension}\" " +
                      "--echo \"MINCOLOR={TOP.MINCOLOR} MAXCOLOR={TOP.MAXCOLOR} AVGCOLOR={TOP.AVGCOLOR}\"")
 
+# Test "postpone_callback" with an "image -BINOP image" operation instead of
+# "image image -BINOP".
+command += oiiotool ("../common/tahoe-tiny.tif -sub ../common/tahoe-tiny.tif "
+                     + "-echo \"postponed sub:\" --printinfo:stats=1:verbose=0")
 
 # To add more tests, just append more lines like the above and also add
 # the new 'feature.tif' (or whatever you call it) to the outputs list,
