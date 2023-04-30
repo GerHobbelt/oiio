@@ -276,17 +276,20 @@ macro (oiio_add_all_tests)
     set (all_openexr_tests
          openexr-suite openexr-multires openexr-chroma
          openexr-v2 openexr-window perchannel oiiotool-deep)
+    # Run all OpenEXR tests without core library
     oiio_add_tests (${all_openexr_tests} openexr-compression
-                    # (default) ENVIRONMENT OPENIMAGEIO_OPTIONS=openexr:core=0
+                    ENVIRONMENT OPENIMAGEIO_OPTIONS=openexr:core=0
                     IMAGEDIR openexr-images
                     URL http://github.com/AcademySoftwareFoundation/openexr-images)
     # For OpenEXR >= 3.1, be sure to test with the core option on
-    oiio_add_tests (${all_openexr_tests} 
-                                            # doesn't work: openexr-compression
-                    SUFFIX ".core"
-                    ENVIRONMENT OPENIMAGEIO_OPTIONS=openexr:core=1
-                    IMAGEDIR openexr-images
-                    URL http://github.com/AcademySoftwareFoundation/openexr-images)
+    if (OpenEXR_VERSION VERSION_GREATER_EQUAL 3.1)
+        oiio_add_tests (${all_openexr_tests}
+                            # N.B. doesn't work yet: openexr-compression
+                        SUFFIX ".core"
+                        ENVIRONMENT OPENIMAGEIO_OPTIONS=openexr:core=1
+                        IMAGEDIR openexr-images
+                        URL http://github.com/AcademySoftwareFoundation/openexr-images)
+    endif ()
     # if (NOT DEFINED ENV{${PROJECT_NAME}_CI})
     #     oiio_add_tests (openexr-damaged
     #                     IMAGEDIR openexr-images
@@ -360,15 +363,22 @@ function (oiio_get_test_data name)
        # Arguments: <prefix> <options> <one_value_keywords> <multi_value_keywords> args...
     if (IS_DIRECTORY "${OIIO_LOCAL_TESTDATA_ROOT}/${name}"
         AND NOT EXISTS "${CMAKE_BINARY_DIR}/testsuite/${name}")
+        set (_ogtd_LINK_RESULT "")
         if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.14)
             # Just make a link if we can
-            message (STATUS "Linking ${name} from ${OIIO_LOCAL_TESTDATA_ROOT}/../${name}")
+            message (STATUS "Linking ${name} from ${OIIO_LOCAL_TESTDATA_ROOT}/${name}")
             file (CREATE_LINK "${OIIO_LOCAL_TESTDATA_ROOT}/${name}"
                               "${CMAKE_BINARY_DIR}/testsuite/${name}"
-                              SYMBOLIC COPY_ON_ERROR)
-        else ()
-            # Older cmake -- copy
-            message (STATUS "Copying ${name} from ${OIIO_LOCAL_TESTDATA_ROOT}/../${name}")
+                              SYMBOLIC RESULT _ogtd_LINK_RESULT)
+            # Note: Using 'COPY_ON_ERROR' in the above command should have prevented the need to
+            # have the manual fall-back below. However, there's been at least one case where a user
+            # noticed that copying did not happen if creating the link failed (CMake 3.24). We can
+            # adjust this in the future if CMake behavior improves.
+            message (STATUS "Link result ${_ogtd_LINK_RESULT}")
+        endif ()
+        if (NOT _ogtd_LINK_RESULT EQUAL 0)
+            # Older cmake or failure to link -- copy
+            message (STATUS "Copying ${name} from ${OIIO_LOCAL_TESTDATA_ROOT}/${name}")
             file (COPY "${OIIO_LOCAL_TESTDATA_ROOT}/${name}"
                   DESTINATION "${CMAKE_BINARY_DIR}/testsuite")
         endif ()
@@ -397,7 +407,8 @@ function (oiio_setup_test_data)
     oiio_get_test_data (oiio-images
                         REPO https://github.com/OpenImageIO/oiio-images.git)
     oiio_get_test_data (openexr-images
-                        REPO https://github.com/AcademySoftwareFoundation/openexr-images.git)
+                        REPO https://github.com/AcademySoftwareFoundation/openexr-images.git
+                        BRANCH main)
     oiio_get_test_data (fits-images)
     oiio_get_test_data (j2kp4files_v1_5)
 endfunction ()
