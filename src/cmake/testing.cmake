@@ -69,7 +69,8 @@ macro (oiio_add_tests)
             set (_test_disabled 1)
         endif ()
     endforeach ()
-    if (0 AND OpenColorIO_VERSION VERSION_GREATER_EQUAL 2.2)
+    if (OpenColorIO_VERSION VERSION_GREATER_EQUAL 2.2
+          AND NOT (OIIO_DISABLE_BUILTIN_OCIO_CONFIGS OR "$ENV{OIIO_DISABLE_BUILTIN_OCIO_CONFIGS}"))
         # For OCIO 2.2+, have the testsuite use the default built-in config
         list (APPEND _ats_ENVIRONMENT "OCIO=ocio://default"
                                       "OIIO_TESTSUITE_OCIOCONFIG=ocio://default")
@@ -327,6 +328,13 @@ macro (oiio_add_all_tests)
                     ENABLEVAR ENABLE_TARGA
                     IMAGEDIR oiio-images)
     endif()
+    if (NOT WIN32)
+        oiio_add_tests (term
+                        ENABLEVAR ENABLE_TERM)
+        # I just could not get this test to work on Windows CI. The test fails
+        # when comparing the output, but the saved artifacts compare just fine
+        # on my system. Maybe someone will come back to this.
+        endif ()
     oiio_add_tests (tiff-suite tiff-depths tiff-misc
                     IMAGEDIR oiio-images/libtiffpic)
     oiio_add_tests (webp
