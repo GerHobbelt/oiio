@@ -1306,7 +1306,19 @@ Writing images
       `:bumpformat=` *string*
         For `-obump` only, specifies the interpretation of 3-channel source
         images as one of: `height`, `normal`, `auto` (default).
-
+      `:uvslopes_scale=` *float*
+        For `-obump` only, specifies the amount to scale the bump-map slopes
+        by. (default: 0.0, meaning not to use this feature)
+      `:cdf=` *int*
+        If nonzero, will add to the texture metadata the forward and inverse
+        Gaussian CDF, which can be used by shaders to implement
+        Histogram-Preserving blending. (default: 0)
+      `:cdfsigma=` *float*
+        In conjunction with `cdf=1`, specifies the sigma value to use for the
+        CDF (default: 1.0/6.0).
+      `:cdfbits=` *int*
+        In conjunction with `cdf=1`, specifies the number of bits to use for
+        the size of the CDF table (default: 8, meaning 256 bins).
 
     Examples::
 
@@ -3388,6 +3400,27 @@ current top image.
     - `--clamp:clampalpha=1` : Clamp the designated alpha channel to [0,1].
     - `--clamp:min=,,0:max=,,3.0` : Clamp the third channel to [0,3], do not
       clamp & other channels.
+
+
+.. option:: --maxchan
+            --minchan
+
+    Replace the top image with a single channel image that, for each pixel,
+    contains the maximum value (for `--maxchan`) or minimum value (for
+    `--minchan`) of all the channels in the corresponding pixel of the
+    original image.
+
+    This command was first added to OpenImageIO 2.4.0.
+
+    Optional appended modifiers include:
+
+      `:subimages=` *indices-or-names*
+        Include/exclude subimages (see :ref:`sec-oiiotool-subimage-modifier`).
+
+    Examples:
+
+        oiiotool RGB.tif --maxchan -o max_of_RGB.tif
+
 
 
 .. option:: --rangecompress

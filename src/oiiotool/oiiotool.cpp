@@ -3056,7 +3056,8 @@ BINARY_IMAGE_FLOAT_OP(saturate, ImageBufAlgo::saturate);    // --saturate
 
 UNARY_IMAGE_OP(abs, ImageBufAlgo::abs);  // --abs
 
-UNARY_IMAGE_OP(premult, ImageBufAlgo::premult);  // --premult
+UNARY_IMAGE_OP(premult, ImageBufAlgo::premult);      // --premult
+UNARY_IMAGE_OP(repremult, ImageBufAlgo::repremult);  // --repremult
 
 // --unpremult
 OIIOTOOL_OP(unpremult, 1, [](OiiotoolOp& op, span<ImageBuf*> img) {
@@ -4425,8 +4426,10 @@ action_fill(int argc, const char* argv[])
 
 BINARY_IMAGE_OP(max, ImageBufAlgo::max);            // --max
 BINARY_IMAGE_COLOR_OP(maxc, ImageBufAlgo::max, 0);  // --maxc
+UNARY_IMAGE_OP(maxchan, ImageBufAlgo::maxchan);     // --maxchan
 BINARY_IMAGE_OP(min, ImageBufAlgo::min);            // --min
 BINARY_IMAGE_COLOR_OP(minc, ImageBufAlgo::min, 0);  // --minc
+UNARY_IMAGE_OP(minchan, ImageBufAlgo::minchan);     // --minchan
 
 
 
@@ -4836,6 +4839,14 @@ prep_texture_config(ImageSpec& configspec, ParamValueList& fileoptions)
                          fileoptions.get_string("bumpformat", "auto"));
     configspec.attribute("maketx:uvslopes_scale",
                          fileoptions.get_float("uvslopes_scale", 0.0f));
+
+    // The default values here should match the initialized values
+    // in src/maketx/maketx.cpp
+    configspec.attribute("maketx:cdf", fileoptions.get_int("cdf"));
+    configspec.attribute("maketx:cdfbits", fileoptions.get_int("cdfbits", 8));
+    configspec.attribute("maketx:cdfsigma",
+                         fileoptions.get_float("cdfsigma", 1.0f / 6));
+
     // if (mipimages.size())
     //     configspec.attribute ("maketx:mipimages", Strutil::join(mipimages,";"));
 
@@ -6090,12 +6101,18 @@ getargs(int argc, char* argv[])
     ap.arg("--maxc %s:VAL")
       .help("Max all values with a scalar or per-channel constants (e.g.: 0.5 or 1,1.25,0.5)")
       .action(action_maxc);
+    ap.arg("--maxchan")
+      .help("Maximum of all channels of the image")
+      .action(action_maxchan);
     ap.arg("--min")
       .help("Pixel-by-pixel min of two images")
       .action(action_min);
     ap.arg("--minc %s:VAL")
       .help("Min all values with a scalar or per-channel constants (e.g.: 0.5 or 1,1.25,0.5)")
       .action(action_minc);
+    ap.arg("--minchan")
+      .help("Minimum of all channels of the image")
+      .action(action_minchan);
     ap.arg("--clamp")
       .help("Clamp values (options: min=..., max=..., clampalpha=0)")
       .action(action_clamp);
@@ -6201,6 +6218,9 @@ getargs(int argc, char* argv[])
     ap.arg("--premult")
       .help("Multiply all color channels of the current image by the alpha")
       .action(action_premult);
+    ap.arg("--repremult")
+      .help("Multiply all color channels of the current image by the alpha, but don't crush alpha=0 pixels to black.")
+      .action(action_repremult);
     // clang-format on
 
     if (ap.parse_args(argc, (const char**)argv) < 0) {

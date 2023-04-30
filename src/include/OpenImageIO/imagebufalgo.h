@@ -405,9 +405,11 @@ ROI OIIO_API text_size (string_view text, int fontsize=16,
 ///             `channelvalues[i]` rather than copy any channel from `src`.
 ///             If `channelorder` itself is empty, the implied channel order
 ///             will be `{0, 1, ..., nchannels-1}`, meaning that it's only
-///             renaming channels, not reordering them.
+///             renaming, truncating, or extending channels, not reordering
+///             the channels that are already present.
 /// @param  channelvalues Fill values for color channels in which
-///             `channelorder[i]` < 0.
+///             `channelorder[i]` < 0. This can be empty if no channels are
+///             to be filled with constant values.
 /// @param  newchannelnames
 ///             An array of new channel names. Channels for which this
 ///             specifies an empty string will have their name taken from
@@ -991,6 +993,25 @@ bool OIIO_API clamp (ImageBuf &dst, const ImageBuf &src,
                      cspan<float> min=-std::numeric_limits<float>::max(),
                      cspan<float> max=std::numeric_limits<float>::max(),
                      bool clampalpha01 = false, ROI roi={}, int nthreads=0);
+
+
+/// @defgroup maxminchan (Maximum / minimum of channels)
+/// @{
+///
+/// `maxchan()` computes a one-channel image that for each pixel, contains the
+/// maximum value of all channels of corresponding pixel of the source image.
+/// `minchan()` similarly computes the minimum value of all channels.
+///
+/// @version 2.3.10
+
+ImageBuf OIIO_API maxchan (const ImageBuf& A, ROI roi={}, int nthreads=0);
+bool OIIO_API maxchan (ImageBuf &dst, const ImageBuf& A,
+                       ROI roi={}, int nthreads=0);
+
+ImageBuf OIIO_API minchan (const ImageBuf& src, ROI roi={}, int nthreads=0);
+bool OIIO_API minchan (ImageBuf &dst, const ImageBuf& src,
+                       ROI roi={}, int nthreads=0);
+/// @}
 
 
 /// Return pixel values that are a contrast-remap of the corresponding
@@ -2104,6 +2125,27 @@ enum MakeTextureMode {
 ///                           factor. The default is 0, disabling the
 ///                           feature. If you use this feature, a suggested
 ///                           value is 256.
+///    - `maketx:cdf` (int) :
+///                           If nonzero, will write a Gaussian CDF and
+///                           Inverse Gaussian CDF as per-channel metadata
+///                           in the texture, which can be used by shaders
+///                           to implement Histogram-Preserving Blending.
+///                           This is only useful when the texture being
+///                           created is written to an image format that
+///                           supports arbitrary metadata (e.g. OpenEXR).
+///                           (See Burley, "On Histogram-Preserving Blending
+///                           for Randomized Texture Tiling," JCGT 8(4), 2019,
+///                           and Heitz/Neyret, "High-Performance By-Example
+///                           Noise using a Histogram-Preserving Blending
+///                           Operator," ACM SIGGRAPH / Eurographics Symposium
+///                           on High-Performance Graphics 2018.) (default: 0)
+///    - `maketx:cdfsigma` (float) :
+///                           When `maketx:cdf` is active, determines the
+///                           CDF sigma (default: 1.0/6).
+///    - `maketx:cdfbits` (int) :
+///                           When `maketx:cdf` is active, determines the
+///                           number of bits to use for the size of the CDF
+///                           table. (default: 8, meaning 256 bins)
 ///
 /// @param  mode
 ///    Describes what type of texture file we are creating and may
