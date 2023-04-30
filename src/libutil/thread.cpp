@@ -31,7 +31,8 @@
 #include "imageio_pvt.h"
 
 #if OIIO_TBB
-#    include <tbb/tbb.h>
+#    include <tbb/parallel_for.h>
+#    include <tbb/task_arena.h>
 #endif
 
 #include <boost/container/flat_map.hpp>
@@ -94,7 +95,7 @@ OIIO_NAMESPACE_END
 OIIO_NAMESPACE_BEGIN
 
 namespace pvt {
-int oiio_use_tbb(0);  // Use TBB if available
+OIIO_UTIL_API int oiio_use_tbb(0);  // Use TBB if available
 }
 
 
@@ -659,7 +660,7 @@ parallel_for_chunked(int64_t begin, int64_t end, int64_t chunksize,
 void
 parallel_for_chunked(int64_t begin, int64_t end, int64_t chunksize,
                      std::function<void(int id, int64_t b, int64_t e)>&& task,
-                     paropt opt)
+                     parallel_options opt)
 {
     parallel_for_chunked_id(begin, end, chunksize, std::move(task), opt);
 }
@@ -678,53 +679,55 @@ parallel_for_impl(Index begin, Index end, function_view<void(Index)> task,
         return;
     }
 #if OIIO_TBB
-    if (opt.strategy() == paropt::ParStrategy::TryTBB ||
-        (opt.strategy() == paropt::ParStrategy::Default && pvt::oiio_use_tbb)) {
+    if (opt.strategy() == paropt::ParStrategy::TryTBB
+        || (opt.strategy() == paropt::ParStrategy::Default
+            && pvt::oiio_use_tbb)) {
         if (opt.maxthreads()) {
             tbb::task_arena arena(opt.maxthreads());
-            arena.execute([=]{ tbb::parallel_for(begin, end, task); });
+            arena.execute([=] { tbb::parallel_for(begin, end, task); });
         } else {
             tbb::parallel_for(begin, end, task);
         }
         return;
     }
 #endif
-    parallel_for_chunked_id(int64_t(begin), int64_t(end), 0,
-                            [&task](int /*id*/, int64_t b, int64_t e) {
-        for (Index i(b), end(e); i != end; ++i)
-            task(i);
-    }, opt);
+    parallel_for_chunked_id(
+        int64_t(begin), int64_t(end), 0,
+        [&task](int /*id*/, int64_t b, int64_t e) {
+            for (Index i(b), end(e); i != end; ++i)
+                task(i);
+        },
+        opt);
 }
 
 
 
 void
-parallel_for(int begin, int end,
-             function_view<void(int)> task, paropt opt)
+parallel_for(int begin, int end, function_view<void(int)> task, paropt opt)
 {
     parallel_for_impl(begin, end, task, opt);
 }
 
 
 void
-parallel_for(uint32_t begin, uint32_t end,
-             function_view<void(uint32_t)> task, paropt opt)
+parallel_for(uint32_t begin, uint32_t end, function_view<void(uint32_t)> task,
+             paropt opt)
 {
     parallel_for_impl(begin, end, task, opt);
 }
 
 
 void
-parallel_for(int64_t begin, int64_t end,
-             function_view<void(int64_t)> task, paropt opt)
+parallel_for(int64_t begin, int64_t end, function_view<void(int64_t)> task,
+             paropt opt)
 {
     parallel_for_impl(begin, end, task, opt);
 }
 
 
 void
-parallel_for(uint64_t begin, uint64_t end,
-             function_view<void(uint64_t)> task, paropt opt)
+parallel_for(uint64_t begin, uint64_t end, function_view<void(uint64_t)> task,
+             paropt opt)
 {
     parallel_for_impl(begin, end, task, opt);
 }
@@ -734,24 +737,25 @@ parallel_for(uint64_t begin, uint64_t end,
 template<typename Index>
 inline void
 parallel_for_range_impl(Index begin, Index end,
-                        std::function<void(Index, Index)>&& task,
-                        paropt opt)
+                        std::function<void(Index, Index)>&& task, paropt opt)
 {
-    if (opt.maxthreads() == 1) { // One thread max? Run in caller's thread.
+    if (opt.maxthreads() == 1) {  // One thread max? Run in caller's thread.
         task(begin, end);
         return;
     }
 #if parlab_TBB
-    if (opt.strategy() == paropt::ParStrategy::TryTBB ||
-        (opt.strategy() == paropt::ParStrategy::Default &&  pvt::oiio_use_tbb)) {
+    if (opt.strategy() == paropt::ParStrategy::TryTBB
+        || (opt.strategy() == paropt::ParStrategy::Default
+            && pvt::oiio_use_tbb)) {
         auto wrapper = [=](const tbb::blocked_range<Index>& r) {
             task(r.begin(), r.end());
         };
         // OIIO::Strutil::print("tbb\n");
         if (opt.maxthreads()) {
             tbb::task_arena arena(opt.maxthreads());
-            arena.execute([=]{
-                tbb::parallel_for(tbb::blocked_range<Index>(begin, end), wrapper);
+            arena.execute([=] {
+                tbb::parallel_for(tbb::blocked_range<Index>(begin, end),
+                                  wrapper);
             });
         } else {
             tbb::parallel_for(tbb::blocked_range<Index>(begin, end), wrapper);
@@ -760,18 +764,16 @@ parallel_for_range_impl(Index begin, Index end,
     }
 #endif
     // OIIO::Strutil::print("oiio\n");
-    OIIO::parallel_for_chunked (int64_t(begin), int64_t(end), 0,
-        [&](int64_t b, int64_t e) {
-            task(Index(b), Index(e));
-        }, opt);
+    OIIO::parallel_for_chunked(
+        int64_t(begin), int64_t(end), 0,
+        [&](int64_t b, int64_t e) { task(Index(b), Index(e)); }, opt);
 }
 
 
 
 void
 parallel_for_range(int32_t begin, int32_t end,
-                   std::function<void(int32_t, int32_t)>&& task,
-                   paropt opt)
+                   std::function<void(int32_t, int32_t)>&& task, paropt opt)
 {
     parallel_for_range_impl(begin, end, std::move(task), opt);
 }
@@ -779,8 +781,7 @@ parallel_for_range(int32_t begin, int32_t end,
 
 void
 parallel_for_range(uint32_t begin, uint32_t end,
-                   std::function<void(uint32_t, uint32_t)>&& task,
-                   paropt opt)
+                   std::function<void(uint32_t, uint32_t)>&& task, paropt opt)
 {
     parallel_for_range_impl(begin, end, std::move(task), opt);
 }
@@ -788,8 +789,7 @@ parallel_for_range(uint32_t begin, uint32_t end,
 
 void
 parallel_for_range(int64_t begin, int64_t end,
-                   std::function<void(int64_t, int64_t)>&& task,
-                   paropt opt)
+                   std::function<void(int64_t, int64_t)>&& task, paropt opt)
 {
     parallel_for_range_impl(begin, end, std::move(task), opt);
 }
@@ -797,8 +797,7 @@ parallel_for_range(int64_t begin, int64_t end,
 
 void
 parallel_for_range(uint64_t begin, uint64_t end,
-                   std::function<void(uint64_t, uint64_t)>&& task,
-                   paropt opt)
+                   std::function<void(uint64_t, uint64_t)>&& task, paropt opt)
 {
     parallel_for_range_impl(begin, end, std::move(task), opt);
 }
@@ -810,10 +809,13 @@ void
 parallel_for(int64_t begin, int64_t end,
              std::function<void(int id, int64_t index)>&& task, paropt opt)
 {
-    parallel_for_chunked_id(begin, end, 0, [&task](int id, int64_t i, int64_t e) {
-        for ( ; i < e; ++i)
-            task (id, i);
-    }, opt);
+    parallel_for_chunked_id(
+        begin, end, 0,
+        [&task](int id, int64_t i, int64_t e) {
+            for (; i < e; ++i)
+                task(id, i);
+        },
+        opt);
 }
 
 
@@ -858,15 +860,14 @@ parallel_for_chunked_2D_id(
 
 // DEPRECATED(2.3)
 void
-parallel_for_chunked_2D (
+parallel_for_chunked_2D(
     int64_t xbegin, int64_t xend, int64_t xchunksize, int64_t ybegin,
     int64_t yend, int64_t ychunksize,
     std::function<void(int id, int64_t, int64_t, int64_t, int64_t)>&& task,
-    paropt opt)
+    parallel_options opt)
 {
-    parallel_for_chunked_2D_id(xbegin, xend, xchunksize,
-                               ybegin, yend, ychunksize,
-                               std::move(task), opt);
+    parallel_for_chunked_2D_id(xbegin, xend, xchunksize, ybegin, yend,
+                               ychunksize, std::move(task), opt);
 }
 
 
@@ -875,29 +876,28 @@ void
 parallel_for_chunked_2D(
     int64_t xbegin, int64_t xend, int64_t xchunksize, int64_t ybegin,
     int64_t yend, int64_t ychunksize,
-    std::function<void(int64_t, int64_t, int64_t, int64_t)>&& task,
-    paropt opt)
+    std::function<void(int64_t, int64_t, int64_t, int64_t)>&& task, paropt opt)
 {
-    auto wrapper = [&](int /*id*/, int64_t xb, int64_t xe,
-                       int64_t yb, int64_t ye) { task(xb,xe,yb,ye); };
-    parallel_for_chunked_2D_id(xbegin, xend, xchunksize,
-                               ybegin, yend, ychunksize, wrapper, opt);
+    auto wrapper = [&](int /*id*/, int64_t xb, int64_t xe, int64_t yb,
+                       int64_t ye) { task(xb, xe, yb, ye); };
+    parallel_for_chunked_2D_id(xbegin, xend, xchunksize, ybegin, yend,
+                               ychunksize, wrapper, opt);
 }
 
 
 
 void
-parallel_for_2D (int64_t xbegin, int64_t xend,
-                 int64_t ybegin, int64_t yend,
-                 std::function<void(int64_t i, int64_t j)>&& task,
-                 paropt opt)
+parallel_for_2D(int64_t xbegin, int64_t xend, int64_t ybegin, int64_t yend,
+                std::function<void(int64_t i, int64_t j)>&& task, paropt opt)
 {
-    parallel_for_chunked_2D_id(xbegin, xend, 0, ybegin, yend, 0,
-            [&task](int /*id*/, int64_t xb, int64_t xe, int64_t yb, int64_t ye) {
-        for (auto y = yb; y < ye; ++y)
-            for (auto x = xb; x < xe; ++x)
-                task (x, y);
-    }, opt);
+    parallel_for_chunked_2D_id(
+        xbegin, xend, 0, ybegin, yend, 0,
+        [&task](int /*id*/, int64_t xb, int64_t xe, int64_t yb, int64_t ye) {
+            for (auto y = yb; y < ye; ++y)
+                for (auto x = xb; x < xe; ++x)
+                    task(x, y);
+        },
+        opt);
 }
 
 
