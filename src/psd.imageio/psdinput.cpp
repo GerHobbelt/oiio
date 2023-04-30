@@ -309,8 +309,9 @@ private:
     // Convert from photoshop native alpha to
     // associated/premultiplied
     template<class T>
-    void removeBackground(T* data, int size, int nchannels, int alpha_channel,
-                          double* background)
+    OIIO_NO_SANITIZE_UNDEFINED void
+    removeBackground(T* data, int size, int nchannels, int alpha_channel,
+                     double* background)
     {
         // RGB = CompRGB - (1 - alpha) * Background;
         double scale = std::numeric_limits<T>::is_integer
@@ -1281,6 +1282,27 @@ PSDInput::load_resource_thumbnail(uint32_t length, bool isBGR)
               && read_bige<uint16_t>(bpp) && read_bige<uint16_t>(planes);
     if (!ok)
         return false;
+
+    // Sanity checks
+    // Strutil::print("thumb h {} w {} bpp {} planes {} format {} widthbytes {} total_size {}\n",
+    //                height, width, bpp, planes, format, widthbytes, total_size);
+    if (bpp != 8 && bpp != 24) {
+        errorfmt(
+            "Thumbnail JPEG is {} bpp, not supported or possibly corrupt file",
+            bpp);
+        return false;
+    }
+    if ((bpp / 8) * width != widthbytes) {
+        errorfmt("Corrupt thumbnail: {}w * {}bpp does not match {} width bytes",
+                 width, bpp, widthbytes);
+        return false;
+    }
+    if (widthbytes * height * planes != total_size) {
+        errorfmt(
+            "Corrupt thumbnail: {}w * {}h * {}bpp does not match {} total_size",
+            width, height, bpp, total_size);
+        return false;
+    }
 
     // We only support kJpegRGB since I don't have any test images with
     // kRawRGB
