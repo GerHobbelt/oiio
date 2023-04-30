@@ -498,9 +498,8 @@ put_parameter(png_structp& sp, png_infop& ip, const std::string& _name,
     if (Strutil::iequals(name, "DateTime") && type == TypeDesc::STRING) {
         png_time mod_time;
         int year, month, day, hour, minute, second;
-        if (sscanf(*(const char**)data, "%4d:%02d:%02d %02d:%02d:%02d", &year,
-                   &month, &day, &hour, &minute, &second)
-            == 6) {
+        if (Strutil::scan_datetime(*(const char**)data, year, month, day, hour,
+                                   minute, second)) {
             mod_time.year   = year;
             mod_time.month  = month;
             mod_time.day    = day;
@@ -600,7 +599,7 @@ write_info(png_structp& sp, png_infop& ip, int& color_type, ImageSpec& spec,
         if (icc_profile && length)
             png_set_iCCP(sp, ip, "Embedded Profile", 0, icc_profile, length);
 #else
-        char* icc_profile = (char*)icc_profile_parameter->data();
+        char* icc_profile      = (char*)icc_profile_parameter->data();
         if (icc_profile && length)
             png_set_iCCP(sp, ip, (png_charp) "Embedded Profile", 0, icc_profile,
                          length);
