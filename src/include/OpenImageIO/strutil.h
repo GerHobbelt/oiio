@@ -848,7 +848,7 @@ std::string OIIO_UTIL_API utf16_to_utf8(const std::wstring& utf16str) noexcept;
 /// Copy at most size characters (including terminating 0 character) from
 /// src into dst[], filling any remaining characters with 0 values. Returns
 /// dst. Note that this behavior is identical to strncpy, except that it
-/// guarantees that there will be a termining 0 character.
+/// guarantees that there will be a terminating 0 character.
 OIIO_UTIL_API char * safe_strcpy (char *dst, string_view src, size_t size) noexcept;
 
 
@@ -858,6 +858,11 @@ OIIO_UTIL_API char * safe_strcpy (char *dst, string_view src, size_t size) noexc
 /// to strcat, but guarantees that the resulting string fits into `size` bytes
 /// and is null-terminated.
 OIIO_UTIL_API char* safe_strcat(char *dst, string_view src, size_t size) noexcept;
+
+
+/// Return the length of null-terminated string `str`, up to maximum `size`.
+/// If str is nullptr, return 0. This is equivalent to C11 strnlen_s.
+OIIO_UTIL_API size_t safe_strlen(const char* str, size_t size) noexcept;
 
 
 /// Is the character a whitespace character (space, linefeed, tab, carrage
