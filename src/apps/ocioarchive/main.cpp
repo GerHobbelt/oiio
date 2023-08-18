@@ -12,12 +12,15 @@ namespace OCIO = OCIO_NAMESPACE;
 
 #include "apputils/argparse.h"
 
+#define MINIZIP_INCLUDE_DIR
+//#define MINIZIP_INCLUDE_DIR "minizip-ng/"
+
 // Config archive functionality.
-#include "minizip-ng/mz.h"
-#include "minizip-ng/mz_os.h"
-#include "minizip-ng/mz_strm.h"
-#include "minizip-ng/mz_zip.h"
-#include "minizip-ng/mz_zip_rw.h"
+#include MINIZIP_INCLUDE_DIR "mz.h"
+#include MINIZIP_INCLUDE_DIR "mz_os.h"
+#include MINIZIP_INCLUDE_DIR "mz_strm.h"
+#include MINIZIP_INCLUDE_DIR "mz_zip.h"
+#include MINIZIP_INCLUDE_DIR "mz_zip_rw.h"
 
 // Array of non OpenColorIO arguments.
 static std::vector<std::string> args;
