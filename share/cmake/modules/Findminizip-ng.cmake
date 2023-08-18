@@ -44,20 +44,20 @@ if(NOT OCIO_INSTALL_EXT_PACKAGES STREQUAL ALL)
         )
 
         # Lib names to search for
-        set(_minizip-ng_LIB_NAMES minizip-ng libminizip-ng)
+        set(_minizip-ng_LIB_NAMES minizip libminizip)
         if(BUILD_TYPE_DEBUG)
             # Prefer Debug lib names (Windows only)
-            list(INSERT _minizip-ng_LIB_NAMES 0 minizip-ngd)
+            list(INSERT _minizip-ng_LIB_NAMES 0 minizipd)
         endif()
 
         if(minizip-ng_STATIC_LIBRARY)
             # Prefer static lib names
             set(_minizip-ng_STATIC_LIB_NAMES 
-                "${CMAKE_STATIC_LIBRARY_PREFIX}minizip-ng${CMAKE_STATIC_LIBRARY_SUFFIX}")
+                "${CMAKE_STATIC_LIBRARY_PREFIX}minizip${CMAKE_STATIC_LIBRARY_SUFFIX}")
             if(WIN32 AND BUILD_TYPE_DEBUG)
                 # Prefer static Debug lib names (Windows only)
                 list(INSERT _minizip-ng_STATIC_LIB_NAMES 0
-                    "${CMAKE_STATIC_LIBRARY_PREFIX}minizip-ngd${CMAKE_STATIC_LIBRARY_SUFFIX}")
+                    "${CMAKE_STATIC_LIBRARY_PREFIX}minizipd${CMAKE_STATIC_LIBRARY_SUFFIX}")
             endif()
         endif()
 
