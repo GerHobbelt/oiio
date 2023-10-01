@@ -23,7 +23,7 @@ message (STATUS "${ColorReset}")
 
 set (OIIO_LOCAL_DEPS_PATH "${CMAKE_SOURCE_DIR}/ext/dist" CACHE STRING
      "Local area for dependencies added to CMAKE_PREFIX_PATH")
-list (APPEND CMAKE_PREFIX_PATH ${CMAKE_SOURCE_DIR}/ext/dist)
+list (APPEND CMAKE_PREFIX_PATH ${OIIO_LOCAL_DEPS_PATH})
 
 include (ExternalProject)
 
@@ -357,6 +357,6 @@ endmacro()
 find_or_download_fmt()
 
 if (FMT_VERSION VERSION_EQUAL 90100
-        AND GCC_VERSION VERSION_GREATER 0.0 AND NOT GCC_VERSION VERSION_GREATER 12.2)
+        AND GCC_VERSION VERSION_GREATER 0.0 AND NOT GCC_VERSION VERSION_GREATER 7.2)
     message (WARNING "${ColorRed}fmt 9.1 is known to not work with gcc <= 7.2${ColorReset}")
 endif ()
