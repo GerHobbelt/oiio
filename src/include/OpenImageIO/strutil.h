@@ -207,23 +207,45 @@ namespace sync {
 /// Output is fully thread-safe (the outputs are "atomic" to the file or
 /// stream), and if the stream is buffered, it is flushed after the output).
 
-template<typename... Args>
-inline void print (FILE *file, const char* fmt, const Args&... args)
+#if FMT_VERSION >= 70000
+template<typename Str, typename... Args>
+inline void print (FILE *file, const Str& fmt, Args&&... args)
 {
-    sync_output (file, ::fmt::format(fmt, args...));
+    sync_output (file, ::fmt::vformat(fmt, ::fmt::make_format_args(args...)));
+}
+
+template<typename Str, typename... Args>
+inline void print (const Str& fmt, Args&&... args)
+{
+    print(stdout, fmt, std::forward<Args>(args)...);
+}
+
+template<typename Str, typename... Args>
+inline void print (std::ostream &file, const Str& fmt, Args&&... args)
+{
+    sync_output (file, ::fmt::vformat(fmt, ::fmt::make_format_args(args...)));
+}
+
+#else
+
+template<typename... Args>
+inline void print (FILE *file, const char* fmt, Args&&... args)
+{
+    sync_output (file, ::fmt::format(fmt, std::forward<Args>(args)...));
 }
 
 template<typename... Args>
-inline void print (const char* fmt, const Args&... args)
+inline void print (const char* fmt, Args&&... args)
 {
-    print(stdout, fmt, args...);
+    print(stdout, fmt, std::forward<Args>(args)...);
 }
 
 template<typename... Args>
-inline void print (std::ostream &file, const char* fmt, const Args&... args)
+inline void print (std::ostream &file, const char* fmt, Args&&... args)
 {
-    sync_output (file, ::fmt::format(fmt, args...));
+    sync_output (file, ::fmt::format(fmt, std::forward<Args>(args)...));
 }
+#endif
 } // namespace sync
 
 
