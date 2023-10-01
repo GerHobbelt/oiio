@@ -38,14 +38,13 @@ memory, even if that's not the way they're stored in the file):
         import numpy as np
 
         inp = ImageInput.open(filename)
-        if inp is None :
-            return
-        spec = inp.spec()
-        xres = spec.width
-        yres = spec.height
-        channels = spec.nchannels
-        pixels = inp.read_image("uint8")
-        inp.close()
+        if inp :
+            spec = inp.spec()
+            xres = spec.width
+            yres = spec.height
+            channels = spec.nchannels
+            pixels = inp.read_image("uint8")
+            inp.close()
 
 Here is a breakdown of what work this code is doing:
 
@@ -163,7 +162,7 @@ Individual scanlines may be read using the ``read_scanline()`` API call:
         auto inp = ImageInput::open (filename);
         const ImageSpec &spec = inp->spec();
         if (spec.tile_width == 0) {
-            std::vector<unsigned char> scanline (spec.width*spec.channels);
+            std::vector<unsigned char> scanline (spec.width * spec.nchannels);
             for (int y = 0;  y < yres;  ++y) {
                 inp->read_scanline (y, 0, TypeDesc::UINT8, &scanline[0]);
                 // ... process data in scanline[0..width*channels-1] ...
@@ -231,7 +230,7 @@ scanline image and you should read pixels using ``read_scanline()``, not
         } else {
             // Tiles
             int tilesize = spec.tile_width * spec.tile_height;
-            std::vector<unsigned char> tile(tilesize * spec.channels);
+            std::vector<unsigned char> tile(tilesize * spec.nchannels);
             for (int y = 0;  y < yres;  y += spec.tile_height) {
                 for (int x = 0;  x < xres;  x += spec.tile_width) {
                     inp->read_tile(x, y, 0, TypeDesc::UINT8, &tile[0]);
