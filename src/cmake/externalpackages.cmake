@@ -1,5 +1,5 @@
-# Copyright 2008-present Contributors to the OpenImageIO project.
-# SPDX-License-Identifier: BSD-3-Clause
+# Copyright Contributors to the OpenImageIO project.
+# SPDX-License-Identifier: BSD-3-Clause and Apache-2.0
 # https://github.com/OpenImageIO/oiio
 
 ###########################################################################
@@ -108,7 +108,7 @@ include_directories(BEFORE ${IMATH_INCLUDES} ${OPENEXR_INCLUDES})
 if (MSVC AND NOT LINKSTATIC)
     add_definitions (-DOPENEXR_DLL) # Is this needed for new versions?
 endif ()
-if (OPENEXR_VERSION VERSION_GREATER_EQUAL 3.0)
+if (OpenEXR_VERSION VERSION_GREATER_EQUAL 3.0)
     set (OIIO_USING_IMATH 3)
 else ()
     set (OIIO_USING_IMATH 2)
