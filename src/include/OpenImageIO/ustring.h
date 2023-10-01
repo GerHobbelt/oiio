@@ -816,41 +816,41 @@ public:
 
     /// Construct a ustringhash from a null-terminated C string (char *).
     OIIO_DEVICE_CONSTEXPR explicit ustringhash(const char* str)
-    {
 #ifdef __CUDA_ARCH__
         // GPU: just compute the hash. This can be constexpr!
-        m_hash = Strutil::strhash(str);
+        : m_hash(Strutil::strhash(str))
 #else
         // CPU: make ustring, get its hash. Note that ustring ctr can't be
         // constexpr because it has to modify the internal ustring table.
-        m_hash = ustring(str).hash();
+        : m_hash(ustring(str).hash())
 #endif
+    {
     }
 
     OIIO_DEVICE_CONSTEXPR explicit ustringhash(const char* str, size_t len)
-    {
 #ifdef __CUDA_ARCH__
         // GPU: just compute the hash. This can be constexpr!
-        m_hash = Strutil::strhash(len, str);
+        : m_hash(Strutil::strhash(len, str))
 #else
         // CPU: make ustring, get its hash. Note that ustring ctr can't be
         // constexpr because it has to modify the internal ustring table.
-        m_hash = ustring(str, len).hash();
+        : m_hash(ustring(str, len).hash())
 #endif
+    {
     }
 
     /// Construct a ustringhash from a string_view, which can be
     /// auto-converted from either a std::string.
     OIIO_DEVICE_CONSTEXPR explicit ustringhash(string_view str)
-    {
 #ifdef __CUDA_ARCH__
         // GPU: just compute the hash. This can be constexpr!
-        m_hash = Strutil::strhash(str);
+        : m_hash(Strutil::strhash(str))
 #else
         // CPU: make ustring, get its hash. Note that ustring ctr can't be
         // constexpr because it has to modify the internal ustring table.
-        m_hash = ustring(str).hash();
+        : m_hash(ustring(str).hash())
 #endif
+    {
     }
 
     /// Construct from a raw hash value. Beware: results are undefined if it's
@@ -1051,11 +1051,9 @@ OIIO_DEVICE_CONSTEXPR ustringhash operator""_ush(const char* str,
 /// Deprecated -- This is too easy to confuse with the ustringhash class. And
 /// also it is unnecessary if you use std::hash<ustring>. This will be removed
 /// in OIIO 3.0.
-#    if OIIO_VERSION_GREATER_EQUAL(2, 6, 0)
-OIIO_DEPRECATED("Use std::hash<ustring> instead of ustringHash")
-#    endif
-
-using ustringHash = std::hash<ustring>;
+using ustringHash
+    OIIO_DEPRECATED("Use std::hash<ustring> instead of ustringHash")
+    = std::hash<ustring>;
 #endif
 
 
