@@ -27,9 +27,9 @@ NEW or CHANGED MINIMUM dependencies since the last major release are **bold**.
  * libjpeg >= 8, or libjpeg-turbo >= 1.1 (tested through jpeg9d and jpeg-turbo
    2.1)
  * Boost >= 1.53 (recommended: at least 1.66; tested through 1.81)
- * [fmtlib](https://github.com/fmtlib/fmt) >= 6.1.2 (tested through 10.0). If
-   not found at build time, this will be automatically downloaded unless the
-   build sets `-DBUILD_MISSING_FMT=OFF`.
+ * **[fmtlib](https://github.com/fmtlib/fmt) >= 7.0** (tested through 10.1).
+   If not found at build time, this will be automatically downloaded unless
+   the build sets `-DBUILD_MISSING_FMT=OFF`.
 
 ### Optional dependencies -- features may be disabled if not found
  * If you are building the `iv` viewer (which will be disabled if any of
@@ -68,7 +68,7 @@ NEW or CHANGED MINIMUM dependencies since the last major release are **bold**.
  * If you want support for WebP images:
      * WebP >= 0.6.1 (tested through 1.3.1)
  * If you want support for OpenColorIO color transformations:
-     * OpenColorIO >= 1.1 (tested through 2.2; 2.0+ is recommended)
+     * OpenColorIO >= 1.1 (tested through 2.3; 2.0+ is recommended)
  * If you want support for Ptex:
      * Ptex >= 2.3.1 (probably works for older; tested through 2.4.2)
  * If you want to be able to do font rendering into images:
