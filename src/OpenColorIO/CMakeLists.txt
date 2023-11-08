@@ -380,7 +380,7 @@ if(UNIX AND NOT APPLE)
     # an app using this project is linked against other versions of our
     # dependencies.
     set(CUSTOM_LINK_FLAGS "${CUSTOM_LINK_FLAGS};-Wl,--exclude-libs,ALL")
-elseif(APPLE)
+elseif(APPLE AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 12 )
     if (expat_LIBRARY)
         get_filename_component(_expat_LIBDIR "${expat_LIBRARY}" DIRECTORY)
         # Add the path to CMake list of search paths for libraries.
