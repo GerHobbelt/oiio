@@ -132,7 +132,7 @@ if(NOT OCIO_INSTALL_EXT_PACKAGES STREQUAL ALL)
 endif()
 
 if(NOT ZLIB_FOUND AND OCIO_INSTALL_EXT_PACKAGES AND NOT OCIO_INSTALL_EXT_PACKAGES STREQUAL NONE)
-    include(InstallZLIB)
+    find_package(zlib REQUIRED)
 endif()
 ###############################################################################
 
