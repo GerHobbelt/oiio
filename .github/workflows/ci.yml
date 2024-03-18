@@ -483,6 +483,7 @@ jobs:
             cxx_std: 17
             python_ver: "3.11"
             aclang: 14
+            simd: sse4.2,avx2
           - desc: MacOS-14-ARM
             runner: macos-14
             nametag: macos14-arm-py311
@@ -495,6 +496,7 @@ jobs:
       CXX: clang++
       CMAKE_CXX_STANDARD: ${{ matrix.cxx_std }}
       PYTHON_VERSION: ${{ matrix.python_ver }}
+      USE_SIMD: ${{matrix.simd}}
       CTEST_TEST_TIMEOUT: 600
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
@@ -547,15 +549,15 @@ jobs:
             generator: "Visual Studio 16 2019"
             openexr_ver: v3.2.2
             python_ver: 3.7
-            simd: sse4.2
+            # simd: sse4.2
           # - desc: windows-2022
           #   runner: windows-2022
           #   vsver: 2022
           #   generator: "Visual Studio 17 2022"
-          #   openexr_ver: main
+          #   openexr_ver: v3.2.2
           #   # v3.1.4
           #   python_ver: 3.7
-          #   simd: sse4.2
+          #   # simd: AVX2
     runs-on: ${{ matrix.runner }}
     env:
       PYTHON_VERSION: ${{matrix.python_ver}}

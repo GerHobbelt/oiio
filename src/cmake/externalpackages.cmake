@@ -144,6 +144,12 @@ if (NOT TARGET libjpeg-turbo::jpeg) # Try to find the non-turbo version
     checked_find_package (JPEG REQUIRED)
 endif ()
 
+# JPEG XL
+option (USE_JXL "Enable JPEG XL support" ON)
+checked_find_package (JXL
+                      VERSION_MIN 0.10.1
+                      DEFINITIONS -DUSE_JXL=1)
+
 # Pugixml setup.  Normally we just use the version bundled with oiio, but
 # some linux distros are quite particular about having separate packages so we
 # allow this to be overridden to use the distro-provided package if desired.
@@ -211,8 +217,8 @@ checked_find_package (GIF
 
 # For HEIF/HEIC/AVIF formats
 checked_find_package (Libheif VERSION_MIN 1.3
-                      RECOMMEND_MIN 1.7
-                      RECOMMEND_MIN_REASON "for AVIF support")
+                      RECOMMEND_MIN 1.16
+                      RECOMMEND_MIN_REASON "for orientation support")
 if (APPLE AND LIBHEIF_VERSION VERSION_GREATER_EQUAL 1.10 AND LIBHEIF_VERSION VERSION_LESS 1.11)
     message (WARNING "Libheif 1.10 on Apple is known to be broken, disabling libheif support")
     set (Libheif_FOUND 0)
