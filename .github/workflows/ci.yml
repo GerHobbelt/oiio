@@ -10,6 +10,8 @@ on:
     paths-ignore:
       - '**.md'
       - '**.rst'
+      - '**.analysis.yml'
+      - '**.properties'
   pull_request:
     paths-ignore:
       - '**.md'
