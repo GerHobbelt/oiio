@@ -9,7 +9,7 @@
 # Run 'make help' to list helpful targets.
 #
 # Copyright Contributors to the OpenImageIO project.
-# SPDX-License-Identifier: BSD-3-Clause and Apache-2.0
+# SPDX-License-Identifier: Apache-2.0
 # https://github.com/AcademySoftwareFoundation/OpenImageIO
 #########################################################################
 
@@ -45,7 +45,7 @@ INSTALL_PREFIX ?= ${working_dir}/${dist_dir}
 VERBOSE ?= ${SHOWCOMMANDS}
 ifneq (${VERBOSE},)
 MY_MAKE_FLAGS += VERBOSE=${VERBOSE}
-MY_CMAKE_FLAGS += -DVERBOSE:BOOL=${VERBOSE}
+MY_CMAKE_FLAGS += -DVERBOSE:BOOL=${VERBOSE} --log-level=VERBOSE
 ifneq (${VERBOSE},0)
 	MY_NINJA_FLAGS += -v
 	TEST_FLAGS += -V
