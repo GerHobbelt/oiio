@@ -159,6 +159,8 @@ endif()
 # From pythonutils.cmake
 find_python()
 
+checked_find_package (pybind11 REQUIRED VERSION_MIN 2.4.2)
+
 
 ###########################################################################
 # Dependencies for optional formats and features. If these are not found,
@@ -236,7 +238,7 @@ checked_find_package (OpenVDB
                       DEFINITIONS  -DUSE_OPENVDB=1)
 if (OpenVDB_FOUND AND OpenVDB_VERSION VERSION_GREATER_EQUAL 10.1 AND CMAKE_CXX_STANDARD VERSION_LESS 17)
     message (WARNING "${ColorYellow}OpenVDB >= 10.1 (we found ${OpenVDB_VERSION}) can only be used when we build with C++17 or higher. Disabling OpenVDB support.${ColorReset}")
-    set (OpeVDB_FOUND 0)
+    set (OpenVDB_FOUND 0)
 endif ()
 
 checked_find_package (Ptex PREFER_CONFIG)
@@ -248,12 +250,14 @@ if (NOT Ptex_FOUND OR NOT Ptex_VERSION)
 endif ()
 
 checked_find_package (WebP)
+# Note: When WebP 1.1 (released late 2019) is our minimum, we can use their
+# exported configs and remove our FindWebP.cmake module.
 
 option (USE_R3DSDK "Enable R3DSDK (RED camera) support" OFF)
-checked_find_package (R3DSDK)  # RED camera
+checked_find_package (R3DSDK NO_RECORD_NOTFOUND)  # RED camera
 
 set (NUKE_VERSION "7.0" CACHE STRING "Nuke version to target")
-checked_find_package (Nuke)
+checked_find_package (Nuke NO_RECORD_NOTFOUND)
 
 
 # Qt -- used for iv
@@ -312,6 +316,8 @@ macro (find_or_download_robin_map)
     checked_find_package (Robinmap REQUIRED)
 endmacro()
 
+find_or_download_robin_map ()
+
 
 ###########################################################################
 # fmtlib
@@ -359,6 +365,7 @@ macro (find_or_download_fmt)
         math(EXPR FMT_VERSION_MINOR "(${FMT_VERSION_NUMERIC} / 100) % 100")
         math(EXPR FMT_VERSION_MAJOR "${FMT_VERSION_NUMERIC} / 10000")
         set (fmt_VERSION "${FMT_VERSION_MAJOR}.${FMT_VERSION_MINOR}.${FMT_VERSION_PATCH}")
+        list (APPEND CFP_ALL_BUILD_DEPS_FOUND "${pkgname} ${${pkgname}_VERSION}")
     else ()
         get_target_property(FMT_INCLUDE_DIR fmt::fmt-header-only INTERFACE_INCLUDE_DIRECTORIES)
         set (OIIO_USING_FMT_LOCAL FALSE)
@@ -373,3 +380,6 @@ if (fmt_VERSION VERSION_EQUAL 9.1.0
         AND GCC_VERSION VERSION_GREATER 0.0 AND NOT GCC_VERSION VERSION_GREATER 7.2)
     message (WARNING "${ColorRed}fmt 9.1 is known to not work with gcc <= 7.2${ColorReset}")
 endif ()
+
+list (SORT CFP_ALL_BUILD_DEPS_FOUND COMPARE STRING CASE INSENSITIVE)
+message (STATUS "All build dependencies: ${CFP_ALL_BUILD_DEPS_FOUND}")
