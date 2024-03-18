@@ -136,8 +136,8 @@ contents of an expression may be any of:
     `ImageDescription`, or `width`)
   * `filename` : the name of the file (e.g., `foo.tif`)
   * `file_extension` : the extension of the file (e.g., `tif`)
-  * `full_geom` : the "full" or "display" size)
-  * `geom` : the pixel data size in the form `640x480+0+0`)
+  * `full_geom` : the "full" or "display" size
+  * `geom` : the pixel data size in the form `640x480+0+0`
   * `nativeformat` : the pixel data type from the file.
   * `MINCOLOR` : the minimum value of each channel over the entire image
     (channels are comma-separated)
@@ -145,6 +145,8 @@ contents of an expression may be any of:
     (channels are comma-separated)
   * `AVGCOLOR` : the average pixel value of the image (channels are
     comma-separated)
+  * `NONFINITE_COUNT` : the number of pixel values in the image that are
+    either NaN or Inf values. (Added in OIIO 2.5.10.)
   * `META` : a multi-line string containing the full metadata of the image,
     similar to what would be printed with `oiiotool -info -v`.
   * `METABRIEF` : a string containing the brief one-line description,
@@ -221,6 +223,14 @@ contents of an expression may be any of:
     retrieved by `OIIO::getattribute(name, ...)`. The `name` may be enclosed
     in single or double quotes or be a single unquoted sequence of characters.
     (Added in OIIO 2.3.)
+  * `var(name)` : returns the user variable of the give name. (Added in OIIO
+    2.4.)
+  * `eq(a,b)` : returns 1 if `a` is equal to `b`, 0 otherwise. (Added in OIIO
+    2.4.)
+  * `neq(a,b)` : returns 1 if `a` is not equal to `b`, 0 otherwise. (Added in
+    OIIO 2.4.)
+  * `not(val)` : returns 1 if `val` is a false value, 0 if `val` evaluates
+     to a true value. (Added in OIIO 2.4.)
 
 
 To illustrate how this works, consider the following command, which trims
