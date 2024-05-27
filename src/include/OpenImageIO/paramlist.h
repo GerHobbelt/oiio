@@ -524,7 +524,7 @@ public:
 
     /// Even more radical than clear, free ALL memory associated with the
     /// list itself.
-    void free()
+    void release()
     {
         clear();
         shrink_to_fit();
