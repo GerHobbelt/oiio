@@ -1049,7 +1049,8 @@ namespace cineon
 		 */
 		bool				Read(InStream *);
 
-#ifdef OIIO_DOES_NOT_NEED_THIS
+//#ifdef OIIO_DOES_NOT_NEED_THIS   // used at oiio\src\cineon.imageio\libcineon\Writer.cpp(118, 22):: error C2039 : 'Write' : is not a member of 'cineon::Header'
+
 		/*!
 		 * \brief Set the Output Stream object to write header to
 		 */
@@ -1057,7 +1058,8 @@ namespace cineon
 
 		// write the offset within the header
 		bool				WriteOffsetData(OutStream *);
-#endif
+
+//#endif
 
 		/*!
 		 * \brief Validate the header
