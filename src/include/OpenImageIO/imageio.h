@@ -2454,7 +2454,7 @@ public:
     /// If the function fails and returns `false`, an error message can be
     /// retrieved from `this->geterror()`, even if the actual error was
     /// related to reading from `in` (i.e., reading errors are automatically
-    /// transferrred to `*this`).
+    /// transferred to `*this`).
     ///
     /// Note: this method is NOT thread-safe (against other threads that may
     /// also be using `in`), since it depends on persistent state in the
@@ -2993,12 +2993,12 @@ OIIO_API std::string geterror(bool clear = true);
 ///   If nonzero, upon program exit, any error messages that would have been
 ///   retrieved by a call to `OIIO::geterror()`, but never were, will be
 ///   printed to stdout. While this may seem chaotic, we are presuming that
-///   any well-written library or application will proactively check error
+///   any well-written library or application will pro-actively check error
 ///   codes and retrieve errors, so this will never print anything upon exit.
 ///   But for less sophisticated applications (or users), this is very useful
 ///   for forcing display of error messages so that users can see relevant
 ///   errors even if they never check them explicitly, thus self-diagnose
-///   their troubles before asking the project dev deam for help. Advanced
+///   their troubles before asking the project dev team for help. Advanced
 ///   users who for some reason desire to neither retrieve errors themselves
 ///   nor have them printed in this manner can disable the behavior by setting
 ///   this attribute to 0.
@@ -3008,12 +3008,12 @@ OIIO_API std::string geterror(bool clear = true);
 ///   If nonzero, an `ImageBuf` upon destruction will print any error messages
 ///   that were never retrieved by its `geterror()` method. While this may
 ///   seem chaotic, we are presuming that any well-written library or
-///   application will proactively check error codes and retrieve errors, so
+///   application will pro-actively check error codes and retrieve errors, so
 ///   will never print anything upon destruction. But for less sophisticated
 ///   applications (or users), this is very useful for forcing display of
 ///   error messages so that users can see relevant errors even if they never
 ///   check them explicitly, thus self-diagnose their troubles before asking
-///   the project dev deam for help. Advanced users who for some reason desire
+///   the project dev team for help. Advanced users who for some reason desire
 ///   to neither retrieve errors themselves nor have them printed in this
 ///   manner can disable the behavior by setting this attribute to 0.
 ///
@@ -3096,7 +3096,7 @@ inline bool attribute (string_view name, string_view val) {
 /// - int64_t IB_local_mem_peak
 ///
 ///   Current and peak size (in bytes) of how much memory was consumed by
-///   ImageBufs that owned their own allcoated local pixel buffers. (Added in
+///   ImageBufs that owned their own allocated local pixel buffers. (Added in
 ///   OpenImageIO 2.5.)
 ///
 /// - float IB_total_open_time
@@ -3127,7 +3127,7 @@ inline bool attribute (string_view name, string_view val) {
 ///   which features this build of OIIO was compiled to support.
 ///
 ///   These were added in OpenImageIO 1.8. The `"build:simd"` attribute was
-///   added added in OpenImageIO 2.5.8 as a preferred synonym for what
+///   added in OpenImageIO 2.5.8 as a preferred synonym for what
 ///   previously was called `"oiio:simd"`, which is now deprecated.
 ///
 /// - `string build:platform` (read-only)
@@ -3142,7 +3142,7 @@ inline bool attribute (string_view name, string_view val) {
 ///
 /// - `string build:dependencies` (read-only)
 ///
-///   List of library dependencieis (where known) and versions, separatd by
+///   List of library dependencies (where known) and versions, separated by
 ///   semicolons. (Added in OpenImageIO 2.5.8.)
 ///
 /// - `float resident_memory_used_MB`
