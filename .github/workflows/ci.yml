@@ -10,7 +10,8 @@ on:
     paths-ignore:
       - '**.md'
       - '**.rst'
-      - '**.analysis.yml'
+      - '**/analysis.yml'
+      - '**/docs.yml'
       - '**.properties'
       - 'docs/**'
   pull_request:
@@ -212,7 +213,7 @@ jobs:
             pybind11_ver: v2.10.0
             skip_tests: 1
             # abi_check: v2.6.2.0
-            abi_check: f30cdf9e2130caabbadebad1093fcdd95fc30fa9
+            abi_check: 6aba6e99fd02cea879f87a0ec08f898db37ab49b
             setenvs: export OIIO_CMAKE_FLAGS="-DOIIO_BUILD_TOOLS=0 -DOIIO_BUILD_TESTS=0 -DUSE_PYTHON=0"
                             USE_OPENCV=0 USE_FFMPEG=0 USE_PYTHON=0 USE_FREETYPE=0
                             CMAKE_BUILD_TYPE=RelWithDebInfo
@@ -265,6 +266,7 @@ jobs:
             ${{matrix.depcmds}}
             src/build-scripts/gh-installdeps.bash
       - name: Build
+        if: matrix.skip_build != '1'
         run: src/build-scripts/ci-build.bash
       - name: Testsuite
         if: matrix.skip_tests != '1'
@@ -286,15 +288,22 @@ jobs:
         if: matrix.abi_check != ''
         run: |
             src/build-scripts/ci-abicheck.bash ./build abi_standard/build libOpenImageIO libOpenImageIO_Util
+      - name: Build Docs
+        if: matrix.build_docs == '1'
+        run: |
+            cd src/doc
+            time make doxygen
+            time make sphinx
       - uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
         # Note: versions of upload-artifact >= 4.0 can't run on the ASWF
         # containers because they need a newer glibc than they have.
-        if: failure()
+        if: ${{ failure() || matrix.build_docs == '1'}}
         with:
           name: oiio-${{github.job}}-${{matrix.nametag}}
           path: |
             build/cmake-save
             build/compat_reports
+            build/sphinx
             build/testsuite/*/*.*
             !build/testsuite/oiio-images
             !build/testsuite/openexr-images
@@ -308,28 +317,28 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - desc: latest releases gcc12 C++17 avx2 exr3.2 ocio2.3
+          - desc: latest releases gcc13 C++20 py3.12 avx2 exr3.2 ocio2.3
             nametag: linux-latest-releases
-            runner: ubuntu-22.04
-            cc_compiler: gcc-12
-            cxx_compiler: g++-12
-            cxx_std: 17
-            fmt_ver: 10.1.1
+            runner: ubuntu-24.04
+            cc_compiler: gcc-13
+            cxx_compiler: g++-13
+            cxx_std: 20
+            fmt_ver: 11.0.2
             opencolorio_ver: v2.3.2
             openexr_ver: v3.2.4
-            pybind11_ver: v2.12.0
-            python_ver: "3.10"
+            pybind11_ver: v2.13.5
+            python_ver: "3.12"
             simd: avx2,f16c
-            setenvs: export LIBJPEGTURBO_VERSION=3.0.1
+            setenvs: export LIBJPEGTURBO_VERSION=3.0.3
                             LIBRAW_VERSION=0.21.2
                             LIBTIFF_VERSION=v4.6.0
-                            OPENJPEG_VERSION=v2.4.0
-                            PTEX_VERSION=v2.4.2
+                            OPENJPEG_VERSION=v2.5.2
+                            PTEX_VERSION=v2.4.3
                             PUGIXML_VERSION=v1.14
                             WEBP_VERSION=v1.4.0
-                            FREETYPE_VERSION=VER-2-13-2
-                            EXTRA_DEP_PACKAGES="libboost-dev"
-          - desc: bleeding edge gcc14 C++20 py3.12 OCIO/libtiff/exr-master avx2
+                            FREETYPE_VERSION=VER-2-13-3
+                            USE_OPENVDB=0
+          - desc: bleeding edge gcc14 C++20 py3.12 OCIO/libtiff/exr-main avx2
             nametag: linux-bleeding-edge
             runner: ubuntu-24.04
             cc_compiler: gcc-14
@@ -351,7 +360,6 @@ jobs:
                             OIIO_CMAKE_FLAGS="-DFORTIFY_SOURCE=2"
                             QT_VERSION=6
                             EXTRA_DEP_PACKAGES="python3.12-dev python3-numpy"
-                            PIP_INSTALLS="none"
                             USE_OPENVDB=0
                             SKIP_APT_GET_UPDATE=1
                             FREETYPE_VERSION=master
@@ -375,7 +383,6 @@ jobs:
                             PTEX_VERSION=v2.4.2
                             PUGIXML_VERSION=v1.14
                             WEBP_VERSION=v1.4.0
-                            EXTRA_DEP_PACKAGES="libboost-dev"
           - desc: clang14 C++20 avx2 exr3.1 ocio2.1
             nametag: linux-clang14
             runner: ubuntu-20.04

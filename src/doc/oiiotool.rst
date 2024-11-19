@@ -241,7 +241,7 @@ contents of an expression may be any of:
 
 To illustrate how this works, consider the following command, which trims
 a four-pixel border from all sides and outputs a new image prefixed with
-"cropped_", without needing to know the resolution or filename of the
+"`cropped_`", without needing to know the resolution or filename of the
 original image::
 
     oiiotool input.exr -cut "{TOP.width-2*4}x{TOP.height-2*4}+{TOP.x+4}+{TOP.y+4}" \
@@ -2781,8 +2781,7 @@ current top image.
       `max=` *vals*
         Specify the maximum range value(s), default 1.0.
       `scontrast=` *vals*
-        Specify sigmoidal contrast slope value(s),
-      default 1.0.
+        Specify sigmoidal contrast slope value(s), default 1.0.
       `sthresh=` *vals*
         Specify sigmoidal threshold value(s) giving the position of maximum
         slope, default 0.5.
@@ -4113,11 +4112,11 @@ current top image.
            -fill:topleft=.1,.1,.1:topright=1,0,0:bottomleft=0,1,0:botromright=0,0,1 \
                640x480 -o gradient.tif
 
-    .. |textimg1| image:: figures/gradient.jpg
+    .. |gradimg1| image:: figures/gradient.jpg
        :width: 2.0 in
-    .. |textimg2| image:: figures/gradienth.jpg
+    .. |gradimg2| image:: figures/gradienth.jpg
        :width: 2.0 in
-    .. |textimg2| image:: figures/gradient4.jpg
+    .. |gradimg3| image:: figures/gradient4.jpg
        :width: 2.0 in
     ..
 
@@ -4175,7 +4174,7 @@ current top image.
        :width: 2.0 in
     .. |textimg2| image:: figures/textcentered.jpg
        :width: 2.0 in
-    .. |textimg2| image:: figures/textshadowed.jpg
+    .. |textimg3| image:: figures/textshadowed.jpg
        :width: 2.0 in
     ..
     
@@ -4438,6 +4437,39 @@ will be printed with the command `oiiotool --colorconfiginfo`.
     Examples::
 
         oiiotool in.jpg --ociofiletransform footransform.csp -o out.jpg
+
+
+.. option:: --ocionamedtransform <name>
+
+    Replace the current image with a new image whose pixels are transformed
+    using the named OpenColorIO named transform.  Optional appended arguments
+    include:
+
+    - `key=` *name*, `value=` *str*
+
+      Adds a key/value pair to the "context" that OpenColorIO will used
+      when applying the look. Multiple key/value pairs may be specified by
+      making each one a comma-separated list.
+    
+    - `inverse=` *val* :
+
+      If *val* is nonzero, inverts the color transformation.
+
+    - `unpremult=` *val* :
+
+      If the numeric *val* is nonzero, the pixel values will be
+      "un-premultipled" (divided by alpha) prior to the actual color
+      conversion, and then re-multipled by alpha afterwards. The default is
+      0, meaning the color transformation not will be automatically
+      bracketed by divide-by-alpha / mult-by-alpha operations.
+
+      `:subimages=` *indices-or-names*
+        Include/exclude subimages (see :ref:`sec-oiiotool-subimage-modifier`).
+
+    Examples::
+
+        oiiotool in.exr --ocionamedtransform:inverse=1 srgb_crv -o out.jpg
+
 
 .. option:: --unpremult
 

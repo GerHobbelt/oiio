@@ -4,7 +4,7 @@
 
 cmake_minimum_required (VERSION 3.15)
 
-set (OpenImageIO_VERSION "2.6.4.0")
+set (OpenImageIO_VERSION "2.6.6.0")
 set (OpenImageIO_VERSION_OVERRIDE "" CACHE STRING
      "Version override (use with caution)!")
 mark_as_advanced (OpenImageIO_VERSION_OVERRIDE)
@@ -24,7 +24,7 @@ set (PROJECT_VERSION_RELEASE_TYPE "dev" CACHE STRING
 set (${PROJECT_NAME}_VERSION_RELEASE_TYPE ${PROJECT_VERSION_RELEASE_TYPE})
 set (PROJECT_AUTHORS "Contributors to the OpenImageIO project")
 option (${PROJECT_NAME}_SUPPORTED_RELEASE
-        "Set ON for supported release branch, OFF for master" OFF)
+        "Set ON for supported release branches, OFF for 'main'" OFF)
 if (${PROJECT_NAME}_SUPPORTED_RELEASE)
     set (${PROJECT_NAME}_DEV_RELEASE OFF)
 else ()

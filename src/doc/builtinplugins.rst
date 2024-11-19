@@ -1293,29 +1293,28 @@ control aspects of the writing itself:
    * - ``jpegxl:use_boxes``
      - int (bool)
      - If nonzero, will enable metadata (Exif, XMP, jumb, iptc) writing to the
-     output file. Default is 1.
+       output file. Default is 1.
    * - ``jpegxl:compress_boxes``
      - int (bool)
      - If nonzero, will enable metadata compression. Default is 1.
    * - ``jpegxl:exif_box``
      - int (bool)
      - If nonzero, will enable Exif metadata writing to the output file.
-     Default is 1.
+       Default is 1.
    * - ``jpegxl:xmp_box``
      - int (bool)
      - If nonzero, will enable XMP metadata writing to the output file.
-     Default is 1.
+       Default is 1.
    * - ``jpegxl:jumb_box``
      - int (bool)
      - If nonzero, will enable JUMBF metadata writing to the output file.
-     Default is 0.
-     (dows not supported at this moment in OIIO)
+       Default is 0. (dows not supported at this moment in OIIO)
    * - ``jpegxl:iptc_box``
      - int (bool)
      - If nonzero, will enable IPTC metadata writing to the output file.
-     Default is 0.
-     (Do not work as expected at this moment. Box is written but content
-     unreadable in exif readers)
+       Default is 0.
+       (Does not work as expected at this moment. Box is written but content
+       unreadable in exif readers.)
 
 .. _sec-bundledplugins-ffmpeg:
 
@@ -2086,6 +2085,15 @@ options are supported:
        equal to 0, ``raw:use_auto_wb`` is not equal to 0. Takes 
        precedence over ``raw:user_mul``.
        (Default: 0, 0, 0, 0; meaning no correction.)
+   * - ``raw:cropbox``
+     - int[4]
+     - If present, sets the box to crop the image to. The four values are the 
+       X and Y coordinate of the top-left corner, the width and the height.
+       If not present, the image is cropped to match the in-camera JPEG,
+       assuming the necessary information is present in the metadata. The
+       cropping is done by setting the display window, so the whole image
+       pixels are still available. The default cropping can be disabled by
+       setting the cropbox to zero size.
    * - ``raw:use_camera_matrix``
      - int
      - Whether to use the embedded color profile, if it's present: 0 =
