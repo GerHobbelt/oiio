@@ -2327,25 +2327,6 @@ IBA_histogram(const ImageBuf& src, int channel = 0, int bins = 256,
 
 
 bool
-IBA_capture_image(ImageBuf& dst, int cameranum,
-                  TypeDesc::BASETYPE convert = TypeDesc::UNKNOWN)
-{
-    py::gil_scoped_release gil;
-    dst = ImageBufAlgo::capture_image(cameranum, convert);
-    return !dst.has_error();
-}
-
-ImageBuf
-IBA_capture_image_ret(int cameranum,
-                      TypeDesc::BASETYPE convert = TypeDesc::UNKNOWN)
-{
-    py::gil_scoped_release gil;
-    return ImageBufAlgo::capture_image(cameranum, convert);
-}
-
-
-
-bool
 IBA_make_texture_ib(ImageBufAlgo::MakeTextureMode mode, const ImageBuf& buf,
                     const std::string& outputfilename, const ImageSpec& config)
 {
@@ -2365,6 +2346,33 @@ IBA_make_texture_filename(ImageBufAlgo::MakeTextureMode mode,
 }
 
 
+ImageBuf
+IBA_demosaic_ret(const ImageBuf& src, const std::string& pattern = "",
+                 const std::string& algorithm = "",
+                 const std::string& layout = "", ROI roi = ROI::All(),
+                 int nthreads = 0)
+{
+    py::gil_scoped_release gil;
+    return ImageBufAlgo::demosaic(src,
+                                  { { "pattern", pattern },
+                                    { "algorithm", algorithm },
+                                    { "layout", layout } },
+                                  roi, nthreads);
+}
+
+bool
+IBA_demosaic(ImageBuf& dst, const ImageBuf& src,
+             const std::string& pattern = "", const std::string& algorithm = "",
+             const std::string& layout = "", ROI roi = ROI::All(),
+             int nthreads = 0)
+{
+    py::gil_scoped_release gil;
+    return ImageBufAlgo::demosaic(dst, src,
+                                  { { "pattern", pattern },
+                                    { "algorithm", algorithm },
+                                    { "layout", layout } },
+                                  roi, nthreads);
+}
 
 void
 declare_imagebufalgo(py::module& m)
@@ -3013,11 +3021,6 @@ declare_imagebufalgo(py::module& m)
         .def_static("fillholes_pushpull", &IBA_fillholes_pushpull_ret, "src"_a,
                     "roi"_a = ROI::All(), "nthreads"_a = 0)
 
-        .def_static("capture_image", &IBA_capture_image, "dst"_a,
-                    "cameranum"_a = 0, "convert"_a = TypeDesc::UNKNOWN)
-        .def_static("capture_image", &IBA_capture_image_ret, "cameranum"_a = 0,
-                    "convert"_a = TypeDesc::UNKNOWN)
-
         .def_static("over", &IBA_over, "dst"_a, "A"_a, "B"_a,
                     "roi"_a = ROI::All(), "nthreads"_a = 0)
         .def_static("over", &IBA_over_ret, "A"_a, "B"_a, "roi"_a = ROI::All(),
@@ -3057,7 +3060,14 @@ declare_imagebufalgo(py::module& m)
         .def_static("make_texture", &IBA_make_texture_filename, "mode"_a,
                     "filename"_a, "outputfilename"_a, "config"_a = ImageSpec())
         .def_static("make_texture", &IBA_make_texture_ib, "mode"_a, "buf"_a,
-                    "outputfilename"_a, "config"_a = ImageSpec());
+                    "outputfilename"_a, "config"_a = ImageSpec())
+
+        .def_static("demosaic", &IBA_demosaic, "dst"_a, "src"_a,
+                    "pattern"_a = "", "algorithm"_a = "", "layout"_a = "",
+                    "roi"_a = ROI::All(), "nthreads"_a = 0)
+        .def_static("demosaic", &IBA_demosaic_ret, "src"_a, "pattern"_a = "",
+                    "algorithm"_a = "", "layout"_a = "", "roi"_a = ROI::All(),
+                    "nthreads"_a = 0);
 }
 
 }  // namespace PyOpenImageIO

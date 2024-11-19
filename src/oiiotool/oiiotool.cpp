@@ -43,6 +43,10 @@
 #    include <OpenImageIO/unittest.h>
 #endif
 
+#ifdef USE_OPENCV
+#    include <OpenImageIO/imagebufalgo_opencv.h>
+#endif
+
 using namespace OIIO;
 using namespace OiioTool;
 using namespace ImageBufAlgo;
@@ -3416,6 +3420,17 @@ OIIOTOOL_OP(warp, 1, [&](OiiotoolOp& op, span<ImageBuf*> img) {
     return ok;
 });
 
+// --demosaic
+OIIOTOOL_OP(demosaic, 1, [&](OiiotoolOp& op, span<ImageBuf*> img) {
+    std::string pattern   = op.options().get_string("pattern");
+    std::string algorithm = op.options().get_string("algorithm");
+    std::string layout    = op.options().get_string("layout");
+
+    return ImageBufAlgo::demosaic(*img[0], *img[1],
+                                  { { "pattern", pattern },
+                                    { "algorithm", algorithm },
+                                    { "layout", layout } });
+});
 
 
 // --st_warp
@@ -3716,14 +3731,19 @@ action_capture(Oiiotool& ot, cspan<const char*> argv)
     OIIO_DASSERT(argv.size() == 1);
     string_view command = ot.express(argv[0]);
     OTScopedTimer timer(ot, command);
+
+#ifdef USE_OPENCV
     auto options = ot.extract_options(command);
     int camera   = options.get_int("camera");
-
-    ImageBuf ib = ImageBufAlgo::capture_image(camera /*, TypeDesc::FLOAT*/);
+    ImageBuf ib  = ImageBufAlgo::capture_image(camera /*, TypeDesc::FLOAT*/);
     if (ib.has_error()) {
         ot.error(command, ib.geterror());
         return;
     }
+#else
+    ot.warning(command, "capture requires OpenCV support");
+    ImageBuf ib(ImageSpec(640, 480, 3, TypeDesc::FLOAT));
+#endif
     ImageRecRef img(new ImageRec("capture", ib.spec(), ot.imagecache));
     (*img)().copy(ib);
     ot.push(img);
@@ -6758,6 +6778,9 @@ Oiiotool::getargs(int argc, char* argv[])
     ap.arg("--text %s:TEXT")
       .help("Render text into the current image (options: x=, y=, size=, color=)")
       .OTACTION(action_text);
+    ap.arg("--demosaic")
+      .help("Demosaic (options: pattern=%s, algorithm=%s, layout=%s)")
+      .OTACTION(action_demosaic);
 
     ap.separator("Manipulating channels or subimages:");
     ap.arg("--ch %s:CHANLIST")

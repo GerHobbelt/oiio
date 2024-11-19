@@ -1206,7 +1206,7 @@ the Python versions allocate and return an array holding the pixel values
     explicit subimage/miplevel.
 
 
-.. py:method:: ImageOutput.get_thumbnail(subimage: int = 0) -> ImageBuf
+.. py:method:: ImageInput.get_thumbnail(subimage: int = 0) -> ImageBuf
 
     Retrieve an ImageBuf containing reduced-resolution("thumbnail") version
     of the image. If no thumbnail could be retrieved, an empty ImageBuf
@@ -3696,18 +3696,6 @@ Import / export
         if not ok :
             print("error:", oiio.geterror())
 
-
-
-.. py:method:: ImageBuf ImageBufAlgo::capture_image (cameranum, convert = OpenImageIO.UNKNOWN)
-
-    Capture a still image from a designated camera.
-
-    Example:
-
-    .. code-block:: python
-
-        WebcamImage = ImageBufAlgo.capture_image (0, OpenImageIO.UINT8)
-        WebcamImage.write ("webcam.jpg")
 
 
 
