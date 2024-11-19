@@ -24,6 +24,9 @@ if [[ "$ASWF_ORG" != ""  ]] ; then
     if [[ "${USE_FFMPEG}" != "0" ]] ; then
         sudo yum install -y ffmpeg ffmpeg-devel && true
     fi
+    if [[ "${USE_FREETYPE:-1}" != "0" ]] ; then
+        sudo yum install -y freetype freetype-devel && true
+    fi
     if [[ "${EXTRA_DEP_PACKAGES}" != "" ]] ; then
         time sudo yum install -y ${EXTRA_DEP_PACKAGES}
     fi
@@ -69,7 +72,9 @@ if [[ "$ASWF_ORG" != ""  ]] ; then
 else
     # Using native Ubuntu runner
 
-    time sudo apt-get update
+    if [[ "${SKIP_APT_GET_UPDATE}" != "1" ]] ; then
+        time sudo apt-get update
+    fi
 
     time sudo apt-get -q install -y \
         git cmake ninja-build ccache g++ \
@@ -81,7 +86,6 @@ else
             libavcodec-dev libavformat-dev libswscale-dev libavutil-dev \
             dcmtk libopenvdb-dev \
             libfreetype6-dev \
-            locales wget \
             libopencolorio-dev \
             libtbb-dev \
             libopencv-dev
@@ -130,10 +134,10 @@ else
     fi
 
     if [[ "$CXX" == "icpc" || "$CC" == "icc" || "$USE_ICC" != "" || "$USE_ICX" != "" ]] ; then
+        time sudo apt-get -q install -y wget
         wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS-2023.PUB
         sudo apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS-2023.PUB
         echo "deb https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
-        time sudo apt-get update
         time sudo apt-get install -y intel-oneapi-compiler-dpcpp-cpp-and-cpp-classic
         set +e; source /opt/intel/oneapi/setvars.sh; set -e
     fi
@@ -201,6 +205,10 @@ fi
 
 if [[ "$LIBJPEGTURBO_VERSION" != "" ]] ; then
     source src/build-scripts/build_libjpeg-turbo.bash
+fi
+
+if [[ "$FREETYPE_VERSION" != "" ]] ; then
+    source src/build-scripts/build_Freetype.bash
 fi
 
 if [[ "$USE_ICC" != "" ]] ; then

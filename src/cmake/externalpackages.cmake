@@ -20,13 +20,15 @@ message (STATUS "*   - To exclude an optional dependency (even if found),")
 message (STATUS "*     -DUSE_Package=OFF or set environment var USE_Package=OFF ")
 message (STATUS "${ColorReset}")
 
+
 set (OIIO_LOCAL_DEPS_PATH "${CMAKE_SOURCE_DIR}/ext/dist" CACHE STRING
      "Local area for dependencies added to CMAKE_PREFIX_PATH")
 list (APPEND CMAKE_PREFIX_PATH ${OIIO_LOCAL_DEPS_PATH})
 
-include (ExternalProject)
+# Tell CMake that find_package should try to find the highest matching version
+# of a package, rather than the first one it finds.
+set(CMAKE_FIND_PACKAGE_SORT_ORDER NATURAL)
 
-option (BUILD_MISSING_DEPS "Try to download and build any missing dependencies" OFF)
 
 include (FindThreads)
 
@@ -47,34 +49,25 @@ if (NOT TARGET CMath::CMath)
     endif ()
 endif ()
 
-checked_find_package (TIFF REQUIRED
-                      VERSION_MIN 3.9
-                      RECOMMEND_MIN 4.0
-                      RECOMMEND_MIN_REASON "to support >4GB files")
-
 # IlmBase & OpenEXR
 checked_find_package (Imath REQUIRED
-                      VERSION_MIN 3.1
-                      PRINT IMATH_INCLUDES Imath_VERSION)
+    VERSION_MIN 3.1
+    PRINT IMATH_INCLUDES OPENEXR_INCLUDES Imath_VERSION
+)
+
 checked_find_package (OpenEXR REQUIRED
-                      VERSION_MIN 3.1
-                      PRINT IMATH_INCLUDES OPENEXR_INCLUDES Imath_VERSION)
+    VERSION_MIN 3.1
+    PRINT IMATH_INCLUDES OPENEXR_INCLUDES Imath_VERSION
+    )
+
 # Force Imath includes to be before everything else to ensure that we have
 # the right Imath/OpenEXR version, not some older version in the system
-# library. This shouldn't be necessary, except for the common case of people
-# building against Imath/OpenEXR 3.x when there is still a system-level
-# install version of 2.x.
+# library.
 include_directories(BEFORE ${IMATH_INCLUDES} ${OPENEXR_INCLUDES})
-if (MSVC AND NOT LINKSTATIC)
-    proj_add_compile_definitions (OPENEXR_DLL) # Is this needed for new versions?
-endif ()
 set (OIIO_USING_IMATH 3)
-set (OPENIMAGEIO_IMATH_TARGETS
-            $<TARGET_NAME_IF_EXISTS:Imath::Imath>
-            $<TARGET_NAME_IF_EXISTS:Imath::Half> )
-set (OPENIMAGEIO_OPENEXR_TARGETS
-            $<TARGET_NAME_IF_EXISTS:OpenEXR::OpenEXR> )
-set (OPENIMAGEIO_IMATH_DEPENDENCY_VISIBILITY "PUBLIC" CACHE STRING
+set (OPENIMAGEIO_IMATH_TARGETS Imath::Imath)
+set (OPENIMAGEIO_OPENEXR_TARGETS OpenEXR::OpenEXR)
+set (OPENIMAGEIO_IMATH_DEPENDENCY_VISIBILITY "PRIVATE" CACHE STRING
      "Should we expose Imath library dependency as PUBLIC or PRIVATE")
 set (OPENIMAGEIO_CONFIG_DO_NOT_FIND_IMATH OFF CACHE BOOL
      "Exclude find_dependency(Imath) from the exported OpenImageIOConfig.cmake")
@@ -82,16 +75,26 @@ set (OPENIMAGEIO_CONFIG_DO_NOT_FIND_IMATH OFF CACHE BOOL
 # JPEG -- prefer JPEG-Turbo to regular libjpeg
 checked_find_package (libjpeg-turbo
                       VERSION_MIN 2.1
-                      DEFINITIONS -DUSE_JPEG_TURBO=1)
-if (NOT TARGET libjpeg-turbo::jpeg) # Try to find the non-turbo version
+                      DEFINITIONS USE_JPEG_TURBO=1)
+if (TARGET libjpeg-turbo::jpeg) # Try to find the non-turbo version
+    # Doctor it so libjpeg-turbo is aliased as JPEG::JPEG
+    alias_library_if_not_exists (JPEG::JPEG libjpeg-turbo::jpeg)
+    set (JPEG_FOUND TRUE)
+else ()
+    # Try to find the non-turbo version
     checked_find_package (JPEG REQUIRED)
 endif ()
+
+
+checked_find_package (TIFF REQUIRED
+                      VERSION_MIN 4.0)
+alias_library_if_not_exists (TIFF::TIFF TIFF::tiff)
 
 # JPEG XL
 option (USE_JXL "Enable JPEG XL support" ON)
 checked_find_package (JXL
                       VERSION_MIN 0.10.1
-                      DEFINITIONS -DUSE_JXL=1)
+                      DEFINITIONS USE_JXL=1)
 
 # Pugixml setup.  Normally we just use the version bundled with oiio, but
 # some linux distros are quite particular about having separate packages so we
@@ -100,7 +103,7 @@ option (USE_EXTERNAL_PUGIXML "Use an externally built shared library version of 
 if (USE_EXTERNAL_PUGIXML)
     checked_find_package (pugixml REQUIRED
                           VERSION_MIN 1.8
-                          DEFINITIONS -DUSE_EXTERNAL_PUGIXML=1)
+                          DEFINITIONS USE_EXTERNAL_PUGIXML=1)
 else ()
     message (STATUS "Using internal PugiXML")
 endif()
@@ -108,7 +111,7 @@ endif()
 # From pythonutils.cmake
 find_python()
 if (USE_PYTHON)
-    checked_find_package (pybind11 REQUIRED VERSION_MIN 2.4.2)
+    checked_find_package (pybind11 REQUIRED VERSION_MIN 2.7)
 endif ()
 
 
@@ -124,29 +127,37 @@ if (NOT BZIP2_FOUND)
 endif ()
 
 checked_find_package (Freetype
-                   DEFINITIONS  -DUSE_FREETYPE=1 )
+                      VERSION_MIN 2.10.0
+                      DEFINITIONS USE_FREETYPE=1 )
 
 checked_find_package (OpenColorIO
-                      DEFINITIONS  -DUSE_OCIO=1 -DUSE_OPENCOLORIO=1
-                      # PREFER_CONFIG
+                      VERSION_MIN 1.1
+                      VERSION_MAX 2.9
+                      NO_FP_RANGE_CHECK
+                      DEFINITIONS  USE_OCIO=1 USE_OPENCOLORIO=1
                       )
 if (OpenColorIO_FOUND)
     option (OIIO_DISABLE_BUILTIN_OCIO_CONFIGS
            "For deveoper debugging/testing ONLY! Disable OCIO 2.2 builtin configs." OFF)
     if (OIIO_DISABLE_BUILTIN_OCIO_CONFIGS OR "$ENV{OIIO_DISABLE_BUILTIN_OCIO_CONFIGS}")
-        proj_add_compile_definitions(OIIO_DISABLE_BUILTIN_OCIO_CONFIGS)
+        add_compile_definitions(OIIO_DISABLE_BUILTIN_OCIO_CONFIGS)
+    endif ()
+    if (NOT OPENCOLORIO_INCLUDES)
+        get_target_property(OPENCOLORIO_INCLUDES OpenColorIO::OpenColorIO INTERFACE_INCLUDE_DIRECTORIES)
     endif ()
 else ()
     set (OpenColorIO_FOUND 0)
 endif ()
+include_directories(BEFORE ${OPENCOLORIO_INCLUDES})
 
 checked_find_package (OpenCV 3.0
-                   DEFINITIONS  -DUSE_OPENCV=1)
+                      DEFINITIONS USE_OPENCV=1)
 
 ## Intel TBB - should be bundled into OpenVDB
 # set (TBB_USE_DEBUG_BUILD OFF)
 # checked_find_package (TBB 2017
-#                       SETVARIABLES OIIO_TBB)
+#                       SETVARIABLES OIIO_TBB
+#                       PREFER_CONFIG)
 
 # DCMTK is used to read DICOM images
 checked_find_package (DCMTK CONFIG VERSION_MIN 3.6.1)
@@ -179,7 +190,7 @@ checked_find_package (OpenJPEG VERSION_MIN 2.0
 checked_find_package (OpenVDB
                       VERSION_MIN  9.0
                       # DEPS         TBB
-                      DEFINITIONS  -DUSE_OPENVDB=1)
+                      DEFINITIONS  USE_OPENVDB=1)
 
 checked_find_package (Ptex PREFER_CONFIG)
 if (NOT Ptex_FOUND OR NOT Ptex_VERSION)
@@ -217,109 +228,23 @@ if (USE_QT AND OPENGL_FOUND)
 endif ()
 
 
-###########################################################################
 # Tessil/robin-map
+checked_find_package (Robinmap REQUIRED
+                      VERSION_MIN 1.2.0
+                      BUILD_LOCAL missing
+                     )
 
-option (BUILD_ROBINMAP_FORCE "Force local download/build of robin-map even if installed" OFF)
-option (BUILD_MISSING_ROBINMAP "Local download/build of robin-map if not installed" ON)
-set (BUILD_ROBINMAP_VERSION "v0.6.2" CACHE STRING "Preferred Tessil/robin-map version, of downloading/building our own")
-
-macro (find_or_download_robin_map)
-    # If we weren't told to force our own download/build of robin-map, look
-    # for an installed version. Still prefer a copy that seems to be
-    # locally installed in this tree.
-    if (NOT BUILD_ROBINMAP_FORCE)
-        find_package (Robinmap QUIET)
-    endif ()
-    # If an external copy wasn't found and we requested that missing
-    # packages be built, or we we are forcing a local copy to be built, then
-    # download and build it.
-    # Download the headers from github
-    if ((BUILD_MISSING_ROBINMAP AND NOT ROBINMAP_FOUND) OR BUILD_ROBINMAP_FORCE)
-        message (STATUS "Downloading local Tessil/robin-map")
-        set (ROBINMAP_INSTALL_DIR "${PROJECT_SOURCE_DIR}/ext/robin-map")
-        set (ROBINMAP_GIT_REPOSITORY "https://github.com/Tessil/robin-map")
-        if (NOT IS_DIRECTORY ${ROBINMAP_INSTALL_DIR}/include/tsl)
-            find_package (Git REQUIRED)
-            execute_process(COMMAND             ${GIT_EXECUTABLE} clone    ${ROBINMAP_GIT_REPOSITORY} -n ${ROBINMAP_INSTALL_DIR})
-            execute_process(COMMAND             ${GIT_EXECUTABLE} checkout ${BUILD_ROBINMAP_VERSION}
-                            WORKING_DIRECTORY   ${ROBINMAP_INSTALL_DIR})
-            if (IS_DIRECTORY ${ROBINMAP_INSTALL_DIR}/include/tsl)
-                message (STATUS "DOWNLOADED Tessil/robin-map to ${ROBINMAP_INSTALL_DIR}.\n"
-                         "Remove that dir to get rid of it.")
-            else ()
-                message (FATAL_ERROR "Could not download Tessil/robin-map")
-            endif ()
-        endif ()
-        set (ROBINMAP_INCLUDE_DIR "${ROBINMAP_INSTALL_DIR}/include")
-    endif ()
-    checked_find_package (Robinmap REQUIRED)
-endmacro()
-
-find_or_download_robin_map ()
+# fmtlib
+option (OIIO_INTERNALIZE_FMT "Copy fmt headers into <install>/include/OpenImageIO/detail/fmt" ON)
+checked_find_package (fmt REQUIRED
+                      VERSION_MIN 7.0
+                      VERSION_MAX 10.99
+                      BUILD_LOCAL missing
+                     )
+get_target_property(FMT_INCLUDE_DIR fmt::fmt-header-only INTERFACE_INCLUDE_DIRECTORIES)
 
 
 ###########################################################################
-# fmtlib
-
-option (BUILD_FMT_FORCE "Force local download/build of fmt even if installed" OFF)
-option (BUILD_MISSING_FMT "Local download/build of fmt if not installed" ON)
-option (INTERNALIZE_FMT "Copy fmt headers into <install>/include/OpenImageIO/detail/fmt" ON)
-set (BUILD_FMT_VERSION "10.0.0" CACHE STRING "Preferred fmtlib/fmt version, when downloading/building our own")
-
-macro (find_or_download_fmt)
-    # If we weren't told to force our own download/build of fmt, look
-    # for an installed version. Still prefer a copy that seems to be
-    # locally installed in this tree.
-    if (NOT BUILD_FMT_FORCE)
-        find_package (fmt QUIET)
-    endif ()
-    # If an external copy wasn't found and we requested that missing
-    # packages be built, or we we are forcing a local copy to be built, then
-    # download and build it.
-    if ((BUILD_MISSING_FMT AND NOT fmt_FOUND) OR BUILD_FMT_FORCE)
-        message (STATUS "Downloading local fmtlib/fmt")
-        set (FMT_INSTALL_DIR "${PROJECT_SOURCE_DIR}/ext/fmt")
-        set (FMT_GIT_REPOSITORY "https://github.com/fmtlib/fmt")
-        if (NOT IS_DIRECTORY ${FMT_INSTALL_DIR}/include/fmt)
-            find_package (Git REQUIRED)
-            execute_process(COMMAND             ${GIT_EXECUTABLE} clone    ${FMT_GIT_REPOSITORY} -n ${FMT_INSTALL_DIR})
-            execute_process(COMMAND             ${GIT_EXECUTABLE} checkout ${BUILD_FMT_VERSION}
-                            WORKING_DIRECTORY   ${FMT_INSTALL_DIR})
-            if (IS_DIRECTORY ${FMT_INSTALL_DIR}/include/fmt)
-                message (STATUS "DOWNLOADED fmtlib/fmt to ${FMT_INSTALL_DIR}.\n"
-                         "Remove that dir to get rid of it.")
-            else ()
-                message (FATAL_ERROR "Could not download fmtlib/fmt")
-            endif ()
-        endif ()
-        set (FMT_INCLUDE_DIR "${FMT_INSTALL_DIR}/include")
-        set (OIIO_USING_FMT_LOCAL TRUE)
-        if (EXISTS "${FMT_INCLUDE_DIR}/fmt/base.h")
-            file (STRINGS "${FMT_INCLUDE_DIR}/fmt/base.h" TMP REGEX "^#define FMT_VERSION .*$")
-        else ()
-            file (STRINGS "${FMT_INCLUDE_DIR}/fmt/core.h" TMP REGEX "^#define FMT_VERSION .*$")
-        endif ()
-        string (REGEX MATCHALL "[0-9]+" FMT_VERSION_NUMERIC ${TMP})
-        math(EXPR FMT_VERSION_PATCH "${FMT_VERSION_NUMERIC} % 100")
-        math(EXPR FMT_VERSION_MINOR "(${FMT_VERSION_NUMERIC} / 100) % 100")
-        math(EXPR FMT_VERSION_MAJOR "${FMT_VERSION_NUMERIC} / 10000")
-        set (fmt_VERSION "${FMT_VERSION_MAJOR}.${FMT_VERSION_MINOR}.${FMT_VERSION_PATCH}")
-        list (APPEND CFP_ALL_BUILD_DEPS_FOUND "${pkgname} ${${pkgname}_VERSION}")
-    else ()
-        get_target_property(FMT_INCLUDE_DIR fmt::fmt-header-only INTERFACE_INCLUDE_DIRECTORIES)
-        set (OIIO_USING_FMT_LOCAL FALSE)
-        checked_find_package (fmt REQUIRED
-                              VERSION_MIN 7.0)
-    endif ()
-endmacro()
-
-find_or_download_fmt()
-
-if (fmt_VERSION VERSION_EQUAL 9.1.0
-        AND GCC_VERSION VERSION_GREATER 0.0 AND NOT GCC_VERSION VERSION_GREATER 7.2)
-    message (WARNING "${ColorRed}fmt 9.1 is known to not work with gcc <= 7.2${ColorReset}")
-endif ()
 
 list (SORT CFP_ALL_BUILD_DEPS_FOUND COMPARE STRING CASE INSENSITIVE)
 message (STATUS "All build dependencies: ${CFP_ALL_BUILD_DEPS_FOUND}")

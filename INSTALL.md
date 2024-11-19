@@ -22,7 +22,7 @@ NEW or CHANGED MINIMUM dependencies since the last major release are **bold**.
  * **CMake >= 3.15** (tested through 3.29)
  * **OpenEXR/Imath >= 3.1** (tested through 3.2
    and main) 
- * libTIFF >= 3.9 (recommended: 4.0+; tested through 4.6)
+ * **libTIFF >= 4.0** (tested through 4.6)
  * libjpeg >= 8 (tested through jpeg9e), or **libjpeg-turbo >= 2.1** (tested
    through 3.0)
  * **[fmtlib](https://github.com/fmtlib/fmt) >= 7.0** (tested through 10.2).
@@ -36,8 +36,7 @@ NEW or CHANGED MINIMUM dependencies since the last major release are **bold**.
      * OpenGL
  * If you are building the Python bindings or running the testsuite:
      * **Python >= 3.7** (tested through 3.12)
-     * pybind11 >= 2.4.2 (Tested through 2.12. Note that pybind11 v2.10+ does
-       not support Python < 3.6.)
+     * **pybind11 >= 2.7** (tested through 2.12)
      * NumPy
  * If you want support for camera "RAW" formats:
      * **LibRaw >= 0.20** (tested though 0.21.2)
@@ -71,7 +70,7 @@ NEW or CHANGED MINIMUM dependencies since the last major release are **bold**.
  * If you want support for Ptex:
      * Ptex >= 2.3.1 (probably works for older; tested through 2.4.2)
  * If you want to be able to do font rendering into images:
-     * Freetype (minimum unknown, tested 2.8 through 2.13)
+     * **Freetype >= 2.10.0** (tested through 2.13)
  * We use PugiXML for XML parsing. There is a version embedded in the OIIO
    tree, but if you want to use an external, system-installed version (as
    may be required by some software distributions with policies against
@@ -281,9 +280,9 @@ the section below, and will only have to point OIIO build process so their locat
   ```
   cd {ZLIB_ROOT}
   git clone https://github.com/madler/zlib .
-  cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=.
+  cmake -S . -B build -DCMAKE_INSTALL_PREFIX=.
   cmake --build build --config Release --target install
-  del build\lib\zlib.lib
+  del build\Release\zlib.lib
   ```
 * libTIFF:
   ```
@@ -296,8 +295,6 @@ the section below, and will only have to point OIIO build process so their locat
   ```
   cd {JPEG_ROOT}
   git clone https://github.com/libjpeg-turbo/libjpeg-turbo .
-  mkdir build
-  cd build
   cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DENABLE_SHARED=OFF -DCMAKE_INSTALL_PREFIX=.
   cmake --build build --config Release --target install
   ```
@@ -322,12 +319,13 @@ cd {OIIO_ROOT}
 git clone https://github.com/AcademySoftwareFoundation/OpenImageIO .
 cmake -S . -B build -DVERBOSE=ON -DCMAKE_BUILD_TYPE=Release ^
   -DZLIB_ROOT={ZLIB_ROOT}\build ^
-  -DTIFF_ROOT={TIFF_ROOT}\build ^
+  -DTIFF_ROOT={TIFF_ROOT} ^
   -DOpenEXR_ROOT={EXR_ROOT}\dist ^
   -DImath_DIR={EXR_ROOT}\dist\lib\cmake\Imath ^
   -DImath_INCLUDE_DIR={EXR_ROOT}\dist\include\Imath ^
   -DImath_LIBRARY={EXR_ROOT}\dist\lib\Imath-3_2.lib ^
-  -DJPEG_ROOT={JPEG_ROOT}\build ^
+  -DJPEG_ROOT={JPEG_ROOT} ^
+  -Dlibjpeg-turbo_ROOT={JPEG_ROOT} ^
   -DUSE_PYTHON=0 -DUSE_QT=0 -DBUILD_SHARED_LIBS=0 -DLINKSTATIC=1
 ```
 
