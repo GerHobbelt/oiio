@@ -287,6 +287,7 @@ ImageInput::read_scanlines(int subimage, int miplevel, int ybegin, int yend,
                            int z, int chbegin, int chend, TypeDesc format,
                            void* data, stride_t xstride, stride_t ystride)
 {
+    pvt::LoggedTimer logtime("II::read_scanlines");
     ImageSpec spec;
     int rps = 0;
     {
@@ -545,43 +546,6 @@ ImageInput::read_tile(int x, int y, int z, TypeDesc format, void* data,
         errorfmt("ImageInput::read_tile : no support for format {}",
                  m_spec.format);
     return ok;
-}
-
-
-
-bool
-ImageInput::read_tiles(int xbegin, int xend, int ybegin, int yend, int zbegin,
-                       int zend, TypeDesc format, void* data, stride_t xstride,
-                       stride_t ystride, stride_t zstride)
-{
-    int subimage, miplevel, chend;
-    {
-        lock_guard lock(*this);
-        subimage = current_subimage();
-        miplevel = current_miplevel();
-        chend    = spec().nchannels;
-    }
-    return read_tiles(subimage, miplevel, xbegin, xend, ybegin, yend, zbegin,
-                      zend, 0, chend, format, data, xstride, ystride, zstride);
-}
-
-
-
-bool
-ImageInput::read_tiles(int xbegin, int xend, int ybegin, int yend, int zbegin,
-                       int zend, int chbegin, int chend, TypeDesc format,
-                       void* data, stride_t xstride, stride_t ystride,
-                       stride_t zstride)
-{
-    int subimage, miplevel;
-    {
-        lock_guard lock(*this);
-        subimage = current_subimage();
-        miplevel = current_miplevel();
-    }
-    return read_tiles(subimage, miplevel, xbegin, xend, ybegin, yend, zbegin,
-                      zend, chbegin, chend, format, data, xstride, ystride,
-                      zstride);
 }
 
 
@@ -876,49 +840,13 @@ ImageInput::read_native_tiles(int subimage, int miplevel, int xbegin, int xend,
 
 
 bool
-ImageInput::read_image(TypeDesc format, void* data, stride_t xstride,
-                       stride_t ystride, stride_t zstride,
-                       ProgressCallback progress_callback,
-                       void* progress_callback_data)
-{
-    int subimage, miplevel;
-    {
-        lock_guard lock(*this);
-        subimage = current_subimage();
-        miplevel = current_miplevel();
-    }
-    return read_image(subimage, miplevel, 0, -1, format, data, xstride, ystride,
-                      zstride, progress_callback, progress_callback_data);
-}
-
-
-
-bool
-ImageInput::read_image(int chbegin, int chend, TypeDesc format, void* data,
-                       stride_t xstride, stride_t ystride, stride_t zstride,
-                       ProgressCallback progress_callback,
-                       void* progress_callback_data)
-{
-    int subimage, miplevel;
-    {
-        lock_guard lock(*this);
-        subimage = current_subimage();
-        miplevel = current_miplevel();
-    }
-    return read_image(subimage, miplevel, chbegin, chend, format, data, xstride,
-                      ystride, zstride, progress_callback,
-                      progress_callback_data);
-}
-
-
-
-bool
 ImageInput::read_image(int subimage, int miplevel, int chbegin, int chend,
                        TypeDesc format, void* data, stride_t xstride,
                        stride_t ystride, stride_t zstride,
                        ProgressCallback progress_callback,
                        void* progress_callback_data)
 {
+    pvt::LoggedTimer logtime("II::read_image");
     ImageSpec spec;
     int rps = 0;
     {
