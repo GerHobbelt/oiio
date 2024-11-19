@@ -35,21 +35,14 @@
 #    include <tbb/task_arena.h>
 #endif
 
-#include <boost/container/flat_map.hpp>
+#include <tsl/robin_map.h>
 
 #ifdef _WIN32
 #    include <windows.h>
 #endif
 
-#if 0
 
-// Use boost::lockfree::queue for the task queue
-#    include <boost/lockfree/queue.hpp>
-template<typename T> using Queue = boost::lockfree::queue<T>;
-
-#else
-
-#    include <queue>
+#include <queue>
 
 OIIO_NAMESPACE_BEGIN
 namespace pvt {
@@ -93,7 +86,6 @@ private:
 }  // namespace pvt
 OIIO_NAMESPACE_END
 
-#endif
 
 
 OIIO_NAMESPACE_BEGIN
@@ -362,7 +354,7 @@ private:
     int m_size { 0 };           // Number of threads in the queue
     std::mutex mutex;
     std::condition_variable cv;
-    mutable boost::container::flat_map<std::thread::id, int> m_worker_threadids;
+    mutable tsl::robin_map<std::thread::id, int> m_worker_threadids;
     mutable spin_mutex m_worker_threadids_mutex;
 };
 

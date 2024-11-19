@@ -7,7 +7,6 @@
 ###########################################################################
 
 if (NOT VERBOSE)
-    set (Boost_FIND_QUIETLY true)
     set (PkgConfig_FIND_QUIETLY true)
     set (Threads_FIND_QUIETLY true)
 endif ()
@@ -33,61 +32,6 @@ include (FindThreads)
 
 
 ###########################################################################
-# Boost setup
-if (MSVC)
-    # Disable automatic linking using pragma comment(lib,...) of boost libraries upon including of a header
-    add_definitions (-DBOOST_ALL_NO_LIB=1)
-endif ()
-
-# If the build system hasn't been specifically told how to link Boost, link it the same way as other
-# OIIO dependencies:
-if (NOT DEFINED Boost_USE_STATIC_LIBS)
-    set (Boost_USE_STATIC_LIBS "${LINKSTATIC}")
-endif ()
-
-if (MSVC)
-    # Not linking Boost as static libraries: either an explicit setting or LINKSTATIC is FALSE:
-    if (NOT Boost_USE_STATIC_LIBS)
-        add_definitions (-DBOOST_ALL_DYN_LINK=1)
-    endif ()
-endif ()
-
-set (Boost_COMPONENTS thread)
-if (NOT USE_STD_FILESYSTEM)
-    list (APPEND Boost_COMPONENTS filesystem)
-endif ()
-message (STATUS "Boost_COMPONENTS = ${Boost_COMPONENTS}")
-# The FindBoost.cmake interface is broken if it uses boost's installed
-# cmake output (e.g. boost 1.70.0, cmake <= 3.14). Specifically it fails
-# to set the expected variables printed below. So until that's fixed
-# force FindBoost.cmake to use the original brute force path.
-if (NOT DEFINED Boost_NO_BOOST_CMAKE)
-    set (Boost_NO_BOOST_CMAKE ON)
-endif ()
-
-checked_find_package (Boost REQUIRED
-                      VERSION_MIN 1.53
-                      COMPONENTS ${Boost_COMPONENTS}
-                      RECOMMEND_MIN 1.66
-                      RECOMMEND_MIN_REASON "Boost 1.66 is the oldest version our CI tests against"
-                      PRINT Boost_INCLUDE_DIRS Boost_LIBRARIES )
-
-# On Linux, Boost 1.55 and higher seems to need to link against -lrt
-if (CMAKE_SYSTEM_NAME MATCHES "Linux"
-      AND ${Boost_VERSION} VERSION_GREATER_EQUAL 105500)
-    list (APPEND Boost_LIBRARIES "rt")
-endif ()
-
-include_directories (SYSTEM "${Boost_INCLUDE_DIRS}")
-link_directories ("${Boost_LIBRARY_DIRS}")
-
-option (OIIO_DISABLE_BOOST_STACKTRACE "Disable use of Boost stacktrace." OFF)
-
-# end Boost setup
-###########################################################################
-
-
-###########################################################################
 # Dependencies for required formats and features. These are so critical
 # that we will not complete the build if they are not found.
 
@@ -109,7 +53,7 @@ checked_find_package (OpenEXR REQUIRED
 # install version of 2.x.
 include_directories(BEFORE ${IMATH_INCLUDES} ${OPENEXR_INCLUDES})
 if (MSVC AND NOT LINKSTATIC)
-    add_definitions (-DOPENEXR_DLL) # Is this needed for new versions?
+    proj_add_compile_definitions (OPENEXR_DLL) # Is this needed for new versions?
 endif ()
 if (OpenEXR_VERSION VERSION_GREATER_EQUAL 3.0)
     set (OIIO_USING_IMATH 3)
@@ -191,7 +135,7 @@ if (OpenColorIO_FOUND)
     option (OIIO_DISABLE_BUILTIN_OCIO_CONFIGS
            "For deveoper debugging/testing ONLY! Disable OCIO 2.2 builtin configs." OFF)
     if (OIIO_DISABLE_BUILTIN_OCIO_CONFIGS OR "$ENV{OIIO_DISABLE_BUILTIN_OCIO_CONFIGS}")
-        add_compile_definitions(OIIO_DISABLE_BUILTIN_OCIO_CONFIGS)
+        proj_add_compile_definitions(OIIO_DISABLE_BUILTIN_OCIO_CONFIGS)
     endif ()
 else ()
     set (OpenColorIO_FOUND 0)
@@ -206,8 +150,7 @@ checked_find_package (OpenCV 3.0
 #                       SETVARIABLES OIIO_TBB)
 
 # DCMTK is used to read DICOM images
-checked_find_package (DCMTK VERSION_MIN 3.6.1
-                      PREFER_CONFIG)
+checked_find_package (DCMTK CONFIG VERSION_MIN 3.6.1)
 
 checked_find_package (FFmpeg VERSION_MIN 3.0)
 checked_find_package (GIF
@@ -225,16 +168,8 @@ if (APPLE AND LIBHEIF_VERSION VERSION_GREATER_EQUAL 1.10 AND LIBHEIF_VERSION VER
 endif ()
 
 checked_find_package (LibRaw
-                      VERSION_MIN 0.18
+                      VERSION_MIN 0.20.0
                       PRINT LibRaw_r_LIBRARIES)
-if (LibRaw_FOUND AND LibRaw_VERSION VERSION_LESS 0.20 AND CMAKE_CXX_STANDARD VERSION_GREATER_EQUAL 17)
-    message (STATUS "${ColorYellow}WARNING When building for C++17, LibRaw should be 0.20 or higher (found ${LibRaw_VERSION}). You may get errors, depending on the compiler.${ColorReset}")
-    # Currently, we issue the above warning and let them take their chances.
-    # If we wish to disable the LibRaw<0.20/C++17 combination that may fail,
-    # just uncomment the following two lines.
-    # set (LibRaw_FOUND 0)
-    # set (LIBRAW_FOUND 0)
-endif ()
 
 checked_find_package (OpenJPEG VERSION_MIN 2.0
                       RECOMMEND_MIN 2.2
@@ -243,13 +178,9 @@ checked_find_package (OpenJPEG VERSION_MIN 2.0
 # find them reliable at all, so we stick to our FindOpenJPEG.cmake module.
 
 checked_find_package (OpenVDB
-                      VERSION_MIN 5.0
+                      VERSION_MIN  9.0
                       # DEPS         TBB
                       DEFINITIONS  -DUSE_OPENVDB=1)
-if (OpenVDB_FOUND AND OpenVDB_VERSION VERSION_GREATER_EQUAL 10.1 AND CMAKE_CXX_STANDARD VERSION_LESS 17)
-    message (WARNING "${ColorYellow}OpenVDB >= 10.1 (we found ${OpenVDB_VERSION}) can only be used when we build with C++17 or higher. Disabling OpenVDB support.${ColorReset}")
-    set (OpenVDB_FOUND 0)
-endif ()
 
 checked_find_package (Ptex PREFER_CONFIG)
 if (NOT Ptex_FOUND OR NOT Ptex_VERSION)

@@ -701,8 +701,9 @@ OpenEXROutput::spec_to_header(ImageSpec& spec, int subimage,
     spec.channelnames.resize(spec.nchannels);
     for (int c = 0; c < spec.nchannels; ++c) {
         if (spec.channelnames[c].empty())
-            spec.channelnames[c] = (c < 4) ? default_chan_names[c]
-                                           : Strutil::sprintf("unknown %d", c);
+            spec.channelnames[c] = (c < 4)
+                                       ? default_chan_names[c]
+                                       : Strutil::fmt::format("unknown {}", c);
         // Hint to lossy compression methods that indicates whether
         // human perception of the quantity represented by this channel
         // is closer to linear or closer to logarithmic.  Compression
@@ -757,11 +758,11 @@ OpenEXROutput::spec_to_header(ImageSpec& spec, int subimage,
         time(&now);
         struct tm mytm;
         Sysutil::get_local_time(&now, &mytm);
-        std::string date = Strutil::sprintf("%4d:%02d:%02d %02d:%02d:%02d",
-                                            mytm.tm_year + 1900,
-                                            mytm.tm_mon + 1, mytm.tm_mday,
-                                            mytm.tm_hour, mytm.tm_min,
-                                            mytm.tm_sec);
+        std::string date
+            = Strutil::fmt::format("{:4d}:{:02d}:{:02d} {:02d}:{:02d}:{:02d}",
+                                   mytm.tm_year + 1900, mytm.tm_mon + 1,
+                                   mytm.tm_mday, mytm.tm_hour, mytm.tm_min,
+                                   mytm.tm_sec);
         spec.attribute("DateTime", date);
     }
 
@@ -806,7 +807,7 @@ OpenEXROutput::spec_to_header(ImageSpec& spec, int subimage,
     // Multi-part EXR files required to have a name. Make one up if not
     // supplied.
     if (m_nsubimages > 1 && !header.hasName()) {
-        std::string n = Strutil::sprintf("subimage%02d", subimage);
+        std::string n = Strutil::fmt::format("subimage{:02d}", subimage);
         header.insert("name", Imf::StringAttribute(n));
     }
 
@@ -1307,7 +1308,7 @@ OpenEXROutput::sanity_check_channelnames()
                 // Duplicate or missing channel name! We don't want
                 // libIlmImf to drop the channel (as it will do for
                 // duplicates), so rename it and hope for the best.
-                m_spec.channelnames[c] = Strutil::sprintf("channel%d", c);
+                m_spec.channelnames[c] = Strutil::fmt::format("channel{}", c);
                 break;
             }
         }
@@ -1484,21 +1485,33 @@ OpenEXROutput::write_scanlines(int ybegin, int yend, int z, TypeDesc format,
                               * 1024;  // Allocate 16 MB, or 1 scanline
     int chunk = std::max(1, int(limit / scanlinebytes));
 
-    bool ok = true;
-    for (; ok && ybegin < yend; ybegin += chunk) {
-        int y1         = std::min(ybegin + chunk, yend);
-        int nscanlines = y1 - ybegin;
-        const void* d  = to_native_rectangle(m_spec.x, m_spec.x + m_spec.width,
-                                             ybegin, y1, z, z + 1, format, data,
-                                             xstride, ystride, zstride,
-                                             m_scratch);
+    bool ok                  = true;
+    const bool isDecreasingY = m_spec.get_string_attribute("openexr:lineOrder")
+                               == "decreasingY";
+    const int nAvailableScanLines = yend - ybegin;
+    const int numChunks           = nAvailableScanLines > 0
+                                        ? 1 + ((nAvailableScanLines - 1) / chunk)
+                                        : 0;
+    const int yLoopStart = isDecreasingY ? ybegin + (numChunks - 1) * chunk
+                                         : ybegin;
+    const int yDelta     = isDecreasingY ? -chunk : chunk;
+    const int yLoopEnd   = yLoopStart + numChunks * yDelta;
+    for (int y = yLoopStart; ok && y != yLoopEnd; y += yDelta) {
+        int y1         = std::min(y + chunk, yend);
+        int nscanlines = y1 - y;
+
+        const void* dataStart = (const char*)data + (y - ybegin) * ystride;
+        const void* d = to_native_rectangle(m_spec.x, m_spec.x + m_spec.width,
+                                            y, y1, z, z + 1, format, dataStart,
+                                            xstride, ystride, zstride,
+                                            m_scratch);
 
         // Compute where OpenEXR needs to think the full buffers starts.
         // OpenImageIO requires that 'data' points to where client stored
         // the bytes to be written, but OpenEXR's frameBuffer.insert() wants
         // where the address of the "virtual framebuffer" for the whole
         // image.
-        char* buf = (char*)d - m_spec.x * pixel_bytes - ybegin * scanlinebytes;
+        char* buf = (char*)d - m_spec.x * pixel_bytes - y * scanlinebytes;
         try {
             Imf::FrameBuffer frameBuffer;
             size_t chanoffset = 0;
@@ -1526,8 +1539,6 @@ OpenEXROutput::write_scanlines(int ybegin, int yend, int z, TypeDesc format,
             errorf("Failed OpenEXR write: unknown exception");
             return false;
         }
-
-        data = (const char*)data + ystride * nscanlines;
     }
 
     // If we allocated more than 1M, free the memory.  It's not wasteful,

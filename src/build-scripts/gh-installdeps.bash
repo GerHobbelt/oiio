@@ -73,7 +73,6 @@ else
 
     time sudo apt-get -q install -y \
         git cmake ninja-build ccache g++ \
-        libboost-dev libboost-thread-dev libboost-filesystem-dev \
         libilmbase-dev libopenexr-dev \
         libtiff-dev libgif-dev libpng-dev
     if [[ "${SKIP_SYSTEM_DEPS_INSTALL}" != "1" ]] ; then
@@ -101,12 +100,8 @@ else
     if [[ "${PYTHON_VERSION}" == "3.9" ]] ; then
         time sudo apt-get -q install -y python3.9-dev python3-numpy
         pip3 --version
-        pip3 install numpy
-    elif [[ "$PYTHON_VERSION" == "2.7" ]] ; then
-        time sudo apt-get -q install -y python-dev python-numpy
-    else
-        pip3 install numpy
     fi
+    pip3 install numpy
 
     if [[ "$USE_LIBHEIF" != "0" ]] ; then
        sudo add-apt-repository ppa:strukturag/libde265 || true
@@ -118,13 +113,7 @@ else
 
     export CMAKE_PREFIX_PATH=/usr/lib/x86_64-linux-gnu:$CMAKE_PREFIX_PATH
 
-    if [[ "$CXX" == "g++-6" ]] ; then
-        time sudo apt-get install -y g++-6
-    elif [[ "$CXX" == "g++-7" ]] ; then
-        time sudo apt-get install -y g++-7
-    elif [[ "$CXX" == "g++-8" ]] ; then
-        time sudo apt-get install -y g++-8
-    elif [[ "$CXX" == "g++-9" ]] ; then
+    if [[ "$CXX" == "g++-9" ]] ; then
         time sudo apt-get install -y g++-9
     elif [[ "$CXX" == "g++-10" ]] ; then
         time sudo apt-get install -y g++-10
@@ -132,6 +121,8 @@ else
         time sudo apt-get install -y g++-11
     elif [[ "$CXX" == "g++-12" ]] ; then
         time sudo apt-get install -y g++-12
+    elif [[ "$CXX" == "g++-13" ]] ; then
+        time sudo apt-get install -y g++-13
     fi
 
     if [[ "$CXX" == "icpc" || "$CC" == "icc" || "$USE_ICC" != "" || "$USE_ICX" != "" ]] ; then

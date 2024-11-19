@@ -26,6 +26,7 @@
 #define OIIO_TEXTURESYSTEM_SUPPORTS_GETATTRIBUTETYPE 1
 
 #define OIIO_TEXTURESYSTEM_SUPPORTS_STOCHASTIC 1
+#define OIIO_TEXTURESYSTEM_SUPPORTS_DECODE_BY_USTRINGHASH 1
 
 #ifndef INCLUDED_IMATHVEC_H
 // Placeholder declaration for Imath::V3f if no Imath headers have been
@@ -93,6 +94,7 @@ enum class Wrap {
 /// "default", "black", "clamp", "periodic", "mirror".
 OIIO_API Wrap decode_wrapmode (const char *name);
 OIIO_API Wrap decode_wrapmode (ustring name);
+OIIO_API Wrap decode_wrapmode (ustringhash name);
 
 /// Utility: Parse a single wrap mode (e.g., "periodic") or a
 /// comma-separated wrap modes string (e.g., "black,clamp") into
@@ -278,6 +280,10 @@ public:
     {
         return (Wrap)Tex::decode_wrapmode(name);
     }
+    static Wrap decode_wrapmode(ustringhash name)
+    {
+        return (Wrap)Tex::decode_wrapmode(name);
+    }
 
     /// Utility: Parse a single wrap mode (e.g., "periodic") or a
     /// comma-separated wrap modes string (e.g., "black,clamp") into
@@ -302,11 +308,18 @@ private:
 /// Texture options for a batch of Tex::BatchWidth points and run mask.
 class OIIO_API TextureOptBatch {
 public:
+    using simd_t = simd::VecType<float, Tex::BatchWidth>::type;
+
     /// Create a TextureOptBatch with all fields initialized to reasonable
     /// defaults.
     TextureOptBatch () {
-        for (int i = 0; i < Tex::BatchWidth; ++i)
-            rnd[i] = -1.0f;
+        *((simd_t*)&sblur) = simd_t::Zero();
+        *((simd_t*)&tblur) = simd_t::Zero();
+        *((simd_t*)&rblur) = simd_t::Zero();
+        *((simd_t*)&swidth) = simd_t::One();
+        *((simd_t*)&twidth) = simd_t::One();
+        *((simd_t*)&rwidth) = simd_t::One();
+        *((simd_t*)&rnd) = simd_t(-1.0f);
     }
 
     // Options that may be different for each point we're texturing
@@ -430,10 +443,15 @@ public:
     {
         return (Wrap)Tex::decode_wrapmode(name);
     }
+    static Wrap decode_wrapmode(ustringhash name)
+    {
+        return (Wrap)Tex::decode_wrapmode(name);
+    }
 
     /// Utility: Parse a single wrap mode (e.g., "periodic") or a
     /// comma-separated wrap modes string (e.g., "black,clamp") into
     /// separate Wrap enums for s and t.
+    OIIO_DEPRECATED("TextureOptions is deprecated, use TextureOpt (1.8)")
     static void parse_wrapmodes(const char* wrapmodes,
                                 TextureOptions::Wrap& swrapcode,
                                 TextureOptions::Wrap& twrapcode)

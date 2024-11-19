@@ -224,7 +224,10 @@ test_file_status()
     std::cout << "Testing is_directory, is_regular, is_executable\n";
     OIIO_CHECK_ASSERT(Filesystem::is_regular("testfile"));
     OIIO_CHECK_ASSERT(!Filesystem::is_directory("testfile"));
+#ifndef _WIN32
+    // Directories look "executable" on Unix, not on Windows
     OIIO_CHECK_ASSERT(!Filesystem::is_executable("testfile"));
+#endif
     OIIO_CHECK_ASSERT(!Filesystem::is_regular("testdir"));
     OIIO_CHECK_ASSERT(Filesystem::is_directory("testdir"));
     OIIO_CHECK_ASSERT(!Filesystem::is_executable("testdir"));
@@ -509,7 +512,7 @@ test_scan_sequences()
     std::vector<std::string> filenames;
 
     for (size_t i = 1; i <= 5; i++) {
-        std::string fn = Strutil::sprintf("foo.%04d.exr", i);
+        std::string fn = Strutil::fmt::format("foo.{:04d}.exr", i);
         filenames.push_back(fn);
         create_test_file(fn);
     }
@@ -528,7 +531,8 @@ test_scan_sequences()
     Filesystem::create_directory("left/l");
 
     for (size_t i = 1; i <= 5; i++) {
-        std::string fn = Strutil::sprintf("left/l/foo_left_l.%04d.exr", i);
+        std::string fn = Strutil::fmt::format("left/l/foo_left_l.{:04d}.exr",
+                                              i);
         filenames.push_back(fn);
         create_test_file(fn);
     }

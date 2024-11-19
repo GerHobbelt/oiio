@@ -27,7 +27,7 @@ export LSAN_OPTIONS=suppressions=$PWD/src/build-scripts/nosanitize.txt
 export ASAN_OPTIONS=print_suppressions=0
 export UBSAN_OPTIONS=suppressions=$PWD/src/build-scripts/ubsan-suppressions.txt
 
-export PYTHON_VERSION=${PYTHON_VERSION:="2.7"}
+export PYTHON_VERSION=${PYTHON_VERSION:="3.7"}
 export PYTHONPATH=$OpenImageIO_ROOT/lib/python${PYTHON_VERSION}/site-packages:$PYTHONPATH
 export BUILD_MISSING_DEPS=${BUILD_MISSING_DEPS:=1}
 export COMPILER=${COMPILER:=gcc}
@@ -37,7 +37,7 @@ export OpenImageIO_CI=true
 export USE_NINJA=${USE_NINJA:=1}
 export CMAKE_GENERATOR=${CMAKE_GENERATOR:=Ninja}
 export CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE:=Release}
-export CMAKE_CXX_STANDARD=${CMAKE_CXX_STANDARD:=14}
+export CMAKE_CXX_STANDARD=${CMAKE_CXX_STANDARD:=17}
 
 export LOCAL_DEPS_DIR=${LOCAL_DEPS_DIR:=$HOME/ext}
 export PATH=${LOCAL_DEPS_DIR}/dist/bin:$PATH

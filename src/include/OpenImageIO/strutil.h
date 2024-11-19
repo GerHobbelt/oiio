@@ -159,6 +159,10 @@ using old::format;
 #endif
 
 
+// format_to comes from fmt library
+using ::fmt::format_to;
+using ::fmt::format_to_n;
+
 
 /// Strutil::printf (fmt, ...)
 /// Strutil::fprintf (FILE*, fmt, ...)
@@ -366,13 +370,13 @@ std::string OIIO_UTIL_API wordwrap (string_view src, int columns = 80,
 
 
 /// Our favorite "string" hash of a length of bytes. Currently, it is just
-/// a wrapper for an inlined, constexpr (if C++ >= 14), Cuda-safe farmhash.
+/// a wrapper for an inlined, constexpr, Cuda-safe farmhash.
 /// It returns a size_t, so will be a 64 bit hash on 64-bit platforms, but
 /// a 32 bit hash on 32-bit platforms.
 inline constexpr size_t
 strhash(size_t len, const char *s)
 {
-    return OIIO::farmhash::inlined::Hash(s, len);
+    return size_t(OIIO::farmhash::inlined::Hash64(s, len));
 }
 
 

@@ -39,8 +39,8 @@ endfunction ()
 #     turned off explicitly from one of these sources.
 #   * Print a message if the package is enabled but not found. This is based
 #     on ${Pkgname}_FOUND or $PKGNAME_FOUND.
-#   * Optional DEFINITIONS <string>... are passed to add_definitions if the
-#     package is found.
+#   * Optional DEFINITIONS <string>... are passed to
+#     proj_add_compile_definitions if the package is found.
 #   * Optional SETVARIABLES <id>... is a list of CMake variables to set to
 #     TRUE if the package is found (they will not be set or changed if the
 #     package is not found).
@@ -64,6 +64,8 @@ endfunction ()
 #     version, accepting but warning if it is below this number (even
 #     if above the true minimum version accepted). The warning message
 #     can give an optional explanation, passed as RECOMMEND_MIN_REASON.
+#   * Optional CONFIG, if supplied, only accepts the package from an
+#     exported config and never uses a FindPackage.cmake module.
 #   * Optional PREFER_CONFIG, if supplied, tries to use an exported config
 #     file from the package before using a FindPackage.cmake module.
 #   * Optional DEBUG turns on extra debugging information related to how
@@ -78,7 +80,7 @@ endfunction ()
 macro (checked_find_package pkgname)
     cmake_parse_arguments(_pkg   # prefix
         # noValueKeywords:
-        "REQUIRED;PREFER_CONFIG;DEBUG;NO_RECORD_NOTFOUND"
+        "REQUIRED;CONFIG;PREFER_CONFIG;DEBUG;NO_RECORD_NOTFOUND"
         # singleValueKeywords:
         "ENABLE;ISDEPOF;VERSION_MIN;VERSION_MAX;RECOMMEND_MIN;RECOMMEND_MIN_REASON"
         # multiValueKeywords:
@@ -122,13 +124,13 @@ macro (checked_find_package pkgname)
     if (_enable OR _pkg_REQUIRED)
         if (${pkgname}_FOUND OR ${pkgname_upper}_FOUND)
             # was already found
-        elseif (_pkg_PREFER_CONFIG OR ALWAYS_PREFER_CONFIG)
+        elseif (_pkg_CONFIG OR _pkg_PREFER_CONFIG OR ALWAYS_PREFER_CONFIG)
             find_package (${pkgname} CONFIG ${_pkg_UNPARSED_ARGUMENTS})
             if (${pkgname}_FOUND OR ${pkgname_upper}_FOUND)
                 set (_config_status "from CONFIG")
             endif ()
         endif ()
-        if (NOT (${pkgname}_FOUND OR ${pkgname_upper}_FOUND))
+        if (NOT (${pkgname}_FOUND OR ${pkgname_upper}_FOUND) AND NOT _pkg_CONFIG)
             find_package (${pkgname} ${_pkg_UNPARSED_ARGUMENTS})
         endif()
         if ((${pkgname}_FOUND OR ${pkgname_upper}_FOUND)
@@ -151,7 +153,7 @@ macro (checked_find_package pkgname)
                 endif ()
             endforeach ()
             message (STATUS "${ColorGreen}Found ${pkgname} ${${pkgname}_VERSION} ${_config_status}${ColorReset}")
-            add_definitions (${_pkg_DEFINITIONS})
+            proj_add_compile_definitions (${_pkg_DEFINITIONS})
             foreach (_v IN LISTS _pkg_SETVARIABLES)
                 set (${_v} TRUE)
             endforeach ()
