@@ -758,7 +758,9 @@ write_mipmap(ImageBufAlgo::MakeTextureMode mode, std::shared_ptr<ImageBuf>& img,
                 mipimages.erase(mipimages.begin());
             } else {
                 // Resize a factor of two smaller
-                smallspec        = outspec;
+                smallspec = outspec;
+                if (!configspec.get_int_attribute("maketx:mipmap_metadata"))
+                    smallspec.extra_attribs.free();
                 smallspec.width  = img->spec().width;
                 smallspec.height = img->spec().height;
                 smallspec.depth  = img->spec().depth;
@@ -1034,8 +1036,7 @@ make_texture_impl(ImageBufAlgo::MakeTextureMode mode, const ImageBuf* input,
         src.reset(new ImageBuf(*input));
     } else {
         // Image buffer supplied that has pixels -- wrap it
-        src.reset(new ImageBuf(input->name(), input->spec(),
-                               (void*)input->localpixels()));
+        src.reset(new ImageBuf(input->spec(), (void*)input->localpixels()));
     }
     OIIO_DASSERT(src.get());
 
@@ -1324,8 +1325,7 @@ make_texture_impl(ImageBufAlgo::MakeTextureMode mode, const ImageBuf* input,
             newspec.full_width  = newspec.width;
             newspec.full_height = newspec.height;
             newspec.full_depth  = newspec.depth;
-            std::string name    = std::string(src->name()) + ".constant_color";
-            src->reset(name, newspec);
+            src->reset(newspec);
             ImageBufAlgo::fill(*src, &constantColor[0]);
             if (verbose) {
                 outstream << "  Constant color image detected. ";
@@ -1622,14 +1622,14 @@ make_texture_impl(ImageBufAlgo::MakeTextureMode mode, const ImageBuf* input,
         }
 
         ColorConfig colorconfig(colorconfigname);
-        if (colorconfig.error()) {
+        if (colorconfig.has_error()) {
             errorfmt("Error Creating ColorConfig: {}", colorconfig.geterror());
             return false;
         }
 
         ColorProcessorHandle processor
             = colorconfig.createColorProcessor(incolorspace, outcolorspace);
-        if (!processor || colorconfig.error()) {
+        if (!processor || colorconfig.has_error()) {
             errorfmt("Error Creating Color Processor: {}",
                      colorconfig.geterror());
             return false;

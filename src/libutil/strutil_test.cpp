@@ -39,11 +39,6 @@ test_format()
     OIIO_CHECK_EQUAL(Strutil::sprintf("%d", int64_t(0xffffffffffffffff)), "-1");
     OIIO_CHECK_EQUAL(Strutil::sprintf("%u", uint64_t(0xffffffffffffffff)), "18446744073709551615");
 
-#ifndef OIIO_HIDE_FORMAT
-    // spot check that Strutil::old::format() is sprintf:
-    OIIO_CHECK_EQUAL(Strutil::old::format("%d",1), "1");
-#endif
-
     // Test formatting with Strutil::fmt::format(), which uses the
     // Python conventions:
     OIIO_CHECK_EQUAL(Strutil::fmt::format("{} {:f} {}", int(3), 3.14f, 3.14f),
@@ -63,15 +58,6 @@ test_format()
     OIIO_CHECK_EQUAL(Strutil::fmt::format("{}", uint64_t(0xffffffffffffffff)), "18446744073709551615");
     OIIO_CHECK_EQUAL(Strutil::fmt::format("{} {:f} {:g}", int(3), 3.14f, 3.14f),
                      "3 3.140000 3.14");
-
-#ifndef OIIO_HIDE_FORMAT
-    // Check that Strutil::format is aliased the right way
-#    if OIIO_FORMAT_IS_FMT
-    OIIO_CHECK_EQUAL(Strutil::format("{}", 1), "1");
-#    else
-    OIIO_CHECK_EQUAL(Strutil::format("%d", 1), "1");
-#    endif
-#endif
 
     Benchmarker bench;
     bench.indent (2);
@@ -1502,6 +1488,16 @@ void test_parse ()
     OIIO_CHECK_EQUAL (ss, ""); OIIO_CHECK_EQUAL (s, "");
     s = "(blah"; ss = parse_nested (s);
     OIIO_CHECK_EQUAL (ss, ""); OIIO_CHECK_EQUAL (s, "(blah");
+
+    OIIO_CHECK_EQUAL(string_is_identifier("valid"), true);
+    OIIO_CHECK_EQUAL(string_is_identifier("_underscore"), true);
+    OIIO_CHECK_EQUAL(string_is_identifier("with123numbers"), true);
+    OIIO_CHECK_EQUAL(string_is_identifier("123invalidStart"), false);
+    OIIO_CHECK_EQUAL(string_is_identifier("invalid-char"), false);
+    OIIO_CHECK_EQUAL(string_is_identifier(""), false);
+    OIIO_CHECK_EQUAL(string_is_identifier("a"), true);
+    OIIO_CHECK_EQUAL(string_is_identifier("_"), true);
+    OIIO_CHECK_EQUAL(string_is_identifier("1"), false);
 }
 
 
