@@ -53,8 +53,8 @@ using pvt::print_info_options;
 #    define OIIO_UNIT_TESTS 1
 #endif
 
-#ifndef OIIOTOOL_METADATA_HISTORY_DEFAULT
-#    define OIIOTOOL_METADATA_HISTORY_DEFAULT 0
+#ifndef OPENIMAGEIO_METADATA_HISTORY_DEFAULT
+#    define OPENIMAGEIO_METADATA_HISTORY_DEFAULT 0
 #endif
 
 
@@ -174,12 +174,12 @@ Oiiotool::clear_options()
     output_dither             = false;
     output_force_tiles        = false;
     metadata_nosoftwareattrib = false;
-#if OIIOTOOL_METADATA_HISTORY_DEFAULT
+#if OPENIMAGEIO_METADATA_HISTORY_DEFAULT
     metadata_history = Strutil::from_string<int>(
-        getenv("OIIOTOOL_METADATA_HISTORY", "1"));
+        getenv("OPENIMAGEIO_METADATA_HISTORY", "1"));
 #else
     metadata_history = Strutil::from_string<int>(
-        getenv("OIIOTOOL_METADATA_HISTORY"));
+        getenv("OPENIMAGEIO_METADATA_HISTORY"));
 #endif
     diff_warnthresh    = 1.0e-6f;
     diff_warnpercent   = 0;
@@ -699,8 +699,13 @@ unset_autopremult(Oiiotool& ot, cspan<const char*> argv)
 static void
 action_label(Oiiotool& ot, cspan<const char*> argv)
 {
-    string_view labelname      = ot.express(argv[1]);
-    ot.image_labels[labelname] = ot.curimg;
+    string_view command = ot.express(argv[0]);
+    string_view name    = ot.express(argv[1]);
+    if (!Strutil::string_is_identifier(name)) {
+        ot.errorfmt(command, "Invalid label name \"{}\"", name);
+        return;
+    }
+    ot.image_labels[name] = ot.curimg;
 }
 
 
@@ -1229,12 +1234,30 @@ control_for(Oiiotool& ot, cspan<const char*> argv)
         std::string variable = ot.express(argv[1]);
         string_view range    = ot.express(argv[2]);
 
+        float val = 0, limit = 0, step = 1;
+        bool valid     = true;
         auto rangevals = Strutil::extract_from_list_string<float>(range);
-        if (rangevals.size() == 1)
-            rangevals.insert(rangevals.begin(), 0.0f);  // supply missing start
-        if (rangevals.size() == 2)
-            rangevals.push_back(1.0f);  // supply missing step
-        if (rangevals.size() != 3) {
+        if (rangevals.size() == 1) {
+            val   = 0.0f;
+            limit = rangevals[0];
+            step  = limit >= 0.0f ? 1.0f : -1.0f;
+        } else if (rangevals.size() == 2) {
+            val   = rangevals[0];
+            limit = rangevals[1];
+            step  = limit >= val ? 1.0f : -1.0f;
+        } else if (rangevals.size() == 3) {
+            val   = rangevals[0];
+            limit = rangevals[1];
+            step  = rangevals[2];
+        } else {
+            valid = false;
+        }
+        // step can't be zero or be opposite direction of val -> limit
+        valid &= (step != 0.0f);
+        if ((val < limit && step < 0.0f) || (val > limit && step > 0.0f))
+            valid = false;
+
+        if (!valid) {
             ot.errorfmt(argv[0], "Invalid range \"{}\"", range);
             return;
         }
@@ -1244,24 +1267,22 @@ control_for(Oiiotool& ot, cspan<const char*> argv)
         // There are two cases here: either we are hitting this --for
         // for the first time (need to initialize and set up the control
         // record), or we are re-iterating on a loop we already set up.
-        float val;
         if (ot.control_stack.empty()
             || ot.control_stack.top().start_arg != ot.ap.current_arg()) {
             // First time through the loop. Note that we recognize our first
             // time by the fact that the top of the control stack doesn't have
             // a start_arg that is this --for command.
-            val = rangevals[0];
             ot.push_control("for", ot.ap.current_arg(), true);
             // Strutil::print("First for!\n");
         } else {
             // We've started this loop already, this is at least our 2nd time
             // through. Just increment the variable and update the condition
             // for another pass through the loop.
-            val = ot.uservars.get_float(variable) + rangevals[2];
+            val = ot.uservars.get_float(variable) + step;
             // Strutil::print("Repeat for!\n");
         }
         ot.uservars.attribute(variable, val);
-        bool cond                        = val < rangevals[1];
+        bool cond = step >= 0.0f ? val < limit : val > limit;
         ot.control_stack.top().condition = cond;
         ot.ap.running(ot.running());
         // Strutil::print("for {} {} : {}={} cond={} (now running={})\n", variable,
@@ -1397,7 +1418,13 @@ set_user_variable(Oiiotool& ot, cspan<const char*> argv)
     string_view command = ot.express(argv[0]);
     string_view name    = ot.express(argv[1]);
     string_view value   = ot.express(argv[2]);
-    auto options        = ot.extract_options(command);
+
+    if (!Strutil::string_is_identifier(name)) {
+        ot.errorfmt(command, "Invalid variable name \"{}\"", name);
+        return 0;
+    }
+
+    auto options = ot.extract_options(command);
     TypeDesc type(options["type"].as_string());
 
     set_attribute_helper(ot.uservars, name, value, type);
@@ -2642,9 +2669,8 @@ action_channels(Oiiotool& ot, cspan<const char*> argv)
         for (int m = 0, miplevels = R->miplevels(s); m < miplevels; ++m) {
             // Shuffle the indexed/named channels
             bool ok = ImageBufAlgo::channels((*R)(s, m), (*A)(s, m),
-                                             (int)channels.size(), &channels[0],
-                                             &values[0], &newchannelnames[0],
-                                             false);
+                                             (int)channels.size(), channels,
+                                             values, newchannelnames, false);
             if (!ok) {
                 ot.error(command, (*R)(s, m).geterror());
                 break;
@@ -2918,7 +2944,7 @@ action_colorcount(Oiiotool& ot, cspan<const char*> argv)
 
     imagesize_t* count = OIIO_ALLOCA(imagesize_t, ncolors);
     bool ok = ImageBufAlgo::color_count((*ot.curimg)(0, 0), count, ncolors,
-                                        &colorvalues[0], &eps[0]);
+                                        colorvalues, eps);
     if (ok) {
         for (int col = 0; col < ncolors; ++col)
             Strutil::print("{:8}  {}\n", count[col], colorstrings[col]);
@@ -2952,8 +2978,8 @@ action_rangecheck(Oiiotool& ot, cspan<const char*> argv)
 
     imagesize_t lowcount = 0, highcount = 0, inrangecount = 0;
     bool ok = ImageBufAlgo::color_range_check((*ot.curimg)(0, 0), &lowcount,
-                                              &highcount, &inrangecount,
-                                              &low[0], &high[0]);
+                                              &highcount, &inrangecount, low,
+                                              high);
     if (ok) {
         Strutil::print("{:8}  < {}\n", lowcount, lowarg);
         Strutil::print("{:8}  > {}\n", highcount, higharg);
@@ -3379,9 +3405,10 @@ OIIOTOOL_OP(warp, 1, [&](OiiotoolOp& op, span<ImageBuf*> img) {
         ok &= ImageBufAlgo::rangecompress(tmpimg, *src);
         src = &tmpimg;
     }
-    ImageBuf::WrapMode wrap = ImageBuf::WrapMode_from_string(wrapname);
-    ok &= ImageBufAlgo::warp(*img[0], *src, *(Imath::M33f*)&M[0], filtername,
-                             0.0f, recompute_roi, wrap);
+    ok &= ImageBufAlgo::warp(*img[0], *src, *(Imath::M33f*)&M[0],
+                             { { "filtername", filtername },
+                               { "recompute_roi", int(recompute_roi) },
+                               { "wrap", wrapname } });
     if (highlightcomp && ok) {
         // re-expand the range in place
         ok &= ImageBufAlgo::rangeexpand(*img[0], *img[0]);
@@ -3428,6 +3455,16 @@ action_pop(Oiiotool& ot, cspan<const char*> argv)
 
 
 
+// --popbottom
+static void
+action_popbottom(Oiiotool& ot, cspan<const char*> argv)
+{
+    OIIO_DASSERT(argv.size() == 1);
+    ot.popbottom();
+}
+
+
+
 // --dup
 static void
 action_dup(Oiiotool& ot, cspan<const char*> argv)
@@ -3452,6 +3489,64 @@ action_swap(Oiiotool& ot, cspan<const char*> argv)
     ImageRecRef A(ot.pop());
     ot.push(B);
     ot.push(A);
+}
+
+
+
+// --stackreverse
+static void
+action_stackreverse(Oiiotool& ot, cspan<const char*> argv)
+{
+    OIIO_DASSERT(argv.size() == 1);
+    string_view command = ot.express(argv[0]);
+    if (!ot.curimg) {
+        ot.error(command, "requires at least one loaded images");
+        return;
+    }
+    if (ot.image_stack.empty())
+        return;  // only curimg -- reversing does nothing
+    ot.image_stack.push_back(ot.curimg);
+    std::reverse(ot.image_stack.begin(), ot.image_stack.end());
+    ot.curimg = ot.image_stack.back();
+    ot.image_stack.pop_back();
+}
+
+
+
+// --stackextract
+static void
+action_stackextract(Oiiotool& ot, cspan<const char*> argv)
+{
+    OIIO_DASSERT(argv.size() == 2);
+    string_view command = ot.express(argv[0]);
+    int index           = Strutil::stoi(ot.express(argv[1]));
+    if (index < 0 || index >= ot.image_stack_depth()) {
+        ot.errorfmt(command, "index {} out of range for stack depth {}", index,
+                    ot.image_stack_depth());
+        return;
+    }
+    if (ot.image_stack.empty())
+        return;  // only curimg -- extract does nothing
+    ot.image_stack.push_back(ot.curimg);
+    // Transform the index to the index of the stack data structure
+    index = int(ot.image_stack.size()) - 1 - index;
+    // Copy that item for safe keeping
+    ImageRecRef newtop = ot.image_stack[index];
+    // Remove it from the stack
+    ot.image_stack.erase(ot.image_stack.begin() + size_t(index));
+    // Now put it back on the top
+    ot.curimg = newtop;
+}
+
+
+
+// --stackclear
+static void
+action_stackclear(Oiiotool& ot, cspan<const char*> argv)
+{
+    OIIO_DASSERT(argv.size() == 1);
+    ot.image_stack.clear();
+    ot.curimg = ImageRecRef();
 }
 
 
@@ -3526,7 +3621,7 @@ action_pattern(Oiiotool& ot, cspan<const char*> argv)
         auto options = ot.extract_options(pattern);
         std::vector<float> fill(nchans, 1.0f);
         Strutil::extract_from_list_string(fill, options.get_string("color"));
-        ok = ImageBufAlgo::fill(ib, &fill[0]);
+        ok = ImageBufAlgo::fill(ib, fill);
     } else if (Strutil::istarts_with(pattern, "fill")) {
         auto options = ot.extract_options(pattern);
         std::vector<float> topleft(nchans, 1.0f);
@@ -3541,22 +3636,21 @@ action_pattern(Oiiotool& ot, cspan<const char*> argv)
                                                                  "bottomleft"))
             && Strutil::extract_from_list_string(
                 bottomright, options.get_string("bottomright"))) {
-            ok = ImageBufAlgo::fill(ib, &topleft[0], &topright[0],
-                                    &bottomleft[0], &bottomright[0]);
+            ok = ImageBufAlgo::fill(ib, topleft, topright, bottomleft,
+                                    bottomright);
         } else if (Strutil::extract_from_list_string(topleft,
                                                      options.get_string("top"))
                    && Strutil::extract_from_list_string(
                        bottomleft, options.get_string("bottom"))) {
-            ok = ImageBufAlgo::fill(ib, &topleft[0], &bottomleft[0]);
+            ok = ImageBufAlgo::fill(ib, topleft, bottomleft);
         } else if (Strutil::extract_from_list_string(topleft,
                                                      options.get_string("left"))
                    && Strutil::extract_from_list_string(
                        topright, options.get_string("right"))) {
-            ok = ImageBufAlgo::fill(ib, &topleft[0], &topright[0], &topleft[0],
-                                    &topright[0]);
+            ok = ImageBufAlgo::fill(ib, topleft, topright, topleft, topright);
         } else if (Strutil::extract_from_list_string(
                        topleft, options.get_string("color"))) {
-            ok = ImageBufAlgo::fill(ib, &topleft[0]);
+            ok = ImageBufAlgo::fill(ib, topleft);
         }
     } else if (Strutil::istarts_with(pattern, "checker")) {
         auto options = ot.extract_options(pattern);
@@ -3567,8 +3661,8 @@ action_pattern(Oiiotool& ot, cspan<const char*> argv)
         std::vector<float> color2(nchans, 1.0f);
         Strutil::extract_from_list_string(color1, options.get_string("color1"));
         Strutil::extract_from_list_string(color2, options.get_string("color2"));
-        ok = ImageBufAlgo::checker(ib, width, height, depth, &color1[0],
-                                   &color2[0], 0, 0, 0);
+        ok = ImageBufAlgo::checker(ib, width, height, depth, color1, color2, 0,
+                                   0, 0);
     } else if (Strutil::istarts_with(pattern, "noise")) {
         auto options     = ot.extract_options(pattern);
         std::string type = options.get_string("type", "gaussian");
@@ -3976,10 +4070,12 @@ public:
         }
         if (do_warp[current_subimage()])
             ok &= ImageBufAlgo::warp(*img[0], *src, M[current_subimage()],
-                                     filtername, 0.0f, false,
-                                     ImageBuf::WrapDefault, edgeclamp);
+                                     { { "filtername", filtername },
+                                       { "recompute_roi", 0 },
+                                       { "edgeclamp", edgeclamp } });
         else
-            ok &= ImageBufAlgo::resize(*img[0], *src, filtername, 0.0f,
+            ok &= ImageBufAlgo::resize(*img[0], *src,
+                                       { { "filtername", filtername } },
                                        img[0]->roi());
         if (highlightcomp && ok) {
             // re-expand the range in place
@@ -4096,7 +4192,7 @@ action_fit(Oiiotool& ot, cspan<const char*> argv)
     bool pad               = options.get_int("pad");
     std::string filtername = options["filter"];
     std::string fillmode   = options["fillmode"];
-    bool exact             = options.get_int("exact");
+    int exact              = options.get_int("exact");
     bool highlightcomp     = options.get_int("highlightcomp");
 
     int subimages = allsubimages ? A->subimages() : 1;
@@ -4117,7 +4213,10 @@ action_fit(Oiiotool& ot, cspan<const char*> argv)
         newspec.x = newspec.full_x = fit_full_x;
         newspec.y = newspec.full_y = fit_full_y;
         (*R)(s, 0).reset(newspec);
-        ImageBufAlgo::fit((*R)(s, 0), *src, filtername, 0.0f, fillmode, exact);
+        ImageBufAlgo::fit((*R)(s, 0), *src,
+                          { { "filtername", filtername },
+                            { "fillmode", fillmode },
+                            { "exact", exact } });
         if (highlightcomp) {
             // re-expand the range in place
             ImageBufAlgo::rangeexpand((*R)(s, 0), (*R)(s, 0));
@@ -4662,28 +4761,27 @@ action_fill(Oiiotool& ot, cspan<const char*> argv)
                                                                  "bottomleft"))
             && Strutil::extract_from_list_string(
                 bottomright, options.get_string("bottomright"))) {
-            ok = ImageBufAlgo::fill(Rib, &topleft[0], &topright[0],
-                                    &bottomleft[0], &bottomright[0],
-                                    ROI(x, x + w, y, y + h));
+            ok = ImageBufAlgo::fill(Rib, topleft, topright, bottomleft,
+                                    bottomright, ROI(x, x + w, y, y + h));
         } else if (Strutil::extract_from_list_string(topleft,
                                                      options.get_string("top"))
                    && Strutil::extract_from_list_string(
                        bottomleft, options.get_string("bottom"))) {
-            ok = ImageBufAlgo::fill(Rib, &topleft[0], &bottomleft[0],
+            ok = ImageBufAlgo::fill(Rib, topleft, bottomleft,
                                     ROI(x, x + w, y, y + h));
         } else if (Strutil::extract_from_list_string(topleft,
                                                      options.get_string("left"))
                    && Strutil::extract_from_list_string(
                        topright, options.get_string("right"))) {
-            ok = ImageBufAlgo::fill(Rib, &topleft[0], &topright[0], &topleft[0],
-                                    &topright[0], ROI(x, x + w, y, y + h));
+            ok = ImageBufAlgo::fill(Rib, topleft, topright, topleft, topright,
+                                    ROI(x, x + w, y, y + h));
         } else if (Strutil::extract_from_list_string(
                        topleft, options.get_string("color"))) {
-            ok = ImageBufAlgo::fill(Rib, &topleft[0], ROI(x, x + w, y, y + h));
+            ok = ImageBufAlgo::fill(Rib, topleft, ROI(x, x + w, y, y + h));
         } else {
             ot.warning(command,
                        "No recognized fill parameters: filling with white.");
-            ok = ImageBufAlgo::fill(Rib, &topleft[0], ROI(x, x + w, y, y + h));
+            ok = ImageBufAlgo::fill(Rib, topleft, ROI(x, x + w, y, y + h));
         }
         if (!ok) {
             ot.error(command, Rib.geterror());
@@ -4733,8 +4831,7 @@ action_clamp(Oiiotool& ot, cspan<const char*> argv)
         for (int m = 0, miplevels = R->miplevels(s); m < miplevels; ++m) {
             ImageBuf& Rib((*R)(s, m));
             ImageBuf& Aib((*A)(s, m));
-            bool ok = ImageBufAlgo::clamp(Rib, Aib, &min[0], &max[0],
-                                          clampalpha01);
+            bool ok = ImageBufAlgo::clamp(Rib, Aib, min, max, clampalpha01);
             if (!ok) {
                 ot.error(command, Rib.geterror());
                 return;
@@ -6122,7 +6219,7 @@ Oiiotool::getargs(int argc, char* argv[])
     ap.arg("-n", &ot.dryrun)
       .help("No saved output (dry run)");
     ap.arg("--no-error-exit", ot.noerrexit)
-      .help("Do not exit upon error, try to process additional comands (danger!)");
+      .help("Do not exit upon error, try to process additional commands (danger!)");
     ap.arg("-a", &ot.allsubimages)
       .help("Do operations on all subimages/miplevels");
     ap.arg("--debug", &ot.debug)
@@ -6695,6 +6792,9 @@ Oiiotool::getargs(int argc, char* argv[])
       .OTACTION(action_flatten);
 
     ap.separator("Image stack manipulation:");
+    ap.arg("--label %s")
+      .help("Label the top image")
+      .OTACTION(action_label);
     ap.arg("--dup")
       .help("Duplicate the current image (push a copy onto the stack)")
       .OTACTION(action_dup);
@@ -6704,9 +6804,18 @@ Oiiotool::getargs(int argc, char* argv[])
     ap.arg("--pop")
       .help("Throw away the current image")
       .OTACTION(action_pop);
-    ap.arg("--label %s")
-      .help("Label the top image")
-      .OTACTION(action_label);
+    ap.arg("--popbottom")
+      .help("Throw away the image on the bottom of the stack")
+      .OTACTION(action_popbottom);
+    ap.arg("--stackreverse")
+      .help("Throw away the image on the bottom of the stack")
+      .OTACTION(action_stackreverse);
+    ap.arg("--stackextract %d:INDEX")
+      .help("Move an indexed stack item to the top of the stack")
+      .OTACTION(action_stackextract);
+    ap.arg("--stackclear")
+      .help("Remove all images from the stack, leaving it empty")
+      .OTACTION(action_stackclear);
 
     ap.separator("Color management:");
     ap.arg("--colorconfiginfo")
