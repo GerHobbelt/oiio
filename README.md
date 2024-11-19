@@ -101,6 +101,11 @@ is the best place to start if you are interested in how to use OpenImageIO,
 its APIs, its component programs (once they are built). There is also a [PDF
 version](https://readthedocs.org/projects/openimageio/downloads/pdf/latest/).
 
+Additional resources:
+
+- [User quick start](docs/QuickStart.md) is a quick example of using
+  OpenImageIO in Python, C++, and the command line.
+
 
 👷 Building and installing OpenImageIO
 --------------------------------------
@@ -157,5 +162,5 @@ pull request (PR) mechanism.
 * [Developer mail list](https://lists.aswf.io/g/oiio-dev)
 * [ASWF Slack](https://slack.aswf.io) (look for the `#openimageio` channel)
 * Biweekly Technical Steering Committee (TSC) Zoom meetings are on the [ASWF
-  Calendar](https://www.aswf.io/meeting-calendar/) (click on the OpenImageIO
+  Calendar](https://calendar.openimageio.org) (click on the OpenImageIO
   meeting entries, every second Monday, to get the Zoom link, anyone may join)
