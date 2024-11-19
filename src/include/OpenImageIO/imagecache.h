@@ -28,7 +28,7 @@
 OIIO_NAMESPACE_BEGIN
 
 // Forward declarations
-class TextureOpt;
+class TextureOpt_v2;
 
 class ImageCachePerThreadInfo;
 class ImageCacheFile;
@@ -128,10 +128,10 @@ public:
     ///           value), any untiled images will be read and cached as if
     ///           they were constructed in tiles of size:
     ///
-    ///               - `autotile * autotile`
-    ///                     if `autoscanline` is 0
-    ///               - `width * autotile`
-    ///                     if `autoscanline` is nonzero.
+    ///           - `autotile * autotile`
+    ///                 if `autoscanline` is 0
+    ///           - `width * autotile`
+    ///                 if `autoscanline` is nonzero.
     ///
     ///           In both cases, this should lead more efficient caching.
     ///           The `autoscanline` determines whether the "virtual tiles"
@@ -520,13 +520,13 @@ public:
     /// or for alternate IC implementations.) The opaque pointer `thread_info`
     /// is thread-specific information returned by `get_perthread_info()`.
     ImageHandle* get_image_handle(ustring filename,
-                                  Perthread* thread_info    = nullptr,
-                                  const TextureOpt* options = nullptr);
+                                  Perthread* thread_info       = nullptr,
+                                  const TextureOpt_v2* options = nullptr);
 
     /// Get an ImageHandle using a UTF-16 encoded wstring filename.
     ImageHandle* get_image_handle(const std::wstring& filename,
-                                  Perthread* thread_info    = nullptr,
-                                  const TextureOpt* options = nullptr)
+                                  Perthread* thread_info       = nullptr,
+                                  const TextureOpt_v2* options = nullptr)
     {
         return get_image_handle(ustring(Strutil::utf16_to_utf8(filename)),
                                 thread_info, options);

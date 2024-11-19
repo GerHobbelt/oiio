@@ -65,8 +65,8 @@ static bool use_handle    = false;
 static bool use_bluenoise = false;
 static float cachesize    = -1;
 static int maxfiles       = -1;
-static int mipmode        = TextureOpt::MipModeDefault;
-static int interpmode     = TextureOpt::InterpSmartBicubic;
+static int mipmode        = int(TextureOpt::MipModeDefault);
+static int interpmode     = int(TextureOpt::InterpSmartBicubic);
 static int stochastic     = 0;
 static float missing[4]   = { -1, 0, 0, 1 };
 static float fill         = -1;  // -1 signifies unset
@@ -829,7 +829,6 @@ plain_tex_region_batch(ImageBuf& image, ustring filename, Mapping2DWide mapping,
             }
             if (stochastic) {
                 // Hash the pixel coords to get a pseudo-random variant
-#if OIIO_VERSION_GREATER_EQUAL(2, 4, 0)
                 constexpr float inv
                     = 1.0f / float(std::numeric_limits<uint32_t>::max());
                 for (int i = 0; i < BatchWidth; ++i) {
@@ -840,7 +839,6 @@ plain_tex_region_batch(ImageBuf& image, ustring filename, Mapping2DWide mapping,
                     else
                         opt.rnd[i] = bjhash::bjfinal(x + i, y) * inv;
                 }
-#endif
             }
 
             int npoints  = std::min(BatchWidth, roi.xend - x);

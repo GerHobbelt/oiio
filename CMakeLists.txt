@@ -1,10 +1,10 @@
 # Copyright Contributors to the OpenImageIO project.
-# SPDX-License-Identifier: BSD-3-Clause and Apache-2.0
+# SPDX-License-Identifier: Apache-2.0
 # https://github.com/AcademySoftwareFoundation/OpenImageIO
 
-cmake_minimum_required (VERSION 3.15)
+cmake_minimum_required (VERSION 3.18.2)
 
-set (OpenImageIO_VERSION "2.6.7.0")
+set (OpenImageIO_VERSION "3.0.0.0")
 set (OpenImageIO_VERSION_OVERRIDE "" CACHE STRING
      "Version override (use with caution)!")
 mark_as_advanced (OpenImageIO_VERSION_OVERRIDE)
@@ -19,12 +19,12 @@ project (OpenImageIO VERSION ${OpenImageIO_VERSION}
 set (PROJ_NAME OIIO)    # short name, caps
 string (TOLOWER ${PROJ_NAME} PROJ_NAME_LOWER)  # short name lower case
 string (TOUPPER ${PROJ_NAME} PROJ_NAME_UPPER)  # short name upper case
-set (PROJECT_VERSION_RELEASE_TYPE "dev" CACHE STRING
+set (PROJECT_VERSION_RELEASE_TYPE "beta1" CACHE STRING
     "Build type, for example: dev, beta2, RC1 (empty string for normal release)")
 set (${PROJECT_NAME}_VERSION_RELEASE_TYPE ${PROJECT_VERSION_RELEASE_TYPE})
 set (PROJECT_AUTHORS "Contributors to the OpenImageIO project")
 option (${PROJECT_NAME}_SUPPORTED_RELEASE
-        "Set ON for supported release branches, OFF for 'main'" OFF)
+        "Set ON for supported release branches, OFF for 'main'" ON)
 if (${PROJECT_NAME}_SUPPORTED_RELEASE)
     set (${PROJECT_NAME}_DEV_RELEASE OFF)
 else ()
@@ -87,9 +87,11 @@ message (STATUS "Build type             = ${CMAKE_BUILD_TYPE}")
 message (STATUS "Supported release      = ${${PROJECT_NAME}_SUPPORTED_RELEASE}")
 
 # Make the build area layout look a bit more like the final dist layout
-set (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set (CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+if (PROJECT_IS_TOP_LEVEL)
+    set (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+    set (CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+    set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+endif()
 
 if ("${PROJECT_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
     message (FATAL_ERROR "Not allowed to run in-source build!")

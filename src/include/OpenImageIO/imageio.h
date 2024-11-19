@@ -951,23 +951,6 @@ public:
 
     /// @}
 
-#if OIIO_DISABLE_DEPRECATED < OIIO_MAKE_VERSION(2,2,0) && OIIO_VERSION_LESS(2,7,0) \
-    && !defined(OIIO_DOXYGEN) && !defined(OIIO_INTERNAL)
-    OIIO_DEPRECATED("Use the modern form of create instead (2.2)")
-    static unique_ptr create (const std::string& filename, bool do_open,
-                              const ImageSpec *config,
-                              string_view plugin_searchpath) {
-        return create(filename, do_open, config, nullptr, plugin_searchpath);
-    }
-    OIIO_DEPRECATED("Use the modern form of create instead (2.1)")
-    static unique_ptr create (const std::string& filename,
-                              const std::string& plugin_searchpath) {
-        return create(filename, false, nullptr, nullptr, plugin_searchpath);
-    }
-    OIIO_DEPRECATED("destroy is no longer needed (2.1)")
-    static void destroy (ImageInput *x) { delete x; }
-#endif
-
 protected:
     ImageInput ();
 public:
@@ -3260,6 +3243,33 @@ inline string_view get_string_attribute (string_view name,
     ustring val;
     return getattribute (name, TypeString, &val) ? string_view(val) : defaultval;
 }
+
+
+/// Set the metadata of the `spec` to presume that color space is `name` (or
+/// to assume nothing about the color space if `name` is empty). The core
+/// operation is to set the "oiio:ColorSpace" attribute, but it also removes
+/// or alters several other attributes that may hint color space in ways that
+/// might be contradictory or no longer true. This uses the current default
+/// color config to adjudicate color space name equivalencies.
+///
+/// @version 3.0
+OIIO_API void set_colorspace(ImageSpec& spec, string_view name);
+
+/// Set the metadata of the `spec` to reflect Rec709 color primaries and the
+/// given gamma. The core operation is to set the "oiio:ColorSpace" attribute,
+/// but it also removes or alters several other attributes that may hint color
+/// space in ways that might be contradictory or no longer true. This uses the
+/// current default color config to adjudicate color space name equivalencies.
+///
+/// @version 3.0
+OIIO_API void set_colorspace_rec709_gamma(ImageSpec& spec, float gamma);
+
+
+/// Are the two named color spaces equivalent, based on the default color
+/// config in effect?
+///
+/// @version 3.0
+OIIO_API bool equivalent_colorspace(string_view a, string_view b);
 
 
 /// Register the input and output 'create' routines and list of file
