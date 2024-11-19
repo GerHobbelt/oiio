@@ -878,9 +878,16 @@ public:
     /// contained only one image.
     int subimage() const;
 
-    /// Return the number of subimages in the file this ImageBuf refers to.
-    /// This will always be 1 for an ImageBuf that was not constructed as a
-    /// direct reference to a file.
+    /// Return the number of subimages in the file this ImageBuf refers to, if
+    /// it can be determined efficiently. This will always be 1 for an
+    /// ImageBuf that was not constructed as a direct reference to a file, or
+    /// for an ImageBuf that refers to a file type that is not capable of
+    /// containing multiple subimages.
+    ///
+    /// Note that a return value of 0 indicates that the number of subimages
+    /// cannot easily be known without reading the entire image file to
+    /// discover the total. To compute this yourself, you would need check
+    /// every subimage successively until you get an error.
     int nsubimages() const;
 
     /// Return the index of the miplevel with a file's subimage that the
@@ -1056,15 +1063,6 @@ public:
         error(Strutil::fmt::format(fmt, args...));
     }
 
-    /// Error reporting for ImageBuf: call this with printf-like arguments
-    /// to report an error. It is not necessary to have the error message
-    /// contain a trailing newline.
-    template<typename... Args>
-    void errorf(const char* fmt, const Args&... args) const
-    {
-        error(Strutil::sprintf(fmt, args...));
-    }
-
     /// Error reporting for ImageBuf: call this with Strutil::format
     /// formatting conventions.  It is not necessary to have the error
     /// message contain a trailing newline. Beware, this is in transition,
@@ -1074,15 +1072,6 @@ public:
                                       const Args&... args) const
     {
         error(Strutil::format(fmt, args...));
-    }
-
-    // Error reporting for ImageBuf: call this with Python / {fmt} /
-    // std::format style formatting specification.
-    template<typename... Args>
-    OIIO_DEPRECATED("use `errorfmt` instead")
-    void fmterror(const char* fmt, const Args&... args) const
-    {
-        error(Strutil::fmt::format(fmt, args...));
     }
 
     /// Returns `true` if the ImageBuf has had an error and has an error

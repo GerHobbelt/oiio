@@ -126,6 +126,7 @@ public:
     bool output_dither;
     bool output_force_tiles;  // for debugging
     bool metadata_nosoftwareattrib;
+    bool metadata_history;
 
     // Options for --diff
     float diff_warnthresh;
@@ -579,15 +580,6 @@ public:
         m_configspec.reset(new ImageSpec(spec));
     }
     void clear_configspec() { m_configspec.reset(); }
-
-    /// Error reporting for ImageRec: call this with printf-like arguments.
-    /// Note however that this is fully typesafe!
-    template<typename... Args>
-    OIIO_DEPRECATED("Use errorfmt instead")
-    void errorf(const char* fmt, const Args&... args) const
-    {
-        append_error(Strutil::sprintf(fmt, args...));
-    }
 
     /// Error reporting for ImageRec: call this with printf-like arguments.
     /// Note however that this is fully typesafe!

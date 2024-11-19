@@ -103,7 +103,8 @@ public:
     bool valid_file(Filesystem::IOProxy* ioproxy) const override;
     int supports(string_view feature) const override
     {
-        return (feature == "exif" || feature == "iptc" || feature == "ioproxy");
+        return (feature == "exif" || feature == "iptc" || feature == "ioproxy"
+                || feature == "multiimage");
         // N.B. No support for arbitrary metadata.
     }
     bool open(const std::string& name, ImageSpec& newspec) override;
@@ -269,8 +270,8 @@ private:
         if (!passcount && readcount > 0) {
             return TIFFGetField(m_tif, tag, dest);
         }
-        // OIIO::debugf(" stgf %s tag %d %s datatype %d passcount %d readcount %d\n",
-        //              name, tag, type, int(TIFFFieldDataType(field)), passcount, readcount);
+        // OIIO::debugfmt(" stgf {} tag {} {} datatype {} passcount {} readcount {}\n",
+        //                name, tag, type, int(TIFFFieldDataType(field)), passcount, readcount);
         return false;
     }
 

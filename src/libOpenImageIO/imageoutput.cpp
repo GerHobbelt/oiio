@@ -30,16 +30,22 @@ using namespace pvt;
 
 
 // store an error message per thread, for a specific ImageInput
-static thread_local tsl::robin_map<const ImageOutput*, std::string>
-    output_error_messages;
+static thread_local tsl::robin_map<uint64_t, std::string> output_error_messages;
+static std::atomic_int64_t output_next_id(0);
 
 
 class ImageOutput::Impl {
 public:
+    Impl()
+        : m_id(++output_next_id)
+    {
+    }
+
     // Unneeded?
     //  // So we can lock this ImageOutput for the thread-safe methods.
     //  std::recursive_mutex m_mutex;
 
+    uint64_t m_id;
     int m_threads = 0;
 
     // The IOProxy object we will use for all I/O operations.
@@ -226,7 +232,7 @@ bool
 ImageOutput::write_deep_image(const DeepData& deepdata)
 {
     if (m_spec.depth > 1) {
-        errorf("write_deep_image is not supported for volume (3D) images.");
+        errorfmt("write_deep_image is not supported for volume (3D) images.");
         return false;
         // FIXME? - not implementing 3D deep images for now.  The only
         // format that supports deep images at this time is OpenEXR, and
@@ -269,7 +275,7 @@ ImageOutput::append_error(string_view message) const
 {
     if (message.size() && message.back() == '\n')
         message.remove_suffix(1);
-    std::string& err_str = output_error_messages[this];
+    std::string& err_str = output_error_messages[m_impl->m_id];
     OIIO_DASSERT(
         err_str.size() < 1024 * 1024 * 16
         && "Accumulated error messages > 16MB. Try checking return codes!");
@@ -565,7 +571,7 @@ bool
 ImageOutput::copy_image(ImageInput* in)
 {
     if (!in) {
-        errorf("copy_image: no input supplied");
+        errorfmt("copy_image: no input supplied");
         return false;
     }
 
@@ -574,9 +580,9 @@ ImageOutput::copy_image(ImageInput* in)
     if (inspec.width != spec().width || inspec.height != spec().height
         || inspec.depth != spec().depth
         || inspec.nchannels != spec().nchannels) {
-        errorf("Could not copy %d x %d x %d channels to %d x %d x %d channels",
-               inspec.width, inspec.height, inspec.nchannels, spec().width,
-               spec().height, spec().nchannels);
+        errorfmt("Could not copy {} x {} x {} channels to {} x {} x {} channels",
+                 inspec.width, inspec.height, inspec.nchannels, spec().width,
+                 spec().height, spec().nchannels);
         return false;
     }
 
@@ -596,7 +602,7 @@ ImageOutput::copy_image(ImageInput* in)
         if (ok)
             ok = write_deep_image(deepdata);
         else
-            errorf("%s", in->geterror());  // copy err from in to out
+            errorfmt("{}", in->geterror());  // copy err from in to out
         return ok;
     }
 
@@ -611,7 +617,7 @@ ImageOutput::copy_image(ImageInput* in)
     if (ok)
         ok = write_image(format, &pixels[0]);
     else
-        errorf("%s", in->geterror());  // copy err from in to out
+        errorfmt("{}", in->geterror());  // copy err from in to out
     return ok;
 }
 
@@ -679,7 +685,7 @@ ImageOutput::copy_tile_to_image_buffer(int x, int y, int z, TypeDesc format,
                                        void* image_buffer, TypeDesc buf_format)
 {
     if (!m_spec.tile_width || !m_spec.tile_height) {
-        errorf("Called write_tile for non-tiled image.");
+        errorfmt("Called write_tile for non-tiled image.");
         return false;
     }
     const ImageSpec& spec(this->spec());
@@ -698,7 +704,7 @@ ImageOutput::copy_tile_to_image_buffer(int x, int y, int z, TypeDesc format,
 bool
 ImageOutput::has_error() const
 {
-    auto iter = output_error_messages.find(this);
+    auto iter = output_error_messages.find(m_impl->m_id);
     if (iter == output_error_messages.end())
         return false;
     return iter.value().size() > 0;
@@ -710,7 +716,7 @@ std::string
 ImageOutput::geterror(bool clear) const
 {
     std::string e;
-    auto iter = output_error_messages.find(this);
+    auto iter = output_error_messages.find(m_impl->m_id);
     if (iter != output_error_messages.end()) {
         e = iter.value();
         if (clear)

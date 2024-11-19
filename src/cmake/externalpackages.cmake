@@ -36,15 +36,28 @@ include (FindThreads)
 # that we will not complete the build if they are not found.
 
 checked_find_package (ZLIB REQUIRED)  # Needed by several packages
+
+# Help set up this target for libtiff config file when using static libtiff
+if (NOT TARGET CMath::CMath)
+    find_library (MATH_LIBRARY m)
+    if (NOT MATH_LIBRARY-NOTFOUND)
+        add_library (CMath::CMath UNKNOWN IMPORTED)
+        set_property (TARGET CMath::CMath
+                      APPEND PROPERTY IMPORTED_LOCATION  ${MATH_LIBRARY})
+    endif ()
+endif ()
+
 checked_find_package (TIFF REQUIRED
                       VERSION_MIN 3.9
                       RECOMMEND_MIN 4.0
                       RECOMMEND_MIN_REASON "to support >4GB files")
 
 # IlmBase & OpenEXR
+checked_find_package (Imath REQUIRED
+                      VERSION_MIN 3.1
+                      PRINT IMATH_INCLUDES Imath_VERSION)
 checked_find_package (OpenEXR REQUIRED
-                      VERSION_MIN 2.4
-                      RECOMMEND_MIN 3.1
+                      VERSION_MIN 3.1
                       PRINT IMATH_INCLUDES OPENEXR_INCLUDES Imath_VERSION)
 # Force Imath includes to be before everything else to ensure that we have
 # the right Imath/OpenEXR version, not some older version in the system
@@ -55,26 +68,12 @@ include_directories(BEFORE ${IMATH_INCLUDES} ${OPENEXR_INCLUDES})
 if (MSVC AND NOT LINKSTATIC)
     proj_add_compile_definitions (OPENEXR_DLL) # Is this needed for new versions?
 endif ()
-if (OpenEXR_VERSION VERSION_GREATER_EQUAL 3.0)
-    set (OIIO_USING_IMATH 3)
-else ()
-    set (OIIO_USING_IMATH 2)
-endif ()
+set (OIIO_USING_IMATH 3)
 set (OPENIMAGEIO_IMATH_TARGETS
-            # For OpenEXR/Imath 3.x:
             $<TARGET_NAME_IF_EXISTS:Imath::Imath>
-            $<TARGET_NAME_IF_EXISTS:Imath::Half>
-            # For OpenEXR >= 2.4/2.5 with reliable exported targets
-            $<TARGET_NAME_IF_EXISTS:IlmBase::Imath>
-            $<TARGET_NAME_IF_EXISTS:IlmBase::Half>
-            $<TARGET_NAME_IF_EXISTS:IlmBase::Iex> )
+            $<TARGET_NAME_IF_EXISTS:Imath::Half> )
 set (OPENIMAGEIO_OPENEXR_TARGETS
-            # For OpenEXR/Imath 3.x:
-            $<TARGET_NAME_IF_EXISTS:OpenEXR::OpenEXR>
-            # For OpenEXR >= 2.4/2.5 with reliable exported targets
-            $<TARGET_NAME_IF_EXISTS:OpenEXR::IlmImf>
-            $<TARGET_NAME_IF_EXISTS:IlmBase::IlmThread>
-            $<TARGET_NAME_IF_EXISTS:IlmBase::Iex> )
+            $<TARGET_NAME_IF_EXISTS:OpenEXR::OpenEXR> )
 set (OPENIMAGEIO_IMATH_DEPENDENCY_VISIBILITY "PUBLIC" CACHE STRING
      "Should we expose Imath library dependency as PUBLIC or PRIVATE")
 set (OPENIMAGEIO_CONFIG_DO_NOT_FIND_IMATH OFF CACHE BOOL

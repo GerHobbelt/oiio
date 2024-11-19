@@ -288,6 +288,7 @@ PLUGENTRY(png);
 PLUGENTRY(pnm);
 PLUGENTRY_RO(psd);
 PLUGENTRY_RO(ptex);
+PLUGENTRY_RO(r3d);
 PLUGENTRY_RO(raw);
 PLUGENTRY(rla);
 PLUGENTRY(sgi);
@@ -404,6 +405,9 @@ catalog_builtin_plugins()
 #if defined(USE_PTEX) && !defined(DISABLE_PTEX)
     DECLAREPLUG_RO (ptex);
 #endif
+#if defined(USE_R3DSDK) && !defined(DISABLE_R3D)
+    DECLAREPLUG_RO (r3d);
+#endif
 #if defined(USE_LIBRAW) && !defined(DISABLE_RAW)
     DECLAREPLUG_RO (raw);
 #endif
@@ -465,12 +469,6 @@ pvt::catalog_all_plugins(std::string searchpath)
 
     std::unique_lock<std::recursive_mutex> lock(imageio_mutex);
     append_if_env_exists(searchpath, "OIIO_LIBRARY_PATH", true);
-#ifdef __APPLE__
-    append_if_env_exists(searchpath, "DYLD_LIBRARY_PATH");
-#endif
-#if defined(__linux__) || defined(__FreeBSD__)
-    append_if_env_exists(searchpath, "LD_LIBRARY_PATH");
-#endif
 
     size_t patlen = pattern.length();
     std::vector<std::string> dirs;

@@ -1003,6 +1003,11 @@ public:
     ///       Does this format reader support retrieving a reduced
     ///       resolution copy of the image via the `thumbnail()` method?
     ///
+    ///  - `"multiimage"` :
+    ///       Does this format support multiple subimages within a file?
+    ///       (Note: this doesn't necessarily mean that the particular
+    ///       file this ImageInput is reading has multiple subimages.)
+    ///
     ///  - `"noimage"` :
     ///        Does this format allow 0x0 sized images, i.e. an image file
     ///        with metadata only and no pixels?
@@ -1690,6 +1695,7 @@ public:
     /// printf-like arguments. It is not necessary to have the error message
     /// contain a trailing newline.
     template<typename... Args>
+    OIIO_FORMAT_DEPRECATED
     void errorf(const char* fmt, const Args&... args) const {
         append_error(Strutil::sprintf (fmt, args...));
     }
@@ -2485,6 +2491,7 @@ public:
     /// printf-like arguments. It is not necessary to have the error message
     /// contain a trailing newline.
     template<typename... Args>
+    OIIO_FORMAT_DEPRECATED
     void errorf(const char* fmt, const Args&... args) const {
         append_error(Strutil::sprintf (fmt, args...));
     }
