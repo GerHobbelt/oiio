@@ -428,7 +428,7 @@ private:
             return;
         }
         uLong uncompressed_size = (uLong)strip_bytes;
-        auto zok = uncompress((Bytef*)uncompressed_buf, &uncompressed_size,
+        auto zok = zng_uncompress((Bytef*)uncompressed_buf, &uncompressed_size,
                               (const Bytef*)compressed_buf, csize);
         if (zok != Z_OK || uncompressed_size != strip_bytes) {
             *ok = false;

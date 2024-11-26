@@ -1348,7 +1348,7 @@ TIFFOutput::compress_one_strip(void* uncompressed_buf, size_t strip_bytes,
                              (unsigned short*)uncompressed_buf, channels, width,
                              height);
     *compressed_size = cbound;
-    auto zok         = compress2((Bytef*)compressed_buf, compressed_size,
+    auto zok         = zng_compress2((Bytef*)compressed_buf, compressed_size,
                                  (const Bytef*)uncompressed_buf,
                                  (unsigned long)strip_bytes, m_zipquality);
     if (zok != Z_OK)

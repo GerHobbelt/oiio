@@ -2288,7 +2288,7 @@ PSDInput::decompress_packbits(const char* src, char* dst,
 bool
 PSDInput::decompress_zip(span<char> src, span<char> dest)
 {
-    z_stream stream {};
+    zng_stream stream {};
     stream.zfree     = Z_NULL;
     stream.opaque    = Z_NULL;
     stream.avail_in  = src.size();
@@ -2296,21 +2296,21 @@ PSDInput::decompress_zip(span<char> src, span<char> dest)
     stream.avail_out = dest.size();
     stream.next_out  = (Bytef*)dest.data();
 
-    if (inflateInit(&stream) != Z_OK) {
+    if (zng_inflateInit(&stream) != Z_OK) {
         errorfmt(
             "zip compression inflate init failed with: src_size={}, dst_size={}",
             src.size(), dest.size());
         return false;
     }
 
-    if (inflate(&stream, Z_FINISH) != Z_STREAM_END) {
+    if (zng_inflate(&stream, Z_FINISH) != Z_STREAM_END) {
         errorfmt(
             "unable to decode zip compressed data: src_size={}, dst_size={}",
             src.size(), dest.size());
         return false;
     }
 
-    if (inflateEnd(&stream) != Z_OK) {
+    if (zng_inflateEnd(&stream) != Z_OK) {
         errorfmt(
             "zip compression inflate cleanup failed with: src_size={}, dst_size={}",
             src.size(), dest.size());
