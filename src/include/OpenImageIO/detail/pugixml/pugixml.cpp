@@ -3750,7 +3750,7 @@ PUGI__NS_BEGIN
 					// get chunk size by selecting such number of characters that are guaranteed to fit into scratch buffer
 					// and form a complete codepoint sequence (i.e. discard start of last codepoint if necessary)
 					size_t chunk_size = get_valid_length(data, bufcapacity);
-					assert(chunk_size);
+					assert(chunk_size != 0);
 
 					// convert chunk and write
 					flush(data, chunk_size);
