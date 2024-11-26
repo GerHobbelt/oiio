@@ -463,7 +463,7 @@ DeepData::clear()
 
 
 void
-DeepData::free()
+DeepData::release()
 {
     clear();
     delete m_impl;

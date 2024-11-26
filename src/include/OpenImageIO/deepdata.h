@@ -47,7 +47,7 @@ public:
     void clear();
     /// In addition to performing the tasks of `clear()`, also ensure that
     /// all allocated memory has been truly freed.
-    void free();
+    void release();
 
     /// Initialize the `DeepData` with the specified number of pixels,
     /// channels, channel types, and channel names, and allocate memory for

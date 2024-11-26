@@ -160,7 +160,7 @@ public:
                bool readonly = false, stride_t xstride = AutoStride,
                stride_t ystride = AutoStride, stride_t zstride = AutoStride);
     void alloc(const ImageSpec& spec, const ImageSpec* nativespec = nullptr);
-    void realloc();
+    void re_alloc();
     bool init_spec(string_view filename, int subimage, int miplevel,
                    DoLock do_lock);
     bool read(int subimage, int miplevel, int chbegin = 0, int chend = -1,
@@ -720,7 +720,7 @@ ImageBufImpl::free_pixels()
         m_allocated_size = 0;
     }
     m_pixels.reset();
-    m_deepdata.free();
+    m_deepdata.release();
     m_storage = ImageBuf::UNINITIALIZED;
     m_blackpixel.clear();
 }
@@ -818,7 +818,7 @@ ImageBufImpl::clear()
     m_channel_stride = 0;
     m_contiguous     = false;
     m_imagecache.reset();
-    m_deepdata.free();
+    m_deepdata.release();
     m_blackpixel.clear();
     m_write_format.clear();
     m_write_tile_width  = 0;
@@ -993,7 +993,7 @@ ImageBuf::reset(const ImageSpec& spec, span<std::byte> buffer,
 
 
 void
-ImageBufImpl::realloc()
+ImageBufImpl::re_alloc()
 {
     new_pixels(m_spec.deep ? size_t(0) : m_spec.image_bytes());
     // N.B. new_pixels will set m_bufspan
@@ -1036,7 +1036,7 @@ ImageBufImpl::alloc(const ImageSpec& spec, const ImageSpec* nativespec)
     m_spec.nchannels = std::max(1, m_spec.nchannels);
 
     m_nativespec = nativespec ? *nativespec : spec;
-    realloc();
+    re_alloc();
     // N.B. realloc sets m_bufspan
     m_spec_valid = true;
 }
@@ -1330,7 +1330,7 @@ ImageBufImpl::read(int subimage, int miplevel, int chbegin, int chend,
         m_spec.format = convert;
     else
         m_spec.format = m_nativespec.format;
-    realloc();
+    re_alloc();
     // N.B. realloc sets m_bufspan
 
     // If forcing a full read, make sure the spec reflects the nativespec's
