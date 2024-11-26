@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include <libpng16/png.h>
-#include <zlib.h>
+#include <libpng/png.h>
+#include <zlib-ng.h>
 
 #include <OpenImageIO/Imath.h>
 #include <OpenImageIO/color.h>

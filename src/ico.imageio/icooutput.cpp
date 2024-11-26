@@ -5,7 +5,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
-#include <zlib.h>
+#include <zlib-ng.h>
 
 #include "../png.imageio/png_pvt.h"
 #include "ico.h"
