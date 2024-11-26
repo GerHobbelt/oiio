@@ -413,7 +413,7 @@ private:
             }
     }
 
-    void uncompress_one_strip(const void* compressed_buf, unsigned long csize,
+    void uncompress_one_strip(const void* compressed_buf, size_t csize,
                               void* uncompressed_buf, size_t strip_bytes,
                               int channels, int width, int height, bool* ok)
     {
@@ -427,7 +427,7 @@ private:
                 TIFFSwabArrayOfShort((unsigned short*)uncompressed_buf, nvals);
             return;
         }
-        uLong uncompressed_size = (uLong)strip_bytes;
+        size_t uncompressed_size = strip_bytes;
         auto zok = zng_uncompress((Bytef*)uncompressed_buf, &uncompressed_size,
                               (const Bytef*)compressed_buf, csize);
         if (zok != Z_OK || uncompressed_size != strip_bytes) {
@@ -1988,7 +1988,7 @@ TIFFInput::read_native_scanlines(int subimage, int miplevel, int ybegin,
             }
             auto out            = this;
             auto uncompress_etc = [=, &ok](int /*id*/) {
-                out->uncompress_one_strip(cbuf, (unsigned long)csize, data,
+                out->uncompress_one_strip(cbuf, csize, data,
                                           strip_bytes, out->m_spec.nchannels,
                                           out->m_spec.width,
                                           out->m_rowsperstrip, &ok);
@@ -2278,7 +2278,7 @@ TIFFInput::read_native_tiles(int subimage, int miplevel, int xbegin, int xend,
                 // Push the rest of the work onto the thread pool queue
                 auto out = this;
                 tasks.push(pool->push([=, &ok](int /*id*/) {
-                    out->uncompress_one_strip(cbuf, (unsigned long)csize, ubuf,
+                    out->uncompress_one_strip(cbuf, csize, ubuf,
                                               tile_bytes, out->m_spec.nchannels,
                                               out->m_spec.tile_width,
                                               out->m_spec.tile_height
