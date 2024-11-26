@@ -40,9 +40,9 @@ static const int zfile_magic_endian = 0xab67082f;  // other endianness
 gzFile
 open_gz(const std::string& filename, const char* mode)
 {
-#ifdef _WIN32
+#if defined(_WIN32)
     std::wstring wpath = Strutil::utf8_to_utf16wstring(filename);
-    gzFile gz          = gzopen_w(wpath.c_str(), mode);
+    gzFile gz          = zng_gzopen_w(wpath.c_str(), mode);
 #else
     gzFile gz = zng_gzopen(filename.c_str(), mode);
 #endif
