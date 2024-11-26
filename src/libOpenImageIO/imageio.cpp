@@ -345,7 +345,7 @@ attribute(string_view name, TypeDesc type, const void* val)
         return pvt::gpu_attribute(name, type, val);
     }
 
-    // Things below here need to buarded by the attrib_mutex
+    // Things below here need to guarded by the attrib_mutex
     spin_lock lock(attrib_mutex);
     if (name == "read_chunk" && type == TypeInt) {
         oiio_read_chunk = *(const int*)val;
@@ -454,7 +454,7 @@ getattribute(string_view name, TypeDesc type, void* val)
         return pvt::gpu_getattribute(name, type, val);
     }
 
-    // Things below here need to buarded by the attrib_mutex
+    // Things below here need to guarded by the attrib_mutex
     spin_lock lock(attrib_mutex);
     if (name == "read_chunk" && type == TypeInt) {
         *(int*)val = oiio_read_chunk;
