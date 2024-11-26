@@ -6,7 +6,7 @@
 #include <cstdio>
 #include <cstdlib>
 
-#include <zlib.h>
+#include <zlib-ng.h>
 
 #include <OpenImageIO/Imath.h>
 #include <OpenImageIO/dassert.h>
