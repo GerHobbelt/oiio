@@ -14,7 +14,7 @@
 #include <map>
 #include <memory>
 #include <vector>
-#include <zlib.h>
+#include <zlib-ng.h>
 
 #include <OpenImageIO/fmath.h>
 #include <OpenImageIO/imagebuf.h>
