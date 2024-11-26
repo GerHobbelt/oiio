@@ -761,7 +761,7 @@ write_mipmap(ImageBufAlgo::MakeTextureMode mode, std::shared_ptr<ImageBuf>& img,
                 // Resize a factor of two smaller
                 smallspec = outspec;
                 if (!configspec.get_int_attribute("maketx:mipmap_metadata"))
-                    smallspec.extra_attribs.free();
+                    smallspec.extra_attribs.release();
                 smallspec.width  = img->spec().width;
                 smallspec.height = img->spec().height;
                 smallspec.depth  = img->spec().depth;
