@@ -11,7 +11,7 @@
 #include <memory>
 
 #include <tiffio.h>
-#include <zlib.h>
+#include <zlib-ng.h>
 
 #include <OpenImageIO/dassert.h>
 #include <OpenImageIO/filesystem.h>
