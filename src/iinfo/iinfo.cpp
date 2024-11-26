@@ -472,7 +472,7 @@ main(int argc, const char* argv[])
         auto in = ImageInput::open(s);
         if (!in) {
             std::string err = geterror();
-            print(std::cerr, "iinfo ERROR: \"{}\" : {}\n", s,
+            OIIO::print(std::cerr, "iinfo ERROR: \"{}\" : {}\n", s,
                   err.size() ? err : std::string("Could not open file."));
             returncode = EXIT_FAILURE;
             continue;
