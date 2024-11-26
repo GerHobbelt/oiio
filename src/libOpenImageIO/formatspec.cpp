@@ -1060,35 +1060,35 @@ ImageSpec::serialize(SerialFormat fmt, SerialVerbose verbose) const
     std::stringstream out;
 
     if (depth > 1)
-        print(out, "{:4} x {:4} x {:4}", width, height, depth);
+        Strutil::print(out, "{:4} x {:4} x {:4}", width, height, depth);
     else
-        print(out, "{:4} x {:4}", width, height);
-    print(out, ", {} channel, {}{}", nchannels, deep ? "deep " : "",
+        Strutil::print(out, "{:4} x {:4}", width, height);
+    Strutil::print(out, ", {} channel, {}{}", nchannels, deep ? "deep " : "",
           depth > 1 ? "volume " : "");
     if (channelformats.size()) {
         for (size_t c = 0; c < channelformats.size(); ++c)
-            print(out, "{}{}", c ? "/" : "", channelformats[c]);
+            Strutil::print(out, "{}{}", c ? "/" : "", channelformats[c]);
     } else {
         int bits = get_int_attribute("oiio:BitsPerSample", 0);
-        print(out, "{}", extended_format_name(this->format, bits));
+        Strutil::print(out, "{}", extended_format_name(this->format, bits));
     }
-    print(out, "\n");
+    Strutil::print(out, "\n");
 
     if (verbose >= SerialDetailed) {
-        print(out, "    channel list: ");
+        Strutil::print(out, "    channel list: ");
         for (int i = 0; i < nchannels; ++i) {
             if (i < (int)channelnames.size())
-                print(out, "{}", channelnames[i]);
+                Strutil::print(out, "{}", channelnames[i]);
             else
-                print(out, "unknown");
+                Strutil::print(out, "unknown");
             if (i < (int)channelformats.size())
-                print(out, " ({})", channelformats[i]);
+                Strutil::print(out, " ({})", channelformats[i]);
             if (i < nchannels - 1)
-                print(out, ", ");
+                Strutil::print(out, ", ");
         }
-        print(out, "\n");
+        Strutil::print(out, "\n");
         if (x || y || z) {
-            print(out, "    pixel data origin: {}\n",
+            Strutil::print(out, "    pixel data origin: {}\n",
                   ((depth > 1) ? format("x={}, y={}, z={}", x, y, z)
                                : format("x={}, y={}", x, y)));
         }
@@ -1096,13 +1096,13 @@ ImageSpec::serialize(SerialFormat fmt, SerialVerbose verbose) const
             || (full_width != width && full_width != 0)
             || (full_height != height && full_height != 0)
             || (full_depth != depth && full_depth != 0)) {
-            print(out, "    full/display size: {}\n",
+            Strutil::print(out, "    full/display size: {}\n",
                   format_res(*this, full_width, full_height, full_depth));
-            print(out, "    full/display origin: {}\n",
+            Strutil::print(out, "    full/display origin: {}\n",
                   format_offset(*this, full_x, full_y, full_z));
         }
         if (tile_width) {
-            print(out, "    tile size: {}\n",
+            Strutil::print(out, "    tile size: {}\n",
                   format_res(*this, tile_width, tile_height, tile_depth));
         }
 
@@ -1113,11 +1113,11 @@ ImageSpec::serialize(SerialFormat fmt, SerialVerbose verbose) const
         attribs.sort(false /* sort case-insensitively */);
 
         for (auto&& p : attribs) {
-            print(out, "    {}: ", p.name());
+            Strutil::print(out, "    {}: ", p.name());
             std::string s = metadata_val(p, verbose == SerialDetailedHuman);
             if (s == "1.#INF")
                 s = "inf";
-            print(out, "{}\n", s);
+            Strutil::print(out, "{}\n", s);
         }
     }
 
