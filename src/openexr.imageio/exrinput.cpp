@@ -708,7 +708,7 @@ struct ChanNameHolder {
         pvt::split_name(fullname, layer, suffix);
     }
 
-    // Compute canoninical channel list sort priority
+    // Compute canonical channel list sort priority
     void compute_special_index()
     {
         static const char* special[]
