@@ -14,7 +14,7 @@
 #include <OpenImageIO/imageio.h>
 using namespace OIIO;
 
-void example1()
+static void example1()
 {
     //
     // Example code fragment from the docs goes here.
@@ -32,7 +32,7 @@ void example1()
 
 
 
-int main(int /*argc*/, char** /*argv*/)
+int main(void)
 {
     // Each example function needs to get called here, or it won't execute
     // as part of the test.

@@ -14,7 +14,7 @@
 #include <OpenImageIO/imageio.h>
 using namespace OIIO;
 
-void example1()
+static void example1()
 {
     //
     // Example code fragment from the docs goes here.
@@ -35,6 +35,9 @@ void example1()
 // BEGIN-imageoutput-simple
 #include <OpenImageIO/imageio.h>
 using namespace OIIO;
+
+namespace
+{
 
 void simple_write()
 {
@@ -76,9 +79,10 @@ void scanlines_write()
 // END-imageoutput-scanlines
 }
 
+}
 
 
-int main(int /*argc*/, char** /*argv*/)
+int main(void)
 {
     simple_write();
     scanlines_write();

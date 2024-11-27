@@ -23,6 +23,8 @@
 #include <OpenImageIO/imagebufalgo.h>
 using namespace OIIO;
 
+namespace
+{
 
 void example1()
 {
@@ -679,8 +681,9 @@ void example_make_texture()
     // END-imagebufalgo-make-texture
 }
 
+}  // namespace
 
-int main(int /*argc*/, char** /*argv*/)
+int main(void)
 {
     // Each example function needs to get called here, or it won't execute
     // as part of the test.

@@ -14,7 +14,7 @@
 #include <OpenImageIO/imageio.h>
 using namespace OIIO;
 
-void example1()
+static void example1()
 {
     //
     // Example code fragment from the docs goes here.
@@ -35,6 +35,9 @@ void example1()
 // BEGIN-imageinput-simple
 #include <OpenImageIO/imageio.h>
 using namespace OIIO;
+
+namespace
+{
 
 void simple_read()
 {
@@ -154,9 +157,9 @@ void error_checking()
 }
 // END-imageinput-errorchecking
 
+}
 
-
-int main(int /*argc*/, char** /*argv*/)
+int main(void)
 {
     // Each example function needs to get called here, or it won't execute
     // as part of the test.
