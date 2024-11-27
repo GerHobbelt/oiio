@@ -566,7 +566,7 @@ oiio_tiff_set_error_handler()
 static tsize_t
 reader_readproc(thandle_t handle, tdata_t data, tsize_t size)
 {
-    auto io = static_cast<Filesystem::IOProxy*>(handle);
+    auto io = reinterpret_cast<Filesystem::IOProxy*>(handle);
     // Strutil::print("iop read {} {} @ {}\n",
     //                io->filename(), size, io->tell());
     auto r = io->read(data, size);
@@ -586,7 +586,7 @@ reader_writeproc(thandle_t, tdata_t, tsize_t size)
 static toff_t
 reader_seekproc(thandle_t handle, toff_t offset, int origin)
 {
-    auto io = static_cast<Filesystem::IOProxy*>(handle);
+    auto io = reinterpret_cast<Filesystem::IOProxy*>(handle);
     // Strutil::print("iop seek {} {} ({})\n",
     //                io->filename(), offset, origin);
     return (io->seek(offset, origin)) ? toff_t(io->tell()) : toff_t(-1);
@@ -608,7 +608,7 @@ reader_closeproc(thandle_t handle)
 static toff_t
 reader_sizeproc(thandle_t handle)
 {
-    auto io = static_cast<Filesystem::IOProxy*>(handle);
+    auto io = reinterpret_cast<Filesystem::IOProxy*>(handle);
     // Strutil::print("iop size\n");
     return toff_t(io->size());
 }
@@ -799,13 +799,13 @@ TIFFInput::seek_subimage(int subimage, int miplevel)
             // Strutil::print("\n\nOpening client \"{}\"\n", m_filename);
             ioseek(0);
 #if OIIO_TIFFLIB_VERSION >= 40500
-            m_tif = TIFFClientOpen(m_filename.c_str(), "rm", ioproxy(),
+            m_tif = TIFFClientOpen(m_filename.c_str(), "rm", reinterpret_cast<thandle_t>(ioproxy()),
                                    reader_readproc, reader_writeproc,
                                    reader_seekproc, reader_closeproc,
                                    reader_sizeproc, reader_mapproc,
                                    reader_unmapproc);
 #else
-            m_tif = TIFFClientOpen(m_filename.c_str(), "rm", ioproxy(),
+            m_tif = TIFFClientOpen(m_filename.c_str(), "rm", reinterpret_cast<thandle_t>(ioproxy()),
                                    reader_readproc, reader_writeproc,
                                    reader_seekproc, reader_closeproc,
                                    reader_sizeproc, reader_mapproc,

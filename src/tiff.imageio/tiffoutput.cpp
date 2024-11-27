@@ -422,21 +422,21 @@ allval(const std::vector<T>& d, T v = T(0))
 static tsize_t
 writer_readproc(thandle_t handle, tdata_t data, tsize_t size)
 {
-    auto io = static_cast<Filesystem::IOProxy*>(handle);
+    auto io = reinterpret_cast<Filesystem::IOProxy*>(handle);
     return io->read(data, size);
 }
 
 static tsize_t
 writer_writeproc(thandle_t handle, tdata_t data, tsize_t size)
 {
-    auto io = static_cast<Filesystem::IOProxy*>(handle);
+    auto io = reinterpret_cast<Filesystem::IOProxy*>(handle);
     return io->write(data, size);
 }
 
 static toff_t
 writer_seekproc(thandle_t handle, toff_t offset, int origin)
 {
-    auto io = static_cast<Filesystem::IOProxy*>(handle);
+    auto io = reinterpret_cast<Filesystem::IOProxy*>(handle);
     // Strutil::print("iop seek {} {} ({})\n",
     //                io->filename(), offset, origin);
     return (io->seek(offset, origin)) ? toff_t(io->tell()) : toff_t(-1);
@@ -458,7 +458,7 @@ writer_closeproc(thandle_t handle)
 static toff_t
 writer_sizeproc(thandle_t handle)
 {
-    auto io = static_cast<Filesystem::IOProxy*>(handle);
+    auto io = reinterpret_cast<Filesystem::IOProxy*>(handle);
     // Strutil::print("iop size\n");
     return toff_t(io->size());
 }
@@ -529,13 +529,13 @@ TIFFOutput::open(const std::string& name, const ImageSpec& userspec,
     if (ioproxy_opened()) {
         ioseek(0);
 #if OIIO_TIFFLIB_VERSION >= 40500
-        m_tif = TIFFClientOpenExt(name.c_str(), openmode, ioproxy(),
+        m_tif = TIFFClientOpenExt(name.c_str(), openmode, reinterpret_cast<thandle_t>(ioproxy()),
                                   writer_readproc, writer_writeproc,
                                   writer_seekproc, writer_closeproc,
                                   writer_sizeproc, writer_mapproc,
                                   writer_unmapproc, openopts);
 #else
-        m_tif = TIFFClientOpen(name.c_str(), openmode, ioproxy(),
+        m_tif = TIFFClientOpen(name.c_str(), openmode, reinterpret_cast<thandle_t>(ioproxy()),
                                writer_readproc, writer_writeproc,
                                writer_seekproc, writer_closeproc,
                                writer_sizeproc, writer_mapproc,
