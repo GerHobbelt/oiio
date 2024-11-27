@@ -18,6 +18,8 @@
 #include <iostream>
 #include <vector>
 
+#include <monolithic_examples.h>
+
 using namespace OIIO;
 
 static bool verbose      = false;

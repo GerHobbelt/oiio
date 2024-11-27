@@ -18,6 +18,8 @@
 #include <OpenImageIO/strutil.h>
 #include <OpenImageIO/sysutil.h>
 
+#include <monolithic_examples.h>
+
 using namespace OIIO;
 
 static bool help          = false;

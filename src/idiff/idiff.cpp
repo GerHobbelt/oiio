@@ -20,6 +20,8 @@
 #include <OpenImageIO/imageio.h>
 #include <OpenImageIO/sysutil.h>
 
+#include <monolithic_examples.h>
+
 
 using namespace OIIO;
 using OIIO::Strutil::print;

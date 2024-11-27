@@ -19,6 +19,8 @@
 #include <OpenImageIO/unittest.h>
 #include <OpenImageIO/vecparam.h>
 
+#include <monolithic_examples.h>
+
 
 using namespace OIIO;
 

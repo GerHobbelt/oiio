@@ -24,6 +24,8 @@
 #include <OpenImageIO/sysutil.h>
 #include <OpenImageIO/timer.h>
 
+#include <monolithic_examples.h>
+
 using namespace OIIO;
 
 #ifndef OPENIMAGEIO_METADATA_HISTORY_DEFAULT

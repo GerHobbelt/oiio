@@ -18,6 +18,7 @@
 
 #include <OpenImageIO/detail/farmhash.h>
 
+#include <monolithic_examples.h>
 
 
 using namespace OIIO;

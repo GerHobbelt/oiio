@@ -24,6 +24,8 @@
 
 #include "imageio_pvt.h"
 
+#include <monolithic_examples.h>
+
 using namespace OIIO;
 using namespace ImageBufAlgo;
 

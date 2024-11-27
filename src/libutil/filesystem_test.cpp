@@ -14,6 +14,8 @@
 #    include <sys/stat.h>
 #endif
 
+#include <monolithic_examples.h>
+
 using namespace OIIO;
 
 

@@ -12,6 +12,9 @@
 
 // BEGIN-imageinput-example1
 #include <OpenImageIO/imageio.h>
+
+#include <monolithic_examples.h>
+
 using namespace OIIO;
 
 static void example1()

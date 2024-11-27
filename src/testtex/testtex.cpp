@@ -26,6 +26,8 @@
 #include <OpenImageIO/timer.h>
 #include <OpenImageIO/ustring.h>
 
+#include <monolithic_examples.h>
+
 using namespace OIIO;
 
 using OIIO::_1;

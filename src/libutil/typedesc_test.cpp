@@ -17,6 +17,8 @@
 #include <OpenImageIO/unittest.h>
 #include <OpenImageIO/ustring.h>
 
+#include <monolithic_examples.h>
+
 
 using namespace OIIO;
 

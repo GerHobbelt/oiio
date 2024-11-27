@@ -30,6 +30,8 @@
 #    include <OpenImageIO/imagebufalgo_opencv.h>
 #endif
 
+#include <monolithic_examples.h>
+
 using namespace OIIO;
 
 

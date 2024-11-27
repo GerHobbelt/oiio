@@ -11,6 +11,8 @@
 #include <OpenImageIO/strided_ptr.h>
 #include <OpenImageIO/unittest.h>
 
+#include <monolithic_examples.h>
+
 using namespace OIIO;
 
 

@@ -14,6 +14,8 @@
 
 #include <iostream>
 
+#include <monolithic_examples.h>
+
 using namespace OIIO;
 
 

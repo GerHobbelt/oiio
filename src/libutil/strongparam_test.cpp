@@ -6,6 +6,8 @@
 #include <OpenImageIO/strongparam.h>
 #include <OpenImageIO/unittest.h>
 
+#include <monolithic_examples.h>
+
 using namespace OIIO;
 
 OIIO_STRONG_PARAM_TYPE(Meters, float);

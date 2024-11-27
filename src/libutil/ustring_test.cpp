@@ -21,6 +21,8 @@
 #    include <fmt/std.h>
 #endif
 
+#include <monolithic_examples.h>
+
 
 using namespace OIIO;
 
