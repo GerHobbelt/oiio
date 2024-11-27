@@ -686,8 +686,13 @@ test_iterator_concurrency()
 
 
 
+#if defined(BUILD_MONOLITHIC)
+#    define main oiio_XXXXXX_main
+#endif
+
+extern "C"
 int
-main(int /*argc*/, char* /*argv*/[])
+main(void)
 {
     // Some miscellaneous things that aren't strictly ImageBuf, but this is
     // as good a place to verify them as any.

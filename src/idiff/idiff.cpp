@@ -37,7 +37,7 @@ enum idiffErrors {
 
 
 static ArgParse
-getargs(int argc, char* argv[])
+getargs(int argc, const char* argv[])
 {
     // clang-format off
     ArgParse ap;
@@ -110,7 +110,7 @@ getargs(int argc, char* argv[])
       .defaultval(1.0f)
       .metavar("FACTOR");
 
-    ap.parse(argc, (const char**)argv);
+    ap.parse(argc, argv);
 
     return ap;
     // clang-format on
@@ -189,14 +189,19 @@ add_filename_to_directory(const std::string& first, std::string& second)
 }
 
 
+#if defined(BUILD_MONOLITHIC)
+#    define main oiio_XXXXXX_main
+#endif
+
+extern "C"
 int
-main(int argc, char* argv[])
+main(int argc, const char** argv)
 {
     // Helpful for debugging to make sure that any crashes dump a stack
     // trace.
     Sysutil::setup_crash_stacktrace("stdout");
 
-    Filesystem::convert_native_arguments(argc, (const char**)argv);
+    Filesystem::convert_native_arguments(argc, argv);
     ArgParse ap = getargs(argc, argv);
 
     std::vector<std::string> filenames = ap["filename"].as_vec<std::string>();

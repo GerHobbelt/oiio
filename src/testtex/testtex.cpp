@@ -1795,9 +1795,13 @@ make_test_files()
 }
 
 
+#if defined(BUILD_MONOLITHIC)
+#    define main oiio_XXXXXX_main
+#endif
 
+extern "C"
 int
-main(int argc, const char* argv[])
+main(int argc, const char** argv)
 {
     Filesystem::convert_native_arguments(argc, argv);
     getargs(argc, argv);

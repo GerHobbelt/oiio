@@ -416,14 +416,19 @@ print_info(const std::string& filename, size_t namefieldlength,
 
 
 
+#if defined(BUILD_MONOLITHIC)
+#    define main oiio_XXXXXX_main
+#endif
+
+extern "C"
 int
-main(int argc, const char* argv[])
+main(int argc, const char** argv)
 {
     // Helpful for debugging to make sure that any crashes dump a stack
     // trace.
     Sysutil::setup_crash_stacktrace("stdout");
 
-    Filesystem::convert_native_arguments(argc, (const char**)argv);
+    Filesystem::convert_native_arguments(argc, argv);
     ArgParse ap;
     // clang-format off
     ap.intro("iinfo -- print information about images\n" OIIO_INTRO_STRING)

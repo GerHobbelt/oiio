@@ -63,7 +63,7 @@ parse_files(int argc, const char* argv[])
 
 
 static void
-getargs(int argc, char* argv[])
+getargs(int argc, const char* argv[])
 {
     bool help = false;
     // clang-format off
@@ -102,7 +102,7 @@ getargs(int argc, char* argv[])
 //FIXME         "-c %s", &channellist, "Restrict/shuffle channels",
                 nullptr);
     // clang-format on
-    if (ap.parse(argc, (const char**)argv) < 0) {
+    if (ap.parse(argc, argv) < 0) {
         print(stderr, "{}\n", ap.geterror());
         ap.usage();
         ap.abort();
@@ -502,14 +502,19 @@ convert_file(const std::string& in_filename, const std::string& out_filename)
 
 
 
+#if defined(BUILD_MONOLITHIC)
+#    define main oiio_XXXXXX_main
+#endif
+
+extern "C"
 int
-main(int argc, char* argv[])
+main(int argc, const char** argv)
 {
     // Helpful for debugging to make sure that any crashes dump a stack
     // trace.
     Sysutil::setup_crash_stacktrace("stdout");
 
-    Filesystem::convert_native_arguments(argc, (const char**)argv);
+    Filesystem::convert_native_arguments(argc, argv);
     getargs(argc, argv);
     if (ap.aborted())
         return return_code;

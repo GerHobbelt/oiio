@@ -29,7 +29,7 @@ static float graphunit = 200;
 
 
 static void
-getargs(int argc, char* argv[])
+getargs(int argc, const char* argv[])
 {
     // clang-format off
     ArgParse ap;
@@ -48,7 +48,7 @@ getargs(int argc, char* argv[])
       .help("Normalize/rescale all filters to peak at 1");
     // clang-format on
 
-    ap.parse(argc, (const char**)argv);
+    ap.parse(argc, argv);
 }
 
 
@@ -226,8 +226,13 @@ bench_2d()
 
 
 
+#if defined(BUILD_MONOLITHIC)
+#    define main oiio_XXXXXX_main
+#endif
+
+extern "C"
 int
-main(int argc, char* argv[])
+main(int argc, const char** argv)
 {
 #if !defined(NDEBUG) || defined(OIIO_CI) || defined(OIIO_CODE_COVERAGE)
     // For the sake of test time, reduce the default iterations for DEBUG,
@@ -247,4 +252,5 @@ main(int argc, char* argv[])
     }
     bench_1d();
     bench_2d();
+    return 0;
 }

@@ -30,7 +30,7 @@ static bool enable_fpe        = false;  // Throw exceptions on FP errors.
 
 
 static void
-getargs(int argc, char* argv[])
+getargs(int argc, const char* argv[])
 {
     // clang-format off
     ArgParse ap;
@@ -45,7 +45,7 @@ getargs(int argc, char* argv[])
     ap.arg("--onlyformat %s:FORMAT", &onlyformat)
       .help("Test only one format");
 
-    ap.parse_args(argc, (const char**)argv);
+    ap.parse_args(argc, argv);
     // clang-format on
 }
 
@@ -533,8 +533,13 @@ test_read_tricky_sizes()
 
 
 
+#if defined(BUILD_MONOLITHIC)
+#    define main oiio_XXXXXX_main
+#endif
+
+extern "C"
 int
-main(int argc, char* argv[])
+main(int argc, const char** argv)
 {
     getargs(argc, argv);
 

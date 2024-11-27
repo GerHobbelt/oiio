@@ -330,8 +330,13 @@ test_imagespec_from_xml()
 
 
 
+#if defined(BUILD_MONOLITHIC)
+#    define main oiio_XXXXXX_main
+#endif
+
+extern "C"
 int
-main(int /*argc*/, char* /*argv*/[])
+main(void)
 {
     print("sizeof(ImageSpec) = {}\n", sizeof(ImageSpec));
 

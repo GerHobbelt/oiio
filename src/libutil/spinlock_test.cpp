@@ -18,6 +18,8 @@
 
 using namespace OIIO;
 
+namespace {
+
 // Test spin locks by creating a bunch of threads that all increment the
 // accumulator many times, protected by spin locks.  If, at the end, the
 // accumulated value is equal to iterations*threads, then the spin locks
@@ -90,7 +92,7 @@ do_accum(int iterations)
 
 
 static void
-getargs(int argc, char* argv[])
+getargs(int argc, const char* argv[])
 {
     ArgParse ap;
     // clang-format off
@@ -109,13 +111,20 @@ getargs(int argc, char* argv[])
       .help("Do a wedge test");
     // clang-format on
 
-    ap.parse(argc, (const char**)argv);
+    ap.parse(argc, argv);
 }
 
+}  // namespace
 
 
+
+#if defined(BUILD_MONOLITHIC)
+#    define main oiio_XXXXXX_main
+#endif
+
+extern "C"
 int
-main(int argc, char* argv[])
+main(int argc, const char** argv)
 {
     getargs(argc, argv);
 

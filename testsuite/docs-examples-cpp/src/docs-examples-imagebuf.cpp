@@ -30,9 +30,13 @@ static void example1()
 //
 ///////////////////////////////////////////////////////////////////////////
 
+#if defined(BUILD_MONOLITHIC)
+#    define main oiio_XXXXXX_main
+#endif
 
-
-int main(void)
+extern "C"
+int
+main(void)
 {
     // Each example function needs to get called here, or it won't execute
     // as part of the test.

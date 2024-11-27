@@ -41,7 +41,7 @@ static float cache_size               = 0;
 
 
 static void
-getargs(int argc, char* argv[])
+getargs(int argc, const char* argv[])
 {
     ArgParse ap;
     // clang-format off
@@ -75,7 +75,7 @@ getargs(int argc, char* argv[])
       .help("Requested output format");
     // clang-format on
 
-    ap.parse(argc, (const char**)argv);
+    ap.parse(argc, argv);
 }
 
 
@@ -472,8 +472,13 @@ set_dataformat(const std::string& output_format, ImageSpec& outspec)
 
 
 
+#if defined(BUILD_MONOLITHIC)
+#    define main oiio_XXXXXX_main
+#endif
+
+extern "C"
 int
-main(int argc, char** argv)
+main(int argc, const char** argv)
 {
     getargs(argc, argv);
     if (input_filename.size() == 0) {

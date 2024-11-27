@@ -26,8 +26,13 @@ speed(Meters a, Seconds b)
 
 
 
+#if defined(BUILD_MONOLITHIC)
+#    define main oiio_XXXXXX_main
+#endif
+
+extern "C"
 int
-main(int /*argc*/, char* /*argv*/[])
+main(void)
 {
     float s = speed(Meters(8.0f), Seconds(2.0f));
     OIIO_CHECK_EQUAL(s, 4.0f);

@@ -110,7 +110,7 @@ colorconvert_help_string()
 // verbose attribute commands. Escape control chars in the arguments, and
 // double-quote any that contain spaces.
 static std::string
-command_line_string(int argc, char* argv[], bool sansattrib)
+command_line_string(int argc, const char* argv[], bool sansattrib)
 {
     std::string s;
     for (int i = 0; i < argc; ++i) {
@@ -146,7 +146,7 @@ command_line_string(int argc, char* argv[], bool sansattrib)
 
 
 static void
-getargs(int argc, char* argv[], ImageSpec& configspec)
+getargs(int argc, const char* argv[], ImageSpec& configspec)
 {
     // Basic runtime options
     std::string dataformatname = "";
@@ -344,7 +344,7 @@ getargs(int argc, char* argv[], ImageSpec& configspec)
       .help("Use OIIO-optimized settings for tile size, planarconfig, metadata.");
 
     // clang-format on
-    ap.parse(argc, (const char**)argv);
+    ap.parse(argc, argv);
     if (filenames.empty()) {
         ap.briefusage();
         std::cout << "\nFor detailed help: maketx --help\n";
@@ -508,8 +508,13 @@ getargs(int argc, char* argv[], ImageSpec& configspec)
 
 
 
+#if defined(BUILD_MONOLITHIC)
+#    define main oiio_XXXXXX_main
+#endif
+
+extern "C"
 int
-main(int argc, char* argv[])
+main(int argc, const char** argv)
 {
     Timer alltimer;
 
@@ -522,7 +527,7 @@ main(int argc, char* argv[])
     std::locale::global(std::locale::classic());
 
     ImageSpec configspec;
-    Filesystem::convert_native_arguments(argc, (const char**)argv);
+    Filesystem::convert_native_arguments(argc, argv);
     getargs(argc, argv, configspec);
 
     OIIO::attribute("threads", nthreads);

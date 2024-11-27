@@ -522,8 +522,13 @@ test_implied_construction()
 
 
 
+#if defined(BUILD_MONOLITHIC)
+#    define main oiio_XXXXXX_main
+#endif
+
+extern "C"
 int
-main(int /*argc*/, char* /*argv*/[])
+main(int argc, const char** argv)
 {
     print("sizeof(ParamValue) is: {}\n", sizeof(ParamValue));
     print("sizeof(ParamValueList) is: {}\n", sizeof(ParamValueList));

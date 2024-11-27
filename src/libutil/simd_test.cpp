@@ -36,7 +36,7 @@ OIIO_SIMD16_ALIGN float dummy_int[16];
 
 
 static void
-getargs(int argc, char* argv[])
+getargs(int argc, const char* argv[])
 {
     ArgParse ap;
     ap.intro("simd_test -- unit test and benchmarks for OpenImageIO/simd.h\n"
@@ -48,7 +48,7 @@ getargs(int argc, char* argv[])
     ap.arg("--trials %d", &ntrials)
       .help("Number of trials");
 
-    ap.parse_args(argc, (const char**)argv);
+    ap.parse_args(argc, argv);
 }
 
 
@@ -1960,8 +1960,13 @@ test_trivially_copyable()
 
 
 
+#if defined(BUILD_MONOLITHIC)
+#    define main oiio_XXXXXX_main
+#endif
+
+extern "C"
 int
-main(int argc, char* argv[])
+main(int argc, const char** argv)
 {
 #if !defined(NDEBUG) || defined(OIIO_CI) || defined(OIIO_CODE_COVERAGE)
     // For the sake of test time, reduce the default iterations for DEBUG,

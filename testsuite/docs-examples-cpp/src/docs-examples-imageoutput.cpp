@@ -82,7 +82,13 @@ void scanlines_write()
 }
 
 
-int main(void)
+#if defined(BUILD_MONOLITHIC)
+#    define main oiio_XXXXXX_main
+#endif
+
+extern "C"
+int
+main(void)
 {
     simple_write();
     scanlines_write();

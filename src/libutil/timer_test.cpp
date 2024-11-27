@@ -19,8 +19,13 @@ using namespace OIIO;
 
 
 
+#if defined(BUILD_MONOLITHIC)
+#    define main oiio_XXXXXX_main
+#endif
+
+extern "C"
 int
-main(int argc, char** argv)
+main(int argc, const char** argv)
 {
     ArgParse ap;
     // clang-format off
@@ -28,7 +33,7 @@ main(int argc, char** argv)
       .usage("timer_test [options]");
     // clang-format on
 
-    ap.parse(argc, (const char**)argv);
+    ap.parse(argc, argv);
 
     // First, just compute and print how expensive a Timer begin/end is,
     // in cycles per second.

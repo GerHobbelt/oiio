@@ -5881,7 +5881,7 @@ crash_me()
 // identified as existing filenames are "genericized" (on Windows,
 // backslashes converted to forward slashes).
 static std::string
-command_line_string(int argc, char* argv[], bool sansattrib)
+command_line_string(int argc, const char* argv[], bool sansattrib)
 {
     std::string s;
     for (int i = 0; i < argc; ++i) {
@@ -6265,7 +6265,7 @@ oiiotool_unit_tests(Oiiotool& ot)
 
 
 void
-Oiiotool::getargs(int argc, char* argv[])
+Oiiotool::getargs(int argc, const char* argv[])
 {
     Oiiotool& ot(*this);  // Local reference alias for *this
 
@@ -6976,7 +6976,7 @@ Oiiotool::getargs(int argc, char* argv[])
       .OTACTION(icc_read);
     // clang-format on
 
-    if (ap.parse_args(argc, (const char**)argv) < 0) {
+    if (ap.parse_args(argc, argv) < 0) {
         auto& errstream(ot.nostderr ? std::cout : std::cerr);
         errstream << ap.geterror() << std::endl;
         if (!ot.quiet)
@@ -7052,7 +7052,7 @@ one_sequence_iteration(Oiiotool& otmain, size_t i, int frame_number,
     Oiiotool otit;  // Oiiotool for this iteration
     otit.imagecache   = otmain.imagecache;
     otit.frame_number = frame_number;
-    otit.getargs((int)seq_argv.size(), (char**)&seq_argv[0]);
+    otit.getargs((int)seq_argv.size(), (const char**)&seq_argv[0]);
 
     if (otit.ap.aborted()) {
         if (!otit.skip_bad_frames) {
@@ -7279,9 +7279,13 @@ handle_sequence(Oiiotool& ot, int argc, const char** argv)
 }
 
 
+#if defined(BUILD_MONOLITHIC)
+#    define main oiio_XXXXXX_main
+#endif
 
+extern "C"
 int
-main(int argc, char* argv[])
+main(int argc, const char** argv)
 {
 #if OIIO_SIMD_SSE && !OIIO_F16C_ENABLED
     // We've found old versions of libopenjpeg (either by itself, or
@@ -7329,8 +7333,8 @@ main(int argc, char* argv[])
     ot.imagecache->attribute("autotile", ot.autotile);
     ot.imagecache->attribute("autoscanline", int(ot.autotile ? 1 : 0));
 
-    Filesystem::convert_native_arguments(argc, (const char**)argv);
-    if (handle_sequence(ot, argc, (const char**)argv)) {
+    Filesystem::convert_native_arguments(argc, argv);
+    if (handle_sequence(ot, argc, argv)) {
         // Deal with sequence
 
     } else {

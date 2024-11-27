@@ -134,8 +134,13 @@ parse_files(int argc, const char* argv[])
 
 
 
+#if defined(BUILD_MONOLITHIC)
+#    define main oiio_XXXXXX_main
+#endif
+
+extern "C"
 int
-main(int argc, const char* argv[])
+main(int argc, const char** argv)
 {
     // Helpful for debugging to make sure that any crashes dump a stack
     // trace.

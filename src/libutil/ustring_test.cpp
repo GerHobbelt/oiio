@@ -38,7 +38,7 @@ static std::vector<std::array<char, 16>> strings;
 
 
 static void
-getargs(int argc, char* argv[])
+getargs(int argc, const char* argv[])
 {
     // clang-format off
     ArgParse ap;
@@ -59,7 +59,7 @@ getargs(int argc, char* argv[])
       .help("Strings (x 1M) to create to make hash collisions");
     // clang-format on
 
-    ap.parse(argc, (const char**)argv);
+    ap.parse(argc, argv);
 
     const int nhw_threads = Sysutil::hardware_concurrency();
     std::cout << "hw threads = " << nhw_threads << "\n";
@@ -319,8 +319,13 @@ verify_no_collisions()
 
 
 
+#if defined(BUILD_MONOLITHIC)
+#    define main oiio_XXXXXX_main
+#endif
+
+extern "C"
 int
-main(int argc, char* argv[])
+main(int argc, const char** argv)
 {
     getargs(argc, argv);
 

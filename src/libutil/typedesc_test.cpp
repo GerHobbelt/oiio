@@ -105,8 +105,13 @@ test_templates()
 
 
 
+#if defined(BUILD_MONOLITHIC)
+#    define main oiio_XXXXXX_main
+#endif
+
+extern "C"
 int
-main(int /*argc*/, char* /*argv*/[])
+main(void)
 {
     std::cout << "TypeDesc size = " << sizeof(TypeDesc) << "\n";
     // We expect a TypeDesc to be the same size as a 64 bit int

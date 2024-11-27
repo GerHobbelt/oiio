@@ -683,7 +683,13 @@ void example_make_texture()
 
 }  // namespace
 
-int main(void)
+#if defined(BUILD_MONOLITHIC)
+#    define main oiio_XXXXXX_main
+#endif
+
+extern "C"
+int
+main(void)
 {
     // Each example function needs to get called here, or it won't execute
     // as part of the test.

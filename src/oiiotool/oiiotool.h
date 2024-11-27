@@ -171,7 +171,7 @@ public:
     void clear_input_config();
 
     // Process command line arguments
-    void getargs(int argc, char* argv[]);
+    void getargs(int argc, const char* argv[]);
 
     bool running() const
     {

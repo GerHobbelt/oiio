@@ -18,6 +18,8 @@
 
 using namespace OIIO;
 
+namespace {
+
 // Test spin_rw_mutex by creating a bunch of threads usually just check
 // the accumulator value (requiring a read lock), but occasionally
 // (1/100 of the time) increment the accumulator, requiring a write
@@ -75,7 +77,7 @@ test_spin_rw(int numthreads, int iterations)
 
 
 static void
-getargs(int argc, char* argv[])
+getargs(int argc, const char* argv[])
 {
     ArgParse ap;
     // clang-format off
@@ -99,13 +101,20 @@ getargs(int argc, char* argv[])
       .help("Do a wedge test");
     // clang-format on
 
-    ap.parse(argc, (const char**)argv);
+    ap.parse(argc, argv);
 }
 
+}  // namespace
 
 
+
+#if defined(BUILD_MONOLITHIC)
+#    define main oiio_XXXXXX_main
+#endif
+
+extern "C"
 int
-main(int argc, char* argv[])
+main(int argc, const char** argv)
 {
     getargs(argc, argv);
 

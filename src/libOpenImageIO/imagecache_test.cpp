@@ -368,8 +368,13 @@ test_get_cache_dimensions()
 
 
 
+#if defined(BUILD_MONOLITHIC)
+#    define main oiio_XXXXXX_main
+#endif
+
+extern "C"
 int
-main(int /*argc*/, char* /*argv*/[])
+main(void)
 {
     create_temp_textures();
 

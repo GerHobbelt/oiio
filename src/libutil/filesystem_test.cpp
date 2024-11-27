@@ -607,8 +607,13 @@ test_last_write_time()
 
 
 
+#if defined(BUILD_MONOLITHIC)
+#    define main oiio_XXXXXX_main
+#endif
+
+extern "C"
 int
-main(int /*argc*/, char* /*argv*/[])
+main(void)
 {
     test_filename_decomposition();
     test_filename_searchpath_find();
