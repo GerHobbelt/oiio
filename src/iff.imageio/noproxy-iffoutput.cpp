@@ -4,6 +4,8 @@
 
 #include "noproxy-iff_pvt.h"
 
+#if IFF_IO_WITHOUT_PROXY
+
 OIIO_PLUGIN_NAMESPACE_BEGIN
 
 using namespace iff_pvt;
@@ -598,3 +600,5 @@ IffOutput::compress_rle_channel(const uint8_t* in, uint8_t* out, int size)
 
 
 OIIO_PLUGIN_NAMESPACE_END
+
+#endif

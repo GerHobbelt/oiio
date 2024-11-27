@@ -2,7 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 // https://github.com/AcademySoftwareFoundation/OpenImageIO
 #include "noproxy-iff_pvt.h"
+
 #include <OpenImageIO/dassert.h>
+
+#if IFF_IO_WITHOUT_PROXY
 
 OIIO_PLUGIN_NAMESPACE_BEGIN
 
@@ -329,3 +332,5 @@ IffOutput::write_header(IffFileHeader& header)
 
 
 OIIO_PLUGIN_NAMESPACE_END
+
+#endif

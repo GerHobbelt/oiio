@@ -5,6 +5,8 @@
 
 #include <cmath>
 
+#if !IFF_IO_WITHOUT_PROXY
+
 OIIO_PLUGIN_NAMESPACE_BEGIN
 
 using namespace iff_pvt;
@@ -773,3 +775,5 @@ IffInput::uncompress_rle_channel(const uint8_t* in, uint8_t* out, int size)
 }
 
 OIIO_PLUGIN_NAMESPACE_END
+
+#endif

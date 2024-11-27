@@ -14,8 +14,6 @@
 #include <OpenImageIO/thread.h>
 #include <OpenImageIO/timer.h>
 
-
-
 OIIO_NAMESPACE_BEGIN
 
 namespace ImageBufAlgo {
