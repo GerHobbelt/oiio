@@ -523,7 +523,7 @@ test_implied_construction()
 
 
 #if defined(BUILD_MONOLITHIC)
-#    define main oiio_XXXXXX_main
+#    define main oiio_paramlist_test_main
 #endif
 
 extern "C"

@@ -684,7 +684,7 @@ void example_make_texture()
 }  // namespace
 
 #if defined(BUILD_MONOLITHIC)
-#    define main oiio_XXXXXX_main
+#    define main oiio_imagebufalgo_main
 #endif
 
 extern "C"

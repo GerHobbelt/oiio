@@ -1961,7 +1961,7 @@ test_trivially_copyable()
 
 
 #if defined(BUILD_MONOLITHIC)
-#    define main oiio_XXXXXX_main
+#    define main oiio_simd_test_main
 #endif
 
 extern "C"

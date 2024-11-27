@@ -473,7 +473,7 @@ set_dataformat(const std::string& output_format, ImageSpec& outspec)
 
 
 #if defined(BUILD_MONOLITHIC)
-#    define main oiio_XXXXXX_main
+#    define main oiio_imagespeed_test_main
 #endif
 
 extern "C"

@@ -254,7 +254,7 @@ test_new()
 
 
 #if defined(BUILD_MONOLITHIC)
-#    define main oiio_XXXXXX_main
+#    define main oiio_argparse_test_main
 #endif
 
 extern "C"

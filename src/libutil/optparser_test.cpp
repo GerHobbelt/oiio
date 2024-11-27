@@ -89,7 +89,7 @@ test_optparser()
 
 
 #if defined(BUILD_MONOLITHIC)
-#    define main oiio_XXXXXX_main
+#    define main oiio_optparser_test_main
 #endif
 
 extern "C"

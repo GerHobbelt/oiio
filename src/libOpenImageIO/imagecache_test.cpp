@@ -369,7 +369,7 @@ test_get_cache_dimensions()
 
 
 #if defined(BUILD_MONOLITHIC)
-#    define main oiio_XXXXXX_main
+#    define main oiio_imagecache_test_main
 #endif
 
 extern "C"

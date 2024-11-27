@@ -1796,7 +1796,7 @@ make_test_files()
 
 
 #if defined(BUILD_MONOLITHIC)
-#    define main oiio_XXXXXX_main
+#    define main oiio_testtex_main
 #endif
 
 extern "C"

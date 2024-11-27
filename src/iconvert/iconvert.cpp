@@ -503,7 +503,7 @@ convert_file(const std::string& in_filename, const std::string& out_filename)
 
 
 #if defined(BUILD_MONOLITHIC)
-#    define main oiio_XXXXXX_main
+#    define main oiio_iconvert_main
 #endif
 
 extern "C"

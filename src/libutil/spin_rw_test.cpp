@@ -109,7 +109,7 @@ getargs(int argc, const char* argv[])
 
 
 #if defined(BUILD_MONOLITHIC)
-#    define main oiio_XXXXXX_main
+#    define main oiio_spin_rw_test_main
 #endif
 
 extern "C"

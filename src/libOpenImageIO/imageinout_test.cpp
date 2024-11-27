@@ -534,7 +534,7 @@ test_read_tricky_sizes()
 
 
 #if defined(BUILD_MONOLITHIC)
-#    define main oiio_XXXXXX_main
+#    define main oiio_imageinout_test_main
 #endif
 
 extern "C"

@@ -160,7 +160,7 @@ void error_checking()
 }  // namespace
 
 #if defined(BUILD_MONOLITHIC)
-#    define main oiio_XXXXXX_main
+#    define main oiio_imageinput_main
 #endif
 
 extern "C"

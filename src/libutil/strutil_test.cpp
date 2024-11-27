@@ -1721,7 +1721,7 @@ test_eval_as_bool()
 
 
 #if defined(BUILD_MONOLITHIC)
-#    define main oiio_XXXXXX_main
+#    define main oiio_strutil_test_main
 #endif
 
 extern "C"

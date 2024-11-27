@@ -509,7 +509,7 @@ getargs(int argc, const char* argv[], ImageSpec& configspec)
 
 
 #if defined(BUILD_MONOLITHIC)
-#    define main oiio_XXXXXX_main
+#    define main oiio_maketx_main
 #endif
 
 extern "C"

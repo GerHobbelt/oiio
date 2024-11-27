@@ -27,7 +27,7 @@ speed(Meters a, Seconds b)
 
 
 #if defined(BUILD_MONOLITHIC)
-#    define main oiio_XXXXXX_main
+#    define main oiio_strongparam_test_main
 #endif
 
 extern "C"

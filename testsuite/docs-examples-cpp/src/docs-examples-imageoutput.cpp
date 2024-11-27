@@ -83,7 +83,7 @@ void scanlines_write()
 
 
 #if defined(BUILD_MONOLITHIC)
-#    define main oiio_XXXXXX_main
+#    define main oiio_imageoutput_main
 #endif
 
 extern "C"

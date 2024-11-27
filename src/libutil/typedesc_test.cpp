@@ -106,7 +106,7 @@ test_templates()
 
 
 #if defined(BUILD_MONOLITHIC)
-#    define main oiio_XXXXXX_main
+#    define main oiio_typedesc_test_main
 #endif
 
 extern "C"

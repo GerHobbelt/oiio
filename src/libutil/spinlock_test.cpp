@@ -119,7 +119,7 @@ getargs(int argc, const char* argv[])
 
 
 #if defined(BUILD_MONOLITHIC)
-#    define main oiio_XXXXXX_main
+#    define main oiio_spinlock_test_main
 #endif
 
 extern "C"

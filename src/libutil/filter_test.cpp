@@ -227,7 +227,7 @@ bench_2d()
 
 
 #if defined(BUILD_MONOLITHIC)
-#    define main oiio_XXXXXX_main
+#    define main oiio_filter_test_main
 #endif
 
 extern "C"

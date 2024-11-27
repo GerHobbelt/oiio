@@ -417,7 +417,7 @@ print_info(const std::string& filename, size_t namefieldlength,
 
 
 #if defined(BUILD_MONOLITHIC)
-#    define main oiio_XXXXXX_main
+#    define main oiio_iinfo_main
 #endif
 
 extern "C"

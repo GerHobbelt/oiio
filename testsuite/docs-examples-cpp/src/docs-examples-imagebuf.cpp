@@ -31,7 +31,7 @@ static void example1()
 ///////////////////////////////////////////////////////////////////////////
 
 #if defined(BUILD_MONOLITHIC)
-#    define main oiio_XXXXXX_main
+#    define main oiio_imagebuf_main
 #endif
 
 extern "C"

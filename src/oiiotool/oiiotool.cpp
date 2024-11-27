@@ -7280,7 +7280,7 @@ handle_sequence(Oiiotool& ot, int argc, const char** argv)
 
 
 #if defined(BUILD_MONOLITHIC)
-#    define main oiio_XXXXXX_main
+#    define main oiio_oiiotool_main
 #endif
 
 extern "C"

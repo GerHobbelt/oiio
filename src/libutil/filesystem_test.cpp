@@ -608,7 +608,7 @@ test_last_write_time()
 
 
 #if defined(BUILD_MONOLITHIC)
-#    define main oiio_XXXXXX_main
+#    define main oiio_filesystem_test_main
 #endif
 
 extern "C"

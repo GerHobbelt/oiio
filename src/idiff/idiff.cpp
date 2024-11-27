@@ -190,7 +190,7 @@ add_filename_to_directory(const std::string& first, std::string& second)
 
 
 #if defined(BUILD_MONOLITHIC)
-#    define main oiio_XXXXXX_main
+#    define main oiio_idiff_main
 #endif
 
 extern "C"

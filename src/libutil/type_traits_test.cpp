@@ -22,7 +22,7 @@ struct test {
 
 
 #if defined(BUILD_MONOLITHIC)
-#    define main oiio_XXXXXX_main
+#    define main oiio_type_traits_test_main
 #endif
 
 extern "C"

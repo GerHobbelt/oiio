@@ -176,7 +176,7 @@ test_thread_pool_shutdown()
 
 
 #if defined(BUILD_MONOLITHIC)
-#    define main oiio_XXXXXX_main
+#    define main oiio_parallel_test_main
 #endif
 
 extern "C"
