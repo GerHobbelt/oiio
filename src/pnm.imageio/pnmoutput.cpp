@@ -9,6 +9,8 @@
 #include <OpenImageIO/fmath.h>
 #include <OpenImageIO/imageio.h>
 
+#include <half.h>
+
 OIIO_PLUGIN_NAMESPACE_BEGIN
 
 #define DBG if (0)

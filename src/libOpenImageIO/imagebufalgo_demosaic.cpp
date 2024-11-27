@@ -11,6 +11,8 @@
 
 #include "imageio_pvt.h"
 
+#include <half.h>
+
 OIIO_NAMESPACE_BEGIN
 
 namespace {
