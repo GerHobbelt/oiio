@@ -154,66 +154,26 @@
 // because we're only using SHA-1 as an image hash, not for cryptography, so
 // we just aren't concerned with whether it leaves data in memory.
 
-#if defined(SHA1_HAS_TCHAR)
-#include <tchar.h>
-#else
-#ifdef _MSC_VER
-#include <tchar.h>
-#else
-#ifndef TCHAR
-#define TCHAR char
-#endif
-#ifndef _T
-#define _T(__x) (__x)
-#define _tmain main
-#define _tprintf printf
-#define _getts gets
-#define _tcslen strlen
-#define _tfopen fopen
-#define _tcscpy strcpy
-#define _tcscat strcat
-#define _sntprintf snprintf
-#endif
-#endif
-#endif
 
 ///////////////////////////////////////////////////////////////////////////
 // Define variable types
 
+#include <stdint.h>
+
 #ifndef UINT_8
-#ifdef _MSC_VER // Compiling with Microsoft compiler
-#define UINT_8 unsigned __int8
-#else // !_MSC_VER
-#define UINT_8 unsigned char
-#endif // _MSC_VER
+#define UINT_8 uint8_t
 #endif
 
 #ifndef UINT_32
-#ifdef _MSC_VER // Compiling with Microsoft compiler
-#define UINT_32 unsigned __int32
-#else // !_MSC_VER
-#if (ULONG_MAX == 0xFFFFFFFFUL)
-#define UINT_32 unsigned long
-#else
-#define UINT_32 unsigned int
-#endif
-#endif // _MSC_VER
+#define UINT_32 uint32_t
 #endif // UINT_32
 
 #ifndef INT_64
-#ifdef _MSC_VER // Compiling with Microsoft compiler
-#define INT_64 __int64
-#else // !_MSC_VER
-#define INT_64 long long
-#endif // _MSC_VER
+#define INT_64 int64_t
 #endif // INT_64
 
 #ifndef UINT_64
-#ifdef _MSC_VER // Compiling with Microsoft compiler
-#define UINT_64 unsigned __int64
-#else // !_MSC_VER
-#define UINT_64 unsigned long long
-#endif // _MSC_VER
+#define UINT_64 uint64_t
 #endif // UINT_64
 
 ///////////////////////////////////////////////////////////////////////////
@@ -254,19 +214,18 @@ public:
 
 #ifdef SHA1_UTILITY_FUNCTIONS
 	// Hash in file contents
-	bool HashFile(const TCHAR* tszFileName);
+	bool HashFile(const char* tszFileName);
 #endif
 
 	// Finalize hash; call it before using ReportHash(Stl)
 	void Final();
 
 #ifdef SHA1_UTILITY_FUNCTIONS
-	bool ReportHash(TCHAR* tszReport, REPORT_TYPE rtReportType = REPORT_HEX) const;
+	bool ReportHash(char* tszReport, REPORT_TYPE rtReportType = REPORT_HEX) const;
 #endif
 
 #ifdef SHA1_STL_FUNCTIONS
-	bool ReportHashStl(std::basic_string<TCHAR>& strOut, REPORT_TYPE rtReportType =
-		REPORT_HEX) const;
+	bool ReportHashStl(std::basic_string<char>& strOut, REPORT_TYPE rtReportType = REPORT_HEX) const;
 #endif
 
 	// Get the raw message digest (20 bytes)
@@ -289,18 +248,5 @@ private:
 };
 
 OIIO_NAMESPACE_END
-
-#ifndef DO_NOT_UNDEFINE_SHA1
-#undef TCHAR
-#undef _T
-#undef _tmain
-#undef _tprintf
-#undef _getts
-#undef _tcslen
-#undef _tfopen
-#undef _tcscpy
-#undef _tcscat
-#undef _sntprintf
-#endif
 
 #endif // SHA1_H_A545E61D43E9404E8D736869AB3CBFE7

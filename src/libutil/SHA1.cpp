@@ -71,7 +71,7 @@ SHA1::append (const void *data, size_t size)
 {
     OIIO_ASSERT (!m_final && "Called SHA1() after already getting digest");
     if (data && size)
-        m_csha1->Update ((const unsigned char *)data, (unsigned int)size);
+        m_csha1->Update ((const UINT_8 *)data, static_cast<UINT_32>(size));
 }
 
 void
@@ -195,11 +195,11 @@ void CSHA1::Update(const UINT_8* pbData, UINT_32 uLen)
 }
 
 #ifdef SHA1_UTILITY_FUNCTIONS
-bool CSHA1::HashFile(const TCHAR* tszFileName)
+bool CSHA1::HashFile(const char* tszFileName)
 {
 	if(tszFileName == NULL) return false;
 
-	FILE* fpIn = _tfopen(tszFileName, _T("rb"));
+	FILE* fpIn = fopen(tszFileName, "rb");
 	if(fpIn == NULL) return false;
 
 	UINT_8* pbData = new UINT_8[SHA1_MAX_FILE_BUFFER];
@@ -235,10 +235,10 @@ void CSHA1::Final()
 		pbFinalCount[i] = static_cast<UINT_8>((m_count[((i >= 4) ? 0 : 1)] >>
 			((3 - (i & 3)) * 8) ) & 0xFF); // Endian independent
 
-	Update((UINT_8*)"\200", 1);
+	Update((const UINT_8*)"\200", 1);
 
 	while((m_count[0] & 504) != 448)
-		Update((UINT_8*)"\0", 1);
+		Update((const UINT_8*)"\0", 1);
 
 	Update(pbFinalCount, 8); // Cause a Transform()
 
@@ -261,35 +261,35 @@ void CSHA1::Final()
 
 
 #ifdef SHA1_UTILITY_FUNCTIONS
-bool CSHA1::ReportHash(TCHAR* tszReport, REPORT_TYPE rtReportType) const
+bool CSHA1::ReportHash(char* tszReport, REPORT_TYPE rtReportType) const
 {
 	if(tszReport == NULL) return false;
 
-	TCHAR tszTemp[16];
+	char tszTemp[16];
 
 	if((rtReportType == REPORT_HEX) || (rtReportType == REPORT_HEX_SHORT))
 	{
-		_sntprintf(tszTemp, 15, _T("%02X"), m_digest[0]);
+		snprintf(tszTemp, 15, "%02X", m_digest[0]);
 		Strutil::safe_strcpy(tszReport, tszTemp, HASH_TEMP_BUFFER_SIZE - 1);
 
-		// const TCHAR* lpFmt = ((rtReportType == REPORT_HEX) ? _T(" %02X") : _T("%02X"));
+		// const char* lpFmt = ((rtReportType == REPORT_HEX) ? " %02X" : "%02X");
 		for(size_t i = 1; i < 20; ++i)
 		{
 			if (rtReportType == REPORT_HEX)
-				_sntprintf(tszTemp, 15, _T(" %02X"), m_digest[i]);
+				snprintf(tszTemp, 15, " %02X", m_digest[i]);
 			else
-				_sntprintf(tszTemp, 15, _T("%02X"), m_digest[i]);
+				snprintf(tszTemp, 15, "%02X", m_digest[i]);
 			Strutil::safe_strcat(tszReport, tszTemp, HASH_TEMP_BUFFER_SIZE - 1);
 		}
 	}
 	else if(rtReportType == REPORT_DIGIT)
 	{
-		_sntprintf(tszTemp, 15, _T("%u"), m_digest[0]);
+		snprintf(tszTemp, 15, "%u", m_digest[0]);
 		Strutil::safe_strcpy(tszReport, tszTemp, HASH_TEMP_BUFFER_SIZE - 1);
 
 		for(size_t i = 1; i < 20; ++i)
 		{
-			_sntprintf(tszTemp, 15, _T(" %u"), m_digest[i]);
+			snprintf(tszTemp, 15, " %u", m_digest[i]);
 			Strutil::safe_strcat(tszReport, tszTemp, HASH_TEMP_BUFFER_SIZE - 1);
 		}
 	}
@@ -300,9 +300,9 @@ bool CSHA1::ReportHash(TCHAR* tszReport, REPORT_TYPE rtReportType) const
 #endif
 
 #ifdef SHA1_STL_FUNCTIONS
-bool CSHA1::ReportHashStl(std::basic_string<TCHAR>& strOut, REPORT_TYPE rtReportType) const
+bool CSHA1::ReportHashStl(std::basic_string<char>& strOut, REPORT_TYPE rtReportType) const
 {
-	TCHAR tszOut[HASH_TEMP_BUFFER_SIZE];
+	char tszOut[HASH_TEMP_BUFFER_SIZE];
 	const bool bResult = ReportHash(tszOut, rtReportType);
 	if(bResult) strOut = tszOut;
 	return bResult;
