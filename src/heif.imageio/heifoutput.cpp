@@ -200,10 +200,8 @@ HeifOutput::close()
             m_ctx->add_exif_metadata(m_ihandle, exifblob.data(),
                                      exifblob.size());
         } catch (const heif::Error& err) {
-#ifdef DEBUG
             std::string e = err.get_message();
-            Strutil::print("{}", e.empty() ? "unknown exception" : e.c_str());
-#endif
+            errorfmt("While adding/updating the EXIF data: {}", e.empty() ? "unknown exception" : e.c_str());
         }
         m_ctx->set_primary_image(m_ihandle);
         Filesystem::IOFile ioproxy(m_filename, Filesystem::IOProxy::Write);
