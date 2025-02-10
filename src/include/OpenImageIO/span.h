@@ -34,7 +34,7 @@ OIIO_NAMESPACE_BEGIN
 using span_size_t = size_t;
 using oiio_span_size_type = OIIO::span_size_t;  // back-compat alias
 
-OIIO_INLINE_CONSTEXPR span_size_t dynamic_extent = -1;
+inline constexpr span_size_t dynamic_extent = -1;
 
 
 
@@ -527,6 +527,22 @@ spancpy(span<T> dst, size_t dstoffset, cspan<T> src, size_t srcoffset = 0,
     n = std::min(n, dst.size() - dstoffset);
     memcpy(dst.data() + dstoffset, src.data() + srcoffset, n * sizeof(T));
     return n;
+}
+
+
+
+/// Perform a safe `memcpy(dst, src, n*sizeof(T))` but ensuring that the
+/// memory accesses stay within the boundaries of spans `dst_span` and
+/// `src_span`.
+///
+/// This is intended to be used as a memory-safe replacement for memcpy if
+/// you know the spans representing safe areas.
+template<typename T>
+inline size_t
+span_memcpy(T* dst, const T* src, size_t n, span<T> dst_span, cspan<T> src_span)
+{
+    return spancpy(dst_span, dst - dst_span.begin(), src_span,
+                   src - src_span.begin(), n);
 }
 
 
