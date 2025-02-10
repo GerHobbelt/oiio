@@ -19,7 +19,7 @@ NEW or CHANGED MINIMUM dependencies since the last major release are **bold**.
        CMake configuration flag: `-DCMAKE_CXX_STANDARD=20`, etc.
  * Compilers: **gcc 9.3** - 14.2, **clang 5** - 19, MSVS 2017 - 2019 (**v19.14
    and up**), **Intel icc 19+**, Intel OneAPI C++ compiler 2022+.
- * **CMake >= 3.18.2** (tested through 3.30)
+ * **CMake >= 3.18.2** (tested through 3.31)
  * **Imath >= 3.1** (tested through 3.1.x and main)
  * **OpenEXR >= 3.1** (tested through 3.3 and main)
  * **libTIFF >= 4.0** (tested through 4.7)
@@ -356,6 +356,15 @@ produce a dynamic-linked version.
 2. Follow vcpkg installation instructions and complete the install. Please note vcpkg has its own list of prerequisites listed on their page.
 
 3. Execute the PowerShell command from where vcpkg is located in directory. ``vcpkg install openimageio``
+
+
+**Note: Importing the OpenImageIO Python Module**
+
+As of OpenImageIO 3.0.3.0, the default DLL-loading behavior for Python 3.8+ has changed.
+
+If you've built OIIO from source and ``import OpenImageIO`` is throwing a ModuleNotFound exception, revert to the legacy DLL-loading behavior by setting environment variable 
+``OPENIMAGEIO_PYTHON_LOAD_DLLS_FROM_PATH=1``. 
+
 
 Test Images
 -----------
