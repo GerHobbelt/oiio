@@ -1021,11 +1021,10 @@ demosaic(ImageBuf& dst, const ImageBuf& src, KWArgs options, ROI roi,
 
     ROI dst_roi = roi;
     if (!dst_roi.defined()) {
-        dst_roi = src.roi();
+        dst_roi         = src.roi();
+        dst_roi.chbegin = 0;
+        dst_roi.chend   = 3;
     }
-
-    dst_roi.chbegin = 0;
-    dst_roi.chend   = 2;
 
     ImageSpec dst_spec = src.spec();
     dst_spec.nchannels = 3;
@@ -1073,7 +1072,7 @@ demosaic(ImageBuf& dst, const ImageBuf& src, KWArgs options, ROI roi,
         dst.errorfmt("ImageBufAlgo::demosaic() invalid pattern");
     }
 
-    return true;
+    return ok;
 }
 
 ImageBuf
