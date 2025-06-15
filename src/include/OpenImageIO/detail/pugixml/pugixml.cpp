@@ -7691,7 +7691,7 @@ PUGI__NS_BEGIN
 			new_size = (new_size + xpath_memory_block_alignment - 1) & ~(xpath_memory_block_alignment - 1);
 
 			// we can only reallocate the last object
-			assert(ptr == 0 || static_cast<char*>(ptr) + old_size == &_root->data[0] + _root_size);
+			assert(ptr == nullptr || static_cast<char*>(ptr) + old_size == &_root->data[0] + _root_size);
 
 			// try to reallocate the object inplace
 			if (ptr && _root_size - old_size + new_size <= _root->capacity)
