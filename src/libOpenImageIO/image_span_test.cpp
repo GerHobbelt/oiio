@@ -15,6 +15,8 @@
 
 #include <iostream>
 
+#undef small    // defined in MS system header files (rpcndr.h) and clashing with the code below.
+
 using namespace OIIO;
 
 

@@ -11,6 +11,8 @@
 #include <OpenImageIO/paramlist.h>
 #include <OpenImageIO/ustring.h>
 
+#undef small  // defined in MS system header files (rpcndr.h) and clashing with the code below.
+
 
 OIIO_NAMESPACE_BEGIN
 

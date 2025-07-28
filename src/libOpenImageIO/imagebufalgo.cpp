@@ -20,6 +20,8 @@
 
 #include "kissfft.hh"
 
+#undef small  // defined in MS system header files (rpcndr.h) and clashing with the code below.
+
 
 
 ///////////////////////////////////////////////////////////////////////////
