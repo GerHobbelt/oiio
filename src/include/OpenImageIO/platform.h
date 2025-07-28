@@ -299,9 +299,9 @@
 /// idiom rather than a direct OIIO_ALLOCA if you aren't sure the item will
 /// be small.
 #if defined(__GNUC__)
-#    define OIIO_ALLOCA(type, size) (assert(size < (1<<20)), (size) != 0 ? ((type*)__builtin_alloca((size) * sizeof(type))) : nullptr)
+#    define OIIO_ALLOCA(type, size) ([](decltype(size) l){ assert(l < (1<<20)); }(size), (size) != 0 ? ((type*)__builtin_alloca((size) * sizeof(type))) : nullptr)
 #else
-#    define OIIO_ALLOCA(type, size) (assert(size < (1<<20)), (size) != 0 ? ((type*)alloca((size) * sizeof(type))) : nullptr)
+#    define OIIO_ALLOCA(type, size) ([](decltype(size) l){ assert(l < (1<<20)); }(size), (size) != 0 ? ((type*)alloca((size) * sizeof(type))) : nullptr)
 #endif
 
 /// Deprecated (for namespace pollution reasons)
