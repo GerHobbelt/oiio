@@ -19,6 +19,9 @@
 #include <OpenImageIO/platform.h>
 #include <OpenImageIO/detail/fmt.h>
 
+#undef min
+#undef max
+
 // Span notes and helpful links:
 // - cppreference on std::span:
 //   https://en.cppreference.com/w/cpp/container/span

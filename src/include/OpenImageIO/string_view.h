@@ -19,6 +19,9 @@
 #include <OpenImageIO/platform.h>
 #include <OpenImageIO/detail/fmt.h>
 
+#undef min
+#undef max
+
 // Some compilers already have a string_view pre-C++17
 // N.B. This logic is taken from fmtlib.
 #if (__has_include(<string_view>) &&                                    \

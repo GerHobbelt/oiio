@@ -47,6 +47,7 @@
 #include <OpenImageIO/platform.h>
 
 #ifdef _WIN32
+#    include <winsock2.h>
 #    include <windows.h>
 #    define DEFINE_CONSOLEV2_PROPERTIES
 #    include <cstdio>

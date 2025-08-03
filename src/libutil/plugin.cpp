@@ -15,6 +15,7 @@ OIIO_PRAGMA_WARNING_POP
 #include <string>
 
 #ifdef _WIN32
+#    include <winsock2.h>
 #    include <windows.h>
 #else
 #    include <dlfcn.h>

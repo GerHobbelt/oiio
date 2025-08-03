@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // https://github.com/AcademySoftwareFoundation/OpenImageIO
 
-
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
