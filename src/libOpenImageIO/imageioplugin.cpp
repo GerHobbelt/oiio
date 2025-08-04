@@ -266,6 +266,8 @@ catalog_plugin(const std::string& format_name,
         extern const char* name##_output_extensions[]; \
         extern const char* name##_imageio_library_version();
 
+OIIO_PLUGIN_EXPORTS_BEGIN
+
 PLUGENTRY(bmp);
 PLUGENTRY(cineon);
 PLUGENTRY(dds);
@@ -299,6 +301,7 @@ PLUGENTRY(targa);
 PLUGENTRY(webp);
 PLUGENTRY(zfile);
 
+OIIO_PLUGIN_EXPORTS_END
 
 #endif  // defined(EMBED_PLUGINS)
 
