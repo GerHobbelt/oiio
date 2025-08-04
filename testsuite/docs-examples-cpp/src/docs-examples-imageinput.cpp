@@ -13,6 +13,8 @@
 // BEGIN-imageinput-example1
 #include <OpenImageIO/imageio.h>
 
+#include "imageio_pvt.h"
+
 #include <monolithic_examples.h>
 
 using namespace OIIO;
@@ -194,6 +196,8 @@ extern "C"
 int
 main(void)
 {
+    pvt::oiio_print_debug = 2;
+
     // Each example function needs to get called here, or it won't execute
     // as part of the test.
     simple_read();
