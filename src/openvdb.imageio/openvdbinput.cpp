@@ -11,6 +11,8 @@
 #    pragma GCC diagnostic ignored "-Wstrict-overflow"
 #endif
 
+#if __has_include(<openvdb/openvdb.h>) && !defined(DISABLE_OPENVDB)
+
 #include <openvdb/openvdb.h>
 #include <openvdb/tools/Dense.h>
 
@@ -601,3 +603,5 @@ openvdb_imageio_library_version()
 OIIO_PLUGIN_EXPORTS_END
 
 OIIO_PLUGIN_NAMESPACE_END
+
+#endif // __has_include(<openvdb/openvdb.h>)

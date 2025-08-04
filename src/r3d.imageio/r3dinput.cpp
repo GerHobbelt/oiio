@@ -20,6 +20,8 @@
 #include <OpenImageIO/sysutil.h>
 #include <OpenImageIO/tiffutils.h>
 
+#if __has_include(<R3DSDK.h>) && !defined(DISABLE_R3D)
+
 #include <R3DSDK.h>
 #ifdef GPU
 #    ifdef CUDA
@@ -427,3 +429,5 @@ R3dInput::terminate()
 }
 
 OIIO_PLUGIN_NAMESPACE_END
+
+#endif // __has_include(<R3DSDK.h>)

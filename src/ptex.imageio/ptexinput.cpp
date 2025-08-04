@@ -2,11 +2,14 @@
 // SPDX-License-Identifier: Apache-2.0
 // https://github.com/AcademySoftwareFoundation/OpenImageIO
 
-#include <Ptexture.h>
-
 #include <OpenImageIO/dassert.h>
 #include <OpenImageIO/imageio.h>
 #include <OpenImageIO/typedesc.h>
+
+#if __has_include(<Ptexture.h>) && !defined(DISABLE_PTEX)
+
+#include <Ptexture.h>
+
 
 OIIO_PLUGIN_NAMESPACE_BEGIN
 
@@ -321,3 +324,5 @@ PtexInput::read_native_tile(int subimage, int miplevel, int x, int y, int /*z*/,
 
 
 OIIO_PLUGIN_NAMESPACE_END
+
+#endif // __has_include(<Ptexture.h>)

@@ -74,6 +74,8 @@ receive_frame(AVCodecContext* avctx, AVFrame* picture, AVPacket* avpkt)
 #include <iostream>
 #include <mutex>
 
+#if !defined(DISABLE_FFMPEG)
+
 OIIO_PLUGIN_NAMESPACE_BEGIN
 
 
@@ -580,9 +582,12 @@ FFmpegInput::read_native_scanline(int subimage, int miplevel, int y, int /*z*/,
 bool
 FFmpegInput::close(void)
 {
-    if (m_codec_context)
+    /* close codec */
+    if (m_codec_context)  // fixed after https://github.com/FFmpeg/FFmpeg/commit/3e1f507f3e8f16b716aa115552d243b48ae809bd
         avcodec_close(m_codec_context);
-    if (m_format_context) {
+    m_codec_context = NULL;
+
+	if (m_format_context) {
         avformat_close_input(&m_format_context);
         av_free(m_format_context);  // will free m_codec and m_codec_context
     }
@@ -710,3 +715,5 @@ FFmpegInput::fps() const
 }
 
 OIIO_PLUGIN_NAMESPACE_END
+
+#endif // !DISABLE_FFMPEG
