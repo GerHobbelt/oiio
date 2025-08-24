@@ -45,7 +45,7 @@
 ///
 
 #if defined(_WIN32) || defined(__CYGWIN__)
-#    ifdef OIIO_STATIC_DEFINE
+#    if defined(OIIO_STATIC_DEFINE) || defined(BUILD_MONOLITHIC)
 #        define OIIO_IMPORT
 #        define OIIO_EXPORT
 #    else
