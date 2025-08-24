@@ -84,7 +84,7 @@ grid-resize.tx       : 1024 x 1024, 4 channel, uint8 tiff
 Reading tahoe-resize.tx
 tahoe-resize.tx      :  512 x  512, 3 channel, uint8 tiff
     MIP-map levels: 512x512 256x256 128x128 64x64 32x32 16x16 8x8 4x4 2x2 1x1
-    SHA-1: 0EA33A92FFE87587280728576050604BCE76DAC5
+    SHA-1: B6A04E868C51C6ABB661C0F6BAA8AD974ECDFC5C
     channel list: R, G, B
     tile size: 64 x 64
     compression: "zip"
@@ -337,6 +337,7 @@ nan.exr              :   64 x   64, 3 channel, half openexr
     textureformat: "Plain Texture"
     wrapmodes: "black,black"
     oiio:AverageColor: "0.5,0.5,0.5"
+    oiio:ColorSpace: "lin_rec709"
     oiio:SHA-1: "44B96A7C3AFBF8D7621E7C6453266E5DD1962D36"
     oiio:subimages: 1
     openexr:levelmode: 0
@@ -365,6 +366,7 @@ checker-exr.pdq      :  128 x  128, 4 channel, half openexr
     textureformat: "Plain Texture"
     wrapmodes: "black,black"
     oiio:AverageColor: "0.5,0.5,0.5,1"
+    oiio:ColorSpace: "lin_rec709"
     oiio:SHA-1: "D924CA144A02479D1507F5910F5FC8F51EF78765"
     oiio:subimages: 1
     openexr:lineOrder: "increasingY"
