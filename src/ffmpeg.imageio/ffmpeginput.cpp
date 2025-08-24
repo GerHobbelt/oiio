@@ -584,7 +584,7 @@ FFmpegInput::close(void)
 {
     /* close codec */
     if (m_codec_context)  // fixed after https://github.com/FFmpeg/FFmpeg/commit/3e1f507f3e8f16b716aa115552d243b48ae809bd
-        avcodec_close(m_codec_context);
+        avcodec_free_context(&m_codec_context);
     m_codec_context = NULL;
 
 	if (m_format_context) {
